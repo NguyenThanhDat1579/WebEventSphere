@@ -1,98 +1,82 @@
-/**
-=========================================================
-* Argon Dashboard 2 MUI - v3.0.1
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/argon-dashboard-material-ui
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
-import { useState, useEffect, useMemo } from "react";
-
-// react-router components
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-
-// @mui material components
+import { useState, useEffect, useMemo, useRef } from "react";
+import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+import SignIn from "../src/layouts/authentication/sign-in";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import Icon from "@mui/material/Icon";
 
-// Argon Dashboard 2 MUI components
 import ArgonBox from "components/ArgonBox";
-
-// Argon Dashboard 2 MUI example components
 import Sidenav from "examples/Sidenav";
 import Configurator from "examples/Configurator";
 
-// Argon Dashboard 2 MUI themes
 import theme from "assets/theme";
 import themeRTL from "assets/theme/theme-rtl";
-import themeDark from "assets/theme-dark";
-import themeDarkRTL from "assets/theme-dark/theme-rtl";
 
-// RTL plugins
 import rtlPlugin from "stylis-plugin-rtl";
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 
-// Argon Dashboard 2 MUI routes
 import routes from "routes";
 import { useSelector } from "react-redux";
-// Argon Dashboard 2 MUI contexts
+
 import { useArgonController, setMiniSidenav, setOpenConfigurator } from "context";
 
-// Images
 import brand from "assets/images/logo-ct.png";
-import brandDark from "assets/images/logo-ct-dark.png";
-
-// Icon Fonts
 import "assets/css/nucleo-icons.css";
 import "assets/css/nucleo-svg.css";
 
 export default function App() {
+  const navigate = useNavigate();
   const role = useSelector((state) => state.auth?.role);
-  console.log(role);
+  console.log("Current user role:", role);
+  const isAuthenticated = role !== null;
+
   const [controller, dispatch] = useArgonController();
-  const { miniSidenav, direction, layout, openConfigurator, sidenavColor, darkSidenav, darkMode } =
+  const { miniSidenav, direction, layout, openConfigurator, sidenavColor, darkSidenav } =
     controller;
+
   const [onMouseEnter, setOnMouseEnter] = useState(false);
   const [rtlCache, setRtlCache] = useState(null);
   const { pathname } = useLocation();
+  const redirectedRef = useRef(false);
+  // Redirect đến sign-in nếu chưa đăng nhập và không ở trang sign-in
+  useEffect(() => {
+    if (!isAuthenticated && pathname !== "/authentication/sign-in") {
+      navigate("/authentication/sign-in");
+    }
+  }, [isAuthenticated, pathname, navigate]);
 
-  // Lọc routes theo role
-  const filteredRoutes = useMemo(() => {
-    return routes.filter((route) => {
-      if (!route.allowedRoles) return true; // route dùng chung
-
-      if (role === 2) {
-        return route.allowedRoles.includes(2);
+  useEffect(() => {
+    if (isAuthenticated && !redirectedRef.current) {
+      redirectedRef.current = true;
+      if (role === 1) {
+        navigate("/dashboard-admin");
+      } else if (role === 2) {
+        navigate("/dashboard-organizer");
+      } else {
+        navigate("/dashboard");
       }
+    }
+  }, [isAuthenticated, role, navigate]);
 
-      if (role === null) {
-        return route.allowedRoles.includes(1);
-      }
-
-      return false; // không match role thì không hiện
-    });
-  }, [role]);
-
-  // Cache for the rtl
+  // Cache RTL
   useMemo(() => {
     const cacheRtl = createCache({
       key: "rtl",
       stylisPlugins: [rtlPlugin],
     });
-
     setRtlCache(cacheRtl);
   }, []);
 
-  // Open sidenav when mouse enter on mini sidenav
+  // Lọc routes theo role
+  const filteredRoutes = useMemo(() => {
+    return routes.filter((route) => {
+      if (route.hidden) return false;
+      if (!route.allowedRoles) return true;
+      return role && route.allowedRoles.includes(role);
+    });
+  }, [role]);
+
   const handleOnMouseEnter = () => {
     if (miniSidenav && !onMouseEnter) {
       setMiniSidenav(dispatch, false);
@@ -100,7 +84,6 @@ export default function App() {
     }
   };
 
-  // Close sidenav when mouse leave mini sidenav
   const handleOnMouseLeave = () => {
     if (onMouseEnter) {
       setMiniSidenav(dispatch, true);
@@ -108,15 +91,12 @@ export default function App() {
     }
   };
 
-  // Change the openConfigurator state
   const handleConfiguratorOpen = () => setOpenConfigurator(dispatch, !openConfigurator);
 
-  // Setting the dir attribute for the body element
   useEffect(() => {
     document.body.setAttribute("dir", direction);
   }, [direction]);
 
-  // Setting page scroll to 0 when changing the route
   useEffect(() => {
     document.documentElement.scrollTop = 0;
     document.scrollingElement.scrollTop = 0;
@@ -135,77 +115,127 @@ export default function App() {
       return null;
     });
 
-  const configsButton = (
-    <ArgonBox
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      width="3.5rem"
-      height="3.5rem"
-      bgColor="white"
-      shadow="sm"
-      borderRadius="50%"
-      position="fixed"
-      right="2rem"
-      bottom="2rem"
-      zIndex={99}
-      color="dark"
-      sx={{ cursor: "pointer" }}
-      onClick={handleConfiguratorOpen}
-    >
-      <Icon fontSize="default" color="inherit">
-        settings
-      </Icon>
-    </ArgonBox>
-  );
+  // NẾU CHƯA ĐĂNG NHẬP -> CHỈ HIỂN THỊ TRANG SIGN IN
+  if (!isAuthenticated) {
+    return direction === "rtl" ? (
+      <CacheProvider value={rtlCache}>
+        <ThemeProvider theme={themeRTL}>
+          <CssBaseline />
+          <Routes>
+            <Route path="/authentication/sign-in" element={<SignIn />} />
+            <Route path="*" element={<Navigate to="/authentication/sign-in" replace />} />
+          </Routes>
+        </ThemeProvider>
+      </CacheProvider>
+    ) : (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Routes>
+          <Route path="/authentication/sign-in" element={<SignIn />} />
+          <Route path="*" element={<Navigate to="/authentication/sign-in" replace />} />
+        </Routes>
+      </ThemeProvider>
+    );
+  }
 
+  // NẾU ĐÃ ĐĂNG NHẬP -> HIỂN THỊ GIAO DIỆN CHÍNH
   return direction === "rtl" ? (
     <CacheProvider value={rtlCache}>
-      <ThemeProvider theme={darkMode ? themeDarkRTL : themeRTL}>
+      <ThemeProvider theme={themeRTL}>
         <CssBaseline />
+        <>
+          {/* Hiển thị Sidenav và Configurator khi đã đăng nhập */}
+          {layout === "dashboard" && (
+            <>
+              <Sidenav
+                color={sidenavColor}
+                brand={brand}
+                brandName="Argon Dashboard 2 PRO"
+                routes={filteredRoutes}
+                onMouseEnter={handleOnMouseEnter}
+                onMouseLeave={handleOnMouseLeave}
+              />
+              <Configurator />
+              <ArgonBox
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                width="3.5rem"
+                height="3.5rem"
+                bgColor="white"
+                shadow="sm"
+                borderRadius="50%"
+                position="fixed"
+                right="2rem"
+                bottom="2rem"
+                zIndex={99}
+                color="dark"
+                sx={{ cursor: "pointer" }}
+                onClick={handleConfiguratorOpen}
+              >
+                <Icon fontSize="default" color="inherit">
+                  settings
+                </Icon>
+              </ArgonBox>
+            </>
+          )}
+
+          {layout === "vr" && <Configurator />}
+
+          <Routes>
+            {getRoutes(filteredRoutes)}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </>
+      </ThemeProvider>
+    </CacheProvider>
+  ) : (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <>
+        {/* Hiển thị Sidenav và Configurator khi đã đăng nhập */}
         {layout === "dashboard" && (
           <>
             <Sidenav
               color={sidenavColor}
-              brand={darkSidenav || darkMode ? brand : brandDark}
+              brand={brand}
               brandName="Argon Dashboard 2 PRO"
               routes={filteredRoutes}
               onMouseEnter={handleOnMouseEnter}
               onMouseLeave={handleOnMouseLeave}
             />
             <Configurator />
-            {configsButton}
+            <ArgonBox
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              width="3.5rem"
+              height="3.5rem"
+              bgColor="white"
+              shadow="sm"
+              borderRadius="50%"
+              position="fixed"
+              right="2rem"
+              bottom="2rem"
+              zIndex={99}
+              color="dark"
+              sx={{ cursor: "pointer" }}
+              onClick={handleConfiguratorOpen}
+            >
+              <Icon fontSize="default" color="inherit">
+                settings
+              </Icon>
+            </ArgonBox>
           </>
         )}
+
         {layout === "vr" && <Configurator />}
+
         <Routes>
           {getRoutes(filteredRoutes)}
-          <Route path="*" element={<Navigate to="/dashboard" />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
-      </ThemeProvider>
-    </CacheProvider>
-  ) : (
-    <ThemeProvider theme={darkMode ? themeDark : theme}>
-      <CssBaseline />
-      {layout === "dashboard" && (
-        <>
-          <Sidenav
-            color={sidenavColor}
-            brand={darkSidenav || darkMode ? brand : brandDark}
-            brandName="Argon Dashboard 2 PRO"
-            routes={filteredRoutes}
-            onMouseEnter={handleOnMouseEnter}
-            onMouseLeave={handleOnMouseLeave}
-          />
-          <Configurator />
-          {configsButton}
-        </>
-      )}
-      {layout === "vr" && <Configurator />}
-      <Routes>
-        {getRoutes(filteredRoutes)}
-        <Route path="*" element={<Navigate to="/authentication/sign-in" />} />
-      </Routes>
+      </>
     </ThemeProvider>
   );
 }

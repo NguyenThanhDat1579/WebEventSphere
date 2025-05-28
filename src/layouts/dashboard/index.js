@@ -1,4 +1,3 @@
-// @mui material components
 import Grid from "@mui/material/Grid";
 import Icon from "@mui/material/Icon";
 

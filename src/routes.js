@@ -30,6 +30,7 @@ const routes = [
     route: "/dashboard",
     icon: <ArgonBox component="i" color="primary" fontSize="14px" className="ni ni-tv-2" />,
     component: <Dashboard />,
+    hidden: true,
   },
   {
     type: "route",
@@ -195,7 +196,7 @@ const routes = [
       <ArgonBox component="i" color="warning" fontSize="14px" className="ni ni-single-copy-04" />
     ),
     component: <SignIn />,
-    allowedRoles: [1],
+    hidden: true,
   },
   {
     type: "route",
@@ -204,7 +205,7 @@ const routes = [
     route: "/authentication/sign-up",
     icon: <ArgonBox component="i" color="info" fontSize="14px" className="ni ni-collection" />,
     component: <SignUp />,
-    allowedRoles: [1],
+    hidden: true,
   },
 ];
 

@@ -1,23 +1,38 @@
-// @mui material components
-import Card from "@mui/material/Card";
+import React, { useEffect, useState } from "react";
 
-// Argon Dashboard 2 MUI components
+// MUI & Argon
+import Card from "@mui/material/Card";
 import ArgonBox from "components/ArgonBox";
 import ArgonTypography from "components/ArgonTypography";
-
-// Argon Dashboard 2 MUI examples
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import Table from "examples/Tables/Table";
 
-// Data
-import authorsTableData from "layouts/tables/data/authorsTableData";
-import projectsTableData from "layouts/tables/data/projectsTableData";
+// API & Helper
+import userApi from "api/userApi"; // Đường dẫn đúng file bạn đã tạo
+import userTableData from "layouts/tables/data/userTableData";
 
 function UserManagement() {
-  const { columns, rows } = authorsTableData;
-  const { columns: prCols, rows: prRows } = projectsTableData;
+  const [columns, setColumns] = useState([]);
+  const [rows, setRows] = useState([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await userApi.getAll();
+        if (res.data.status) {
+          const { columns, rows } = userTableData(res.data.data);
+          setColumns(columns);
+          setRows(rows);
+        }
+      } catch (error) {
+        console.error("Lỗi khi gọi API /users/all:", error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   return (
     <DashboardLayout>
@@ -26,7 +41,7 @@ function UserManagement() {
         <ArgonBox mb={3}>
           <Card>
             <ArgonBox display="flex" justifyContent="space-between" alignItems="center" p={3}>
-              <ArgonTypography variant="h6">Authors table</ArgonTypography>
+              <ArgonTypography variant="h6">Danh sách người dùng</ArgonTypography>
             </ArgonBox>
             <ArgonBox
               sx={{
@@ -42,23 +57,6 @@ function UserManagement() {
             </ArgonBox>
           </Card>
         </ArgonBox>
-        <Card>
-          <ArgonBox display="flex" justifyContent="space-between" alignItems="center" p={3}>
-            <ArgonTypography variant="h6">Projects table</ArgonTypography>
-          </ArgonBox>
-          <ArgonBox
-            sx={{
-              "& .MuiTableRow-root:not(:last-child)": {
-                "& td": {
-                  borderBottom: ({ borders: { borderWidth, borderColor } }) =>
-                    `${borderWidth[1]} solid ${borderColor}`,
-                },
-              },
-            }}
-          >
-            <Table columns={prCols} rows={prRows} />
-          </ArgonBox>
-        </Card>
       </ArgonBox>
       <Footer />
     </DashboardLayout>

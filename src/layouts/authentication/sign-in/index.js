@@ -34,7 +34,9 @@ function Illustration() {
 
     if (email === "admin" && password === "admin") {
       console.log("Admin đăng nhập");
-      navigate("/dashboard");
+      dispatch(setUserData({ role: 1 })); // Lưu role = 1
+      navigate("/dashboard-admin");
+      return; // Dừng hàm
     }
 
     try {
@@ -43,8 +45,8 @@ function Illustration() {
 
       if (userData && userData.role === 2) {
         console.log("Organizer đăng nhập", userData);
-        dispatch(setUserData(userData));
-        navigate("/dashboard");
+        dispatch(setUserData(userData)); // Lưu role từ API (role = 2)
+        navigate("/dashboard-organizer");
       } else {
         console.log("Đăng nhập không phải organizer", userData);
       }

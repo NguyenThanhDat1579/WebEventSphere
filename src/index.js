@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "App";
 import { Provider } from "react-redux";
+import { ThemeProvider } from "@mui/material/styles";
+import theme from "assets/theme";
 import store from "../src/store/index";
 
 // Soft UI Context Provider
@@ -18,13 +20,17 @@ const container = document.getElementById("root");
 const root = createRoot(container);
 
 root.render(
-  <Provider store={store}>
-    <BrowserRouter basename="/argon-dashboard-material-ui">
-      <ArgonControllerProvider>
-        <PerfectScrollbar>
-          <App />
-        </PerfectScrollbar>
-      </ArgonControllerProvider>
-    </BrowserRouter>
-  </Provider>
+  <ThemeProvider theme={theme}>
+    <Provider store={store}>
+      <BrowserRouter basename="/argon-dashboard-material-ui">
+        <ArgonControllerProvider>
+          <PerfectScrollbar>
+            <App />
+          </PerfectScrollbar>
+        </ArgonControllerProvider>
+      </BrowserRouter>
+    </Provider>
+  </ThemeProvider>
 );
+
+

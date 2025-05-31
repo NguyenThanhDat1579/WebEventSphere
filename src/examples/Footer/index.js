@@ -27,7 +27,7 @@ import ArgonTypography from "components/ArgonTypography";
 // Argon Dashboard 2 MUI base styles
 import typography from "assets/theme/base/typography";
 
-function Footer({ company, links }) {
+function Footer({ company = {}, links = [] }) {
   const { href, name } = company;
   const { size } = typography;
 

@@ -68,7 +68,7 @@ function OrganizerCreateNewEvent() {
         </Grid>
         <Grid container spacing={3} mb={3}>
           <Grid item xs={12} lg={7}>
-            <GradientLineChart
+            {/* <GradientLineChart
               title="Sales Overview"
               description={
                 <ArgonBox display="flex" alignItems="center">
@@ -84,7 +84,7 @@ function OrganizerCreateNewEvent() {
                 </ArgonBox>
               }
               chart={gradientLineChartData}
-            />
+            /> */}
           </Grid>
           <Grid item xs={12} lg={5}>
             <Slider />

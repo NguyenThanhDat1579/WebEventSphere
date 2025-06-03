@@ -150,7 +150,7 @@ export default function App() {
               <Sidenav
                 color={sidenavColor}
                 brand={brand}
-                brandName="Argon Dashboard 2 PRO"
+                brandName="EventSphere"
                 routes={filteredRoutes}
                 onMouseEnter={handleOnMouseEnter}
                 onMouseLeave={handleOnMouseLeave}
@@ -199,7 +199,7 @@ export default function App() {
             <Sidenav
               color={sidenavColor}
               brand={brand}
-              brandName="Argon Dashboard 2 PRO"
+              brandName="EventSphere"
               routes={filteredRoutes}
               onMouseEnter={handleOnMouseEnter}
               onMouseLeave={handleOnMouseLeave}

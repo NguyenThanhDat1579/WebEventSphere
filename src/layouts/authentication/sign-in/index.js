@@ -1,5 +1,5 @@
 import { useState } from "react";
-import authApi from "../../../api/authApi";
+import authApi from "../../../api/utils/authApi";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../../../store/slices/authSlice";
 import { useNavigate } from "react-router-dom";
@@ -56,20 +56,20 @@ function Illustration() {
   };
   return (
     <IllustrationLayout
-      title="Sign In"
-      description="Enter your email and password to sign in"
+      title="Đăng nhập"
+      description=""
       illustration={{
         image: bgImage,
-        title: '"Attention is the new currency"',
-        description:
-          "The more effortless the writing looks, the more effort the writer actually put into the process.",
+        // title: '"Attention is the new currency"',
+        // description:
+        //   "The more effortless the writing looks, the more effort the writer actually put into the process.",
       }}
     >
       <ArgonBox component="form" role="form">
         <ArgonBox mb={2}>
           <ArgonInput
             type="email"
-            placeholder="Email"
+            placeholder="Nhập Email"
             size="large"
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -77,7 +77,7 @@ function Illustration() {
         <ArgonBox mb={2}>
           <ArgonInput
             type="password"
-            placeholder="Password"
+            placeholder="Nhập mật khẩu"
             size="large"
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -90,17 +90,17 @@ function Illustration() {
             onClick={handleSetRememberMe}
             sx={{ cursor: "pointer", userSelect: "none" }}
           >
-            &nbsp;&nbsp;Remember me
+            &nbsp;&nbsp;Ghi nhớ tài khoản
           </ArgonTypography>
         </ArgonBox>
         <ArgonBox mt={4} mb={1}>
           <ArgonButton color="info" size="large" fullWidth onClick={handleSignIn}>
-            Sign In
+            Đăng nhập
           </ArgonButton>
         </ArgonBox>
         <ArgonBox mt={3} textAlign="center">
-          <ArgonTypography variant="button" color="text" fontWeight="regular">
-            Don&apos;t have an account?{" "}
+          {/* <ArgonTypography variant="button" color="text" fontWeight="regular">
+            Bạn có tài khoản chưa?{" "}
             <ArgonTypography
               component={Link}
               to="/authentication/sign-up"
@@ -110,7 +110,7 @@ function Illustration() {
             >
               Sign up
             </ArgonTypography>
-          </ArgonTypography>
+          </ArgonTypography> */}
         </ArgonBox>
       </ArgonBox>
     </IllustrationLayout>

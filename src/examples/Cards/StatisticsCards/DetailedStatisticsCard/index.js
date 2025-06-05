@@ -35,8 +35,8 @@ function DetailedStaticsCard({ bgColor, title, count, percentage, icon, directio
   return (
     <Card>
       <ArgonBox
-        bgColor={bgColor === "white" && darkMode ? "transparent" : bgColor}
-        variant={bgColor === "white" && darkMode ? "contained" : "gradient"}
+        bgColor={bgColor === "black" && darkMode ? "transparent" : bgColor}
+        variant={bgColor === "black" && darkMode ? "contained" : "gradient"}
       >
         <ArgonBox p={2}>
           <Grid container>
@@ -44,8 +44,8 @@ function DetailedStaticsCard({ bgColor, title, count, percentage, icon, directio
               <Grid item>
                 <ArgonBox
                   variant="gradient"
-                  bgColor={bgColor === "white" ? icon.color : "white"}
-                  color={bgColor === "white" ? "white" : "dark"}
+                  bgColor={bgColor === "black" ? icon.color : "black"}
+                  color={bgColor === "black" ? "black" : "dark"}
                   width="3rem"
                   height="3rem"
                   borderRadius="section"
@@ -74,7 +74,7 @@ function DetailedStaticsCard({ bgColor, title, count, percentage, icon, directio
               <ArgonBox ml={direction === "left" ? 2 : 0} lineHeight={1}>
                 <ArgonTypography
                   variant="button"
-                  color={bgColor === "white" ? "text" : "white"}
+                  color={bgColor === "black" ? "text" : "black"}
                   textTransform="uppercase"
                   fontWeight="medium"
                 >
@@ -83,7 +83,7 @@ function DetailedStaticsCard({ bgColor, title, count, percentage, icon, directio
                 <ArgonTypography
                   variant="h5"
                   fontWeight="bold"
-                  color={bgColor === "white" ? "dark" : "white"}
+                  color={bgColor === "black" ? "dark" : "black"}
                   mb={1}
                 >
                   {count}
@@ -133,7 +133,7 @@ function DetailedStaticsCard({ bgColor, title, count, percentage, icon, directio
             <ArgonTypography
               variant="body2"
               fontWeight="regular"
-              color={bgColor === "white" ? "text" : "white"}
+              color={bgColor === "black" ? "text" : "black"}
               ml={0.5}
               mt={-0.125}
             >

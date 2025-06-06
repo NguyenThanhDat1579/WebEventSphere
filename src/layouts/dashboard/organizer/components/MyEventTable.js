@@ -5,10 +5,11 @@ import {
   TableBody,
   TableCell,
   TableContainer,
-  TableHead,
   TableRow,
   Paper,
   Button,
+  Avatar,
+  Box,
 } from "@mui/material";
 import { format } from "date-fns";
 import ArgonTypography from "components/ArgonTypography";
@@ -22,20 +23,16 @@ function MyEventTable({ events }) {
 
   return (
     <TableContainer component={Paper} sx={{ boxShadow: 1, overflowX: "auto" }}>
-      <Table size="medium" sx={{ minWidth: 700, tableLayout: "fixed" }}>
-        {/* Bỏ TableHead */}
-
+      <Table size="medium" sx={{ minWidth: 800, tableLayout: "fixed" }}>
         <TableBody>
-          {/* Chuyển TableHead thành 1 TableRow trong TableBody */}
           <TableRow>
-            <TableCell sx={{ width: "15%", fontWeight: "bold" }}>Tên sự kiện</TableCell>
-            <TableCell sx={{ width: "10%", fontWeight: "bold" }}>Ngày</TableCell>
-            <TableCell sx={{ width: "15%", fontWeight: "bold" }}>Địa điểm</TableCell>
+            <TableCell sx={{ width: "20%", fontWeight: "bold" }}>Sự kiện</TableCell>
+            <TableCell sx={{ width: "10%", fontWeight: "bold" }}>Thời gian</TableCell>
             <TableCell sx={{ width: "10%", fontWeight: "bold" }}>Trạng thái</TableCell>
-            <TableCell sx={{ width: "10%", fontWeight: "bold", textAlign: "center" }}>
+            <TableCell sx={{ width: "15%", fontWeight: "bold", textAlign: "center" }}>
               Vé đã bán
             </TableCell>
-            <TableCell sx={{ width: "10%", fontWeight: "bold", textAlign: "center" }}>
+            <TableCell sx={{ width: "15%", fontWeight: "bold", textAlign: "right" }}>
               Doanh thu
             </TableCell>
             <TableCell sx={{ width: "10%", fontWeight: "bold", textAlign: "center" }}>
@@ -43,7 +40,6 @@ function MyEventTable({ events }) {
             </TableCell>
           </TableRow>
 
-          {/* Các rows dữ liệu */}
           {events.map((event, index) => (
             <TableRow
               key={event.id}
@@ -56,11 +52,32 @@ function MyEventTable({ events }) {
                 },
               }}
             >
-              <TableCell sx={{ whiteSpace: "normal", wordBreak: "break-word" }}>
-                {event.title}
+              {/* Avatar + Title */}
+              <TableCell>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Avatar
+                    src={event.avatar}
+                    alt={event.title}
+                    variant="rounded"
+                    sx={{ width: 48, height: 48 }}
+                  />
+                  <ArgonTypography
+                    variant="body2"
+                    fontWeight="medium"
+                    sx={{ whiteSpace: "normal" }}
+                  >
+                    {event.title}
+                  </ArgonTypography>
+                </Box>
               </TableCell>
-              <TableCell>{format(event.date, "dd/MM/yyyy")}</TableCell>
-              <TableCell>{event.location || "Đang cập nhật"}</TableCell>
+
+              <TableCell>
+                {`${format(new Date(event.timeStart * 1000), "dd/MM/yyyy")} - ${format(
+                  new Date(event.timeEnd * 1000),
+                  "dd/MM/yyyy"
+                )}`}
+              </TableCell>
+
               <TableCell>
                 <ArgonTypography
                   variant="caption"
@@ -70,11 +87,14 @@ function MyEventTable({ events }) {
                   {event.status === "Published" ? "Đang diễn ra" : "Đã kết thúc"}
                 </ArgonTypography>
               </TableCell>
+
               <TableCell sx={{ textAlign: "center" }}>
                 {event.soldTickets} / {event.totalTickets}
               </TableCell>
+
               <TableCell sx={{ textAlign: "right" }}>{formatCurrency(event.revenue)}</TableCell>
-              <TableCell sx={{ textAlign: "right" }}>
+
+              <TableCell sx={{ textAlign: "center" }}>
                 <Button color="info" size="small">
                   Chi tiết
                 </Button>
@@ -92,12 +112,12 @@ MyEventTable.propTypes = {
     PropTypes.shape({
       id: PropTypes.string.isRequired,
       title: PropTypes.string.isRequired,
-      date: PropTypes.instanceOf(Date).isRequired,
-      location: PropTypes.string,
+      avatar: PropTypes.string,
+      timeStart: PropTypes.number.isRequired, // Thêm
+      timeEnd: PropTypes.number.isRequired,
       status: PropTypes.oneOf(["Published", "Ended"]).isRequired,
       soldTickets: PropTypes.number.isRequired,
       totalTickets: PropTypes.number.isRequired,
-      ticketPrice: PropTypes.number,
       revenue: PropTypes.number.isRequired,
     })
   ).isRequired,

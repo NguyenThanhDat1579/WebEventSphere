@@ -9,6 +9,7 @@ import {
   IconButton,
 } from "@mui/material";
 import Icon from "@mui/material/Icon";
+import { Button } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -74,6 +75,17 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, isMini = false
     if (toInputRef.current) {
       toInputRef.current.focus();
     }
+  };
+
+  const handleReset = () => {
+    setSearch("");
+    setStatus("all");
+    setFromDate(null);
+    setToDate(null);
+
+    onSearch?.("");
+    onStatusFilter?.("all");
+    onDateRange?.({ from: null, to: null });
   };
 
   return (
@@ -224,6 +236,24 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, isMini = false
                     />
                   </Box>
                 </Box>
+              </Box>
+              <Box display="flex" justifyContent="flex-end" mt={-4} mb={1} pr={2}>
+                <Button
+                  onClick={handleReset}
+                  sx={{
+                    backgroundColor: "#1976d2",
+                    color: "#fff",
+                    border: "1px solid transparent", // viền trong suốt ban đầu để giữ kích thước
+                    boxSizing: "border-box",
+                    "&:hover": {
+                      backgroundColor: "#fff",
+                      color: "#1565c0",
+                      borderColor: "#1565c0", // đổi màu viền khi hover
+                    },
+                  }}
+                >
+                  Làm mới
+                </Button>
               </Box>
             </LocalizationProvider>
           </Box>

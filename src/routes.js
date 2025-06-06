@@ -15,7 +15,7 @@ import RevenueAndReporting from "layouts/dashboard/admin/RevenueAndReporting";
 import OrganizerDashboard from "layouts/dashboard/organizer/OrganizerDashboard";
 import OrganizerMyEvent from "layouts/dashboard/organizer/OrganizerMyEvent";
 import OrganizerRevenue from "layouts/dashboard/organizer/OrganizerRevenue";
-import OrganizerCreateNewEvent from "layouts/dashboard/organizer/OrganizerCreateNewEvent";
+import OrganizerCreateNewEvent from "layouts/dashboard/organizer/OrganizerCreateNewEvent/OrganizerCreateNewEvent";
 import OrganizerTicketsAndAttendees from "layouts/dashboard/organizer/OrganizerTicketsAndAttendees";
 import UserManagement from "layouts/tables/admin/UserManagement";
 import OrganizerManagement from "layouts/tables/admin/OrganizerManagement";

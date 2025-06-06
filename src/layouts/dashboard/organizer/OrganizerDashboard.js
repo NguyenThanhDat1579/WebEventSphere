@@ -10,7 +10,7 @@ import ArgonTypography from "components/ArgonTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
-import DetailedStatisticsCard from "examples/Cards/StatisticsCards/DetailedStatisticsCard";
+import DetailedStatisticsCard from "examples/Cards/StatisticsCards/DetailedStatisticsCard/index";
 import SalesTable from "examples/Tables/SalesTable";
 import CategoriesList from "examples/Lists/CategoriesList";
 import GradientLineChart from "examples/Charts/LineCharts/GradientLineChart";
@@ -152,7 +152,7 @@ function OrganizerDashboard() {
 
     const fetchEvents = async () => {
       try {
-        const response = await eventApi.getEventOfOrganization(token); // truyền token
+        const response = await eventApi.getEventOfOrganization(); // truyền token
         if (response.data.status === 200) {
           setEvents(response.data.events); // cập nhật danh sách sự kiện
           setTotalRevenue(response.data.totalRevenue);

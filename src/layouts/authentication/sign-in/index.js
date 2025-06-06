@@ -1,5 +1,6 @@
 import { useState } from "react";
 import authApi from "../../../api/utils/authApi";
+import { saveTokens } from "../../../api/token/authTokens.js";
 import { useDispatch } from "react-redux";
 import { setUserData } from "../../../store/slices/authSlice";
 import { useNavigate } from "react-router-dom";
@@ -45,6 +46,7 @@ function Illustration() {
 
       if (userData && userData.role === 2) {
         console.log("Organizer đăng nhập", userData);
+        await saveTokens(userData.token, userData.refreshToken);
         dispatch(setUserData(userData)); // Lưu role từ API (role = 2)
         navigate("/dashboard-organizer");
       } else {
@@ -82,7 +84,7 @@ function Illustration() {
             onChange={(e) => setPassword(e.target.value)}
           />
         </ArgonBox>
-        <ArgonBox display="flex" alignItems="center">
+        {/* <ArgonBox display="flex" alignItems="center">
           <Switch checked={rememberMe} onChange={handleSetRememberMe} />
           <ArgonTypography
             variant="button"
@@ -92,9 +94,15 @@ function Illustration() {
           >
             &nbsp;&nbsp;Ghi nhớ tài khoản
           </ArgonTypography>
-        </ArgonBox>
+        </ArgonBox> */}
         <ArgonBox mt={4} mb={1}>
-          <ArgonButton color="info" size="large" fullWidth onClick={handleSignIn}>
+          <ArgonButton
+            color="info"
+            size="large"
+            variant="gradient"
+            fullWidth
+            onClick={handleSignIn}
+          >
             Đăng nhập
           </ArgonButton>
         </ArgonBox>

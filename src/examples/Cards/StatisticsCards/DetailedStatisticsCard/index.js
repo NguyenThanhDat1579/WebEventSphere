@@ -12,24 +12,57 @@ import ArgonTypography from "components/ArgonTypography";
 
 // Argon Dashboard 2 MUI contexts
 import { useArgonController } from "context";
-function DetailedStaticsCard({ bgColor, title, count, icon }) {
+
+function DetailedStaticsCard({ bgColor, title, count, icon, direction, percentage }) {
   const [controller] = useArgonController();
   const { darkMode } = controller;
 
   return (
     <Card>
       <ArgonBox
-        bgColor={bgColor === "white" && darkMode ? "transparent" : bgColor}
-        variant={bgColor === "white" && darkMode ? "contained" : "gradient"}
+        bgColor={bgColor === "black" && darkMode ? "transparent" : bgColor}
+        variant={bgColor === "black" && darkMode ? "contained" : "gradient"}
       >
         <ArgonBox p={2}>
           <Grid container alignItems="center" justifyContent="space-between" spacing={2}>
-            {/* Phần title và count bên trái */}
+            {/* Icon bên trái nếu direction === "left" */}
+            {direction === "left" && (
+              <Grid item>
+                <ArgonBox
+                  variant="gradient"
+                  bgColor={bgColor === "black" ? icon.color : "black"}
+                  color={bgColor === "black" ? "black" : "dark"}
+                  width="3rem"
+                  height="3rem"
+                  borderRadius="section"
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                >
+                  {typeof icon.component === "string" ? (
+                    <Icon fontSize="small" color="inherit">
+                      {icon.component}
+                    </Icon>
+                  ) : (
+                    <ArgonBox
+                      fontSize="1.125rem"
+                      display="grid"
+                      placeItems="center"
+                      color="inherit"
+                    >
+                      {icon.component}
+                    </ArgonBox>
+                  )}
+                </ArgonBox>
+              </Grid>
+            )}
+
+            {/* Nội dung title & count */}
             <Grid item xs>
-              <ArgonBox lineHeight={1}>
+              <ArgonBox ml={direction === "left" ? 2 : 0} lineHeight={1}>
                 <ArgonTypography
                   variant="button"
-                  color={bgColor === "white" ? "text" : "white"}
+                  color={bgColor === "black" ? "text" : "black"}
                   textTransform="uppercase"
                   fontWeight="medium"
                   gutterBottom={false}
@@ -46,44 +79,70 @@ function DetailedStaticsCard({ bgColor, title, count, icon }) {
               </ArgonBox>
             </Grid>
 
-            {/* Phần icon bên phải */}
-            <Grid item>
-              <ArgonBox
-                variant="gradient"
-                bgColor={bgColor === "white" ? icon.color : "white"}
-                color={bgColor === "white" ? "white" : "dark"}
-                width="2.5rem" // thu nhỏ icon
-                height="2.5rem"
-                borderRadius="section"
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-              >
-                {typeof icon.component === "string" ? (
-                  <Icon fontSize="small" color="inherit">
-                    {icon.component}
-                  </Icon>
-                ) : (
-                  <ArgonBox fontSize="1rem" display="grid" placeItems="center" color="inherit">
-                    {icon.component}
-                  </ArgonBox>
-                )}
-              </ArgonBox>
-            </Grid>
+            {/* Icon bên phải nếu direction === "right" */}
+            {direction === "right" && (
+              <Grid item>
+                <ArgonBox
+                  variant="gradient"
+                  bgColor={bgColor === "white" ? icon.color : "white"}
+                  color={bgColor === "white" ? "white" : "dark"}
+                  width="2.5rem"
+                  height="2.5rem"
+                  borderRadius="section"
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                >
+                  {typeof icon.component === "string" ? (
+                    <Icon fontSize="small" color="inherit">
+                      {icon.component}
+                    </Icon>
+                  ) : (
+                    <ArgonBox fontSize="1rem" display="grid" placeItems="center" color="inherit">
+                      {icon.component}
+                    </ArgonBox>
+                  )}
+                </ArgonBox>
+              </Grid>
+            )}
           </Grid>
+
+          {/* Hiển thị phần trăm nếu có */}
+          {percentage && (
+            <ArgonTypography
+              display="flex"
+              alignItems="center"
+              variant="button"
+              fontWeight="bold"
+              color={percentage.color}
+              mt={2}
+            >
+              {percentage.count}
+              <ArgonTypography
+                variant="body2"
+                fontWeight="regular"
+                color={bgColor === "black" ? "text" : "black"}
+                ml={0.5}
+                mt={-0.125}
+              >
+                {percentage.text}
+              </ArgonTypography>
+            </ArgonTypography>
+          )}
         </ArgonBox>
       </ArgonBox>
     </Card>
   );
 }
 
-// Setting default values for the props of DetailedStaticsCard
+// Default props
 DetailedStaticsCard.defaultProps = {
   bgColor: "white",
   direction: "right",
+  percentage: null,
 };
 
-// Typechecking props for the DetailedStaticsCard
+// Typechecking
 DetailedStaticsCard.propTypes = {
   bgColor: PropTypes.oneOf([
     "transparent",
@@ -103,6 +162,11 @@ DetailedStaticsCard.propTypes = {
     component: PropTypes.node.isRequired,
   }).isRequired,
   direction: PropTypes.oneOf(["right", "left"]),
+  percentage: PropTypes.shape({
+    color: PropTypes.string,
+    count: PropTypes.string,
+    text: PropTypes.string,
+  }),
 };
 
 export default DetailedStaticsCard;

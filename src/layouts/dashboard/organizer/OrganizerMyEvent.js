@@ -1,101 +1,121 @@
-// @mui material components
-import Grid from "@mui/material/Grid";
-import Icon from "@mui/material/Icon";
-
-// Argon Dashboard 2 MUI components
+import { useState } from "react";
+import SearchFilterBar from "./components/SearchFilterBar";
+import MyEventTable from "./components/MyEventTable";
 import ArgonBox from "components/ArgonBox";
 import ArgonTypography from "components/ArgonTypography";
-
-// Argon Dashboard 2 MUI example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
-import DetailedStatisticsCard from "examples/Cards/StatisticsCards/DetailedStatisticsCard";
-import SalesTable from "examples/Tables/SalesTable";
-import CategoriesList from "examples/Lists/CategoriesList";
-import GradientLineChart from "examples/Charts/LineCharts/GradientLineChart";
+import Grid from "@mui/material/Grid";
+import { format } from "date-fns";
 
-// Argon Dashboard 2 MUI base styles
-import typography from "assets/theme/base/typography";
+// Dữ liệu thực từ API (giả lập tĩnh)
+const eventList = [
+  {
+    id: "68216e4f1b8c90b1dce49399",
+    name: "J97 - Dách Và Những Vì Tinh Tú",
+    timeStart: "2025-06-11T19:18:00.000Z",
+    timeEnd: "2025-06-21T19:18:00.000Z",
+    avatar:
+      "https://res.cloudinary.com/ddkqz5udn/image/upload/v1747021151/n6m0ac5r5aygbl84emtd.jpg",
+    ticketPrice: 970000,
+    ticketQuantity: 20,
+    soldTickets: 0,
+  },
+  {
+    id: "68216e691b8c90b1dce4939b",
+    name: "J97 - Dách Và Những Vì Tinh Tú 2",
+    timeStart: "2025-06-11T19:18:00.000Z",
+    timeEnd: "2025-06-21T19:18:00.000Z",
+    avatar:
+      "https://res.cloudinary.com/ddkqz5udn/image/upload/v1747021151/n6m0ac5r5aygbl84emtd.jpg",
+    ticketPrice: 970000,
+    ticketQuantity: 20,
+    soldTickets: 0,
+  },
+  {
+    id: "68216e4f1b8c90b1dce49399",
+    name: "J97 - Dách Và Những Vì Tinh Tú",
+    timeStart: "2025-06-11T19:18:00.000Z",
+    timeEnd: "2025-06-21T19:18:00.000Z",
+    avatar:
+      "https://res.cloudinary.com/ddkqz5udn/image/upload/v1747021151/n6m0ac5r5aygbl84emtd.jpg",
+    ticketPrice: 970000,
+    ticketQuantity: 20,
+    soldTickets: 0,
+  },
+  {
+    id: "68216e691b8c90b1dce4939b",
+    name: "J97 - Dách Và Những Vì Tinh Tú 2",
+    timeStart: "2025-06-11T19:18:00.000Z",
+    timeEnd: "2025-06-21T19:18:00.000Z",
+    avatar:
+      "https://res.cloudinary.com/ddkqz5udn/image/upload/v1747021151/n6m0ac5r5aygbl84emtd.jpg",
+    ticketPrice: 970000,
+    ticketQuantity: 20,
+    soldTickets: 0,
+  },
+];
 
-// Dashboard layout components
-import Slider from "layouts/dashboard/components/Slider";
+// Chuyển đổi thành dữ liệu cần hiển thị
 
-// Data
-import gradientLineChartData from "layouts/dashboard/data/gradientLineChartData";
-import salesTableData from "layouts/dashboard/data/salesTableData";
-import categoriesListData from "layouts/dashboard/data/categoriesListData";
+const transformedEvents = eventList.map((event) => {
+  const parsePrice = (priceStr) => {
+    const str = (priceStr ?? "").toString();
+    return parseInt(str.replace(/[.,VND\s]/g, ""), 10) || 0;
+  };
+
+  const timeStart = new Date(event.timeStart);
+  const timeEnd = new Date(event.timeEnd);
+  const ticketPrice = parsePrice(event.ticketPrice);
+  const soldTickets = event.soldTickets || 0;
+  const totalTickets = event.ticketQuantity || 0; // đúng trường từ API
+
+  return {
+    id: event.id,
+    title: event.name,
+    date: timeStart, // Date object
+    location: "Đang cập nhật", // vì dữ liệu gốc không có location
+    soldTickets,
+    totalTickets,
+    ticketPrice,
+    revenue: ticketPrice * soldTickets,
+    status: timeEnd < new Date() ? "Ended" : "Published",
+  };
+});
 
 function OrganizerMyEvent() {
-  const { size } = typography;
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [dateRange, setDateRange] = useState({ from: null, to: null });
+
+  const handleSearch = (value) => setSearch(value);
+  const handleStatusFilter = (value) => setStatusFilter(value);
+  const handleDateRange = (range) => setDateRange(range);
+
   return (
     <DashboardLayout>
       <DashboardNavbar />
       <ArgonBox py={3}>
-        <Grid container spacing={3} mb={3}>
-          <Grid item xs={12} md={6} lg={3}>
-            <DetailedStatisticsCard
-              title="today's money"
-              count="$53,000"
-              icon={{ color: "info", component: <i className="ni ni-money-coins" /> }}
-              percentage={{ color: "success", count: "+55%", text: "since yesterday" }}
-            />
-          </Grid>
-          <Grid item xs={12} md={6} lg={3}>
-            <DetailedStatisticsCard
-              title="today's users"
-              count="2,300"
-              icon={{ color: "error", component: <i className="ni ni-world" /> }}
-              percentage={{ color: "success", count: "+3%", text: "since last week" }}
-            />
-          </Grid>
-          <Grid item xs={12} md={6} lg={3}>
-            <DetailedStatisticsCard
-              title="new clients"
-              count="+3,462"
-              icon={{ color: "success", component: <i className="ni ni-paper-diploma" /> }}
-              percentage={{ color: "error", count: "-2%", text: "since last quarter" }}
-            />
-          </Grid>
-          <Grid item xs={12} md={6} lg={3}>
-            <DetailedStatisticsCard
-              title="sales"
-              count="$103,430"
-              icon={{ color: "warning", component: <i className="ni ni-cart" /> }}
-              percentage={{ color: "success", count: "+5%", text: "than last month" }}
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <SearchFilterBar
+              onSearch={handleSearch}
+              onStatusFilter={handleStatusFilter}
+              onDateRange={handleDateRange}
             />
           </Grid>
         </Grid>
-        <Grid container spacing={3} mb={3}>
-          <Grid item xs={12} lg={7}>
-            <GradientLineChart
-              title="Sales Overview"
-              description={
-                <ArgonBox display="flex" alignItems="center">
-                  <ArgonBox fontSize={size.lg} color="success" mb={0.3} mr={0.5} lineHeight={0}>
-                    <Icon sx={{ fontWeight: "bold" }}>arrow_upward</Icon>
-                  </ArgonBox>
-                  <ArgonTypography variant="button" color="text" fontWeight="medium">
-                    4% more{" "}
-                    <ArgonTypography variant="button" color="text" fontWeight="regular">
-                      in 2022
-                    </ArgonTypography>
-                  </ArgonTypography>
-                </ArgonBox>
-              }
-              chart={gradientLineChartData}
-            />
-          </Grid>
-          <Grid item xs={12} lg={5}>
-            <Slider />
-          </Grid>
-        </Grid>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={8}>
-            <SalesTable title="Sales by Country" rows={salesTableData} />
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <CategoriesList title="categories" categories={categoriesListData} />
+
+        <Grid container spacing={2} mt={1}>
+          <Grid item xs={12}>
+            {transformedEvents.length === 0 ? (
+              <ArgonTypography variant="body2" color="text" mt={2}>
+                Không có sự kiện nào phù hợp với bộ lọc.
+              </ArgonTypography>
+            ) : (
+              <MyEventTable events={transformedEvents} />
+            )}
           </Grid>
         </Grid>
       </ArgonBox>
@@ -103,4 +123,5 @@ function OrganizerMyEvent() {
     </DashboardLayout>
   );
 }
+
 export default OrganizerMyEvent;

@@ -10,7 +10,7 @@ import Footer from "examples/Footer";
 import Table from "examples/Tables/Table";
 
 // API & Helper
-import userApi from "api/userApi"; // Đường dẫn đúng file bạn đã tạo
+import userApi from "api/userApi";
 import userTableData from "layouts/tables/data/userTableData";
 
 function UserManagement() {
@@ -22,7 +22,11 @@ function UserManagement() {
       try {
         const res = await userApi.getAll();
         if (res.data.status) {
-          const { columns, rows } = userTableData(res.data.data);
+          // 🔍 Lọc chỉ người dùng có role === 3
+          const filteredUsers = res.data.data.filter(user => user.role === 3);
+
+          // ⚙️ Truyền dữ liệu đã lọc vào hàm dựng bảng
+          const { columns, rows } = userTableData(filteredUsers);
           setColumns(columns);
           setRows(rows);
         }

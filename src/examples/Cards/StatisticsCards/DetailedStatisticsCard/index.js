@@ -12,18 +12,18 @@ function DetailedStaticsCard({ bgColor, title, count, icon }) {
   const [controller] = useArgonController();
   const { darkMode } = controller;
 
-  // Mình set màu cố định ở đây
-  const titleColor = "#1976d2"; // màu xanh dương cho title
-  const countColor = "#d32f2f"; // màu đỏ đậm cho count
-  const iconBgColor = "#1976d2"; // màu nền icon xanh dương
-  const iconColor = "#ffffff"; // màu icon trắng
+  // Màu cố định
+  const titleColor = "#1976d2"; // xanh dương cho title
+  const countColor = "#d32f2f"; // đỏ đậm cho count
+  const iconBgColor = "#1976d2"; // nền icon xanh dương
+  const iconColor = "#ffffff"; // icon trắng
 
   return (
     <Card>
       <ArgonBox bgColor={bgColor} variant="contained">
         <ArgonBox p={2}>
           <Grid container alignItems="center" justifyContent="space-between" spacing={2}>
-            {/* Phần title và count bên trái */}
+            {/* Nội dung title & count */}
             <Grid item xs>
               <ArgonBox lineHeight={1}>
                 <ArgonTypography
@@ -39,7 +39,7 @@ function DetailedStaticsCard({ bgColor, title, count, icon }) {
               </ArgonBox>
             </Grid>
 
-            {/* Phần icon bên phải */}
+            {/* Icon bên phải */}
             <Grid item>
               <ArgonBox
                 variant="gradient"
@@ -96,7 +96,7 @@ DetailedStaticsCard.propTypes = {
   title: PropTypes.string.isRequired,
   count: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   icon: PropTypes.shape({
-    color: PropTypes.string, // Không dùng, bạn có thể bỏ nếu muốn
+    color: PropTypes.string, // không dùng, có thể bỏ
     component: PropTypes.node.isRequired,
   }).isRequired,
 };

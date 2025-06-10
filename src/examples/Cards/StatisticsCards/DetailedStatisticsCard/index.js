@@ -1,163 +1,86 @@
-/**
-=========================================================
-* Argon Dashboard 2 MUI - v3.0.1
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/argon-dashboard-material-ui
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
-// prop-types is a library for typechecking of props
 import PropTypes from "prop-types";
-
-// @mui material components
 import Card from "@mui/material/Card";
 import Grid from "@mui/material/Grid";
 import Icon from "@mui/material/Icon";
 
-// Argon Dashboard 2 MUI components
 import ArgonBox from "components/ArgonBox";
 import ArgonTypography from "components/ArgonTypography";
 
-// Argon Dashboard 2 MUI contexts
 import { useArgonController } from "context";
 
-function DetailedStaticsCard({ bgColor, title, count, percentage, icon, direction }) {
+function DetailedStaticsCard({ bgColor, title, count, icon }) {
   const [controller] = useArgonController();
   const { darkMode } = controller;
 
+  // Màu cố định
+  const titleColor = "#1976d2"; // xanh dương cho title
+  const countColor = "#d32f2f"; // đỏ đậm cho count
+  const iconBgColor = "#1976d2"; // nền icon xanh dương
+  const iconColor = "#ffffff"; // icon trắng
+
   return (
     <Card>
-      <ArgonBox
-        bgColor={bgColor === "black" && darkMode ? "transparent" : bgColor}
-        variant={bgColor === "black" && darkMode ? "contained" : "gradient"}
-      >
+      <ArgonBox bgColor={bgColor} variant="contained">
         <ArgonBox p={2}>
-          <Grid container>
-            {direction === "left" ? (
-              <Grid item>
-                <ArgonBox
-                  variant="gradient"
-                  bgColor={bgColor === "black" ? icon.color : "black"}
-                  color={bgColor === "black" ? "black" : "dark"}
-                  width="3rem"
-                  height="3rem"
-                  borderRadius="section"
-                  display="flex"
-                  justifyContent="center"
-                  alignItems="center"
-                >
-                  {typeof icon.component === "string" ? (
-                    <Icon fontSize="small" color="inherit">
-                      {icon.component}
-                    </Icon>
-                  ) : (
-                    <ArgonBox
-                      fontSize="1.125rem"
-                      display="grid"
-                      placeItems="center"
-                      color="inherit"
-                    >
-                      {icon.component}
-                    </ArgonBox>
-                  )}
-                </ArgonBox>
-              </Grid>
-            ) : null}
-            <Grid item xs={8}>
-              <ArgonBox ml={direction === "left" ? 2 : 0} lineHeight={1}>
+          <Grid container alignItems="center" justifyContent="space-between" spacing={2}>
+            {/* Nội dung title & count */}
+            <Grid item xs>
+              <ArgonBox lineHeight={1}>
                 <ArgonTypography
                   variant="button"
-                  color={bgColor === "black" ? "text" : "black"}
-                  textTransform="uppercase"
-                  fontWeight="medium"
+                  sx={{ color: titleColor, textTransform: "uppercase", fontWeight: "medium" }}
+                  gutterBottom={false}
                 >
                   {title}
                 </ArgonTypography>
-                <ArgonTypography
-                  variant="h5"
-                  fontWeight="bold"
-                  color={bgColor === "black" ? "dark" : "black"}
-                  mb={1}
-                >
+                <ArgonTypography variant="h5" sx={{ color: countColor, fontWeight: "bold" }}>
                   {count}
                 </ArgonTypography>
               </ArgonBox>
             </Grid>
-            {direction === "right" ? (
-              <Grid item xs={4}>
-                <ArgonBox
-                  variant="gradient"
-                  bgColor={bgColor === "white" ? icon.color : "white"}
-                  color={bgColor === "white" ? "white" : "dark"}
-                  width="3rem"
-                  height="3rem"
-                  borderRadius="section"
-                  display="flex"
-                  justifyContent="center"
-                  alignItems="center"
-                  ml="auto"
-                >
-                  {typeof icon.component === "string" ? (
-                    <Icon fontSize="small" color="inherit">
-                      {icon.component}
-                    </Icon>
-                  ) : (
-                    <ArgonBox
-                      fontSize="1.125rem"
-                      display="grid"
-                      placeItems="center"
-                      color="inherit"
-                    >
-                      {icon.component}
-                    </ArgonBox>
-                  )}
-                </ArgonBox>
-              </Grid>
-            ) : null}
+
+            {/* Icon bên phải */}
+            <Grid item>
+              <ArgonBox
+                variant="gradient"
+                sx={{
+                  bgcolor: iconBgColor,
+                  color: iconColor,
+                  width: "2.5rem",
+                  height: "2.5rem",
+                  borderRadius: "12px",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                {typeof icon.component === "string" ? (
+                  <Icon fontSize="small" sx={{ color: iconColor }}>
+                    {icon.component}
+                  </Icon>
+                ) : (
+                  <ArgonBox
+                    fontSize="1rem"
+                    display="grid"
+                    placeItems="center"
+                    sx={{ color: iconColor }}
+                  >
+                    {icon.component}
+                  </ArgonBox>
+                )}
+              </ArgonBox>
+            </Grid>
           </Grid>
-          <ArgonTypography
-            display="flex"
-            alignItems="center"
-            variant="button"
-            fontWeight="bold"
-            color={percentage.color}
-          >
-            {percentage.count}
-            <ArgonTypography
-              variant="body2"
-              fontWeight="regular"
-              color={bgColor === "black" ? "text" : "black"}
-              ml={0.5}
-              mt={-0.125}
-            >
-              {percentage.text}
-            </ArgonTypography>
-          </ArgonTypography>
         </ArgonBox>
       </ArgonBox>
     </Card>
   );
 }
 
-// Setting default values for the props of DetailedStaticsCard
 DetailedStaticsCard.defaultProps = {
   bgColor: "white",
-  percentage: {
-    color: "success",
-    count: 0,
-    text: "",
-  },
-  direction: "right",
 };
 
-// Typechecking props for the DetailedStaticsCard
 DetailedStaticsCard.propTypes = {
   bgColor: PropTypes.oneOf([
     "transparent",
@@ -172,25 +95,10 @@ DetailedStaticsCard.propTypes = {
   ]),
   title: PropTypes.string.isRequired,
   count: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  percentage: PropTypes.shape({
-    color: PropTypes.oneOf([
-      "primary",
-      "secondary",
-      "info",
-      "success",
-      "warning",
-      "error",
-      "dark",
-      "white",
-    ]),
-    count: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    text: PropTypes.string,
-  }),
   icon: PropTypes.shape({
-    color: PropTypes.oneOf(["primary", "secondary", "info", "success", "warning", "error", "dark"]),
+    color: PropTypes.string, // không dùng, có thể bỏ
     component: PropTypes.node.isRequired,
   }).isRequired,
-  direction: PropTypes.oneOf(["right", "left"]),
 };
 
 export default DetailedStaticsCard;

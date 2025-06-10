@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 
 // react-router components
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { clearUserData } from "../../../store/slices/authSlice"; // cập nhật đúng đường dẫn
 
 // prop-types is a library for typechecking of props.
 import PropTypes from "prop-types";
@@ -50,6 +52,22 @@ function DashboardNavbar({ absolute, light, isMini }) {
   const { miniSidenav, transparentNavbar, fixedNavbar, openConfigurator } = controller;
   const [openMenu, setOpenMenu] = useState(false);
   const route = useLocation().pathname.split("/").slice(1);
+  const dispatch1 = useDispatch();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // Clear Redux state
+    dispatch1(clearUserData());
+
+    // Optionally: Xoá thêm localStorage nếu có dùng
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    // Navigate về trang đăng nhập
+    navigate("/authentication/sign-in");
+    setTimeout(() => {
+      window.location.reload();
+    }, 100); // Delay nhẹ để đảm bảo navigate xong mới reload
+  };
 
   useEffect(() => {
     // Setting the navbar type
@@ -64,10 +82,6 @@ function DashboardNavbar({ absolute, light, isMini }) {
       setTransparentNavbar(dispatch, (fixedNavbar && window.scrollY === 0) || !fixedNavbar);
     }
 
-    /** 
-     The event listener that's calling the handleTransparentNavbar function when 
-     scrolling the window.
-    */
     window.addEventListener("scroll", handleTransparentNavbar);
 
     // Call the handleTransparentNavbar function to set the state with the initial value.
@@ -133,12 +147,12 @@ function DashboardNavbar({ absolute, light, isMini }) {
           mb={{ xs: 1, md: 0 }}
           sx={(theme) => navbarRow(theme, { isMini })}
         >
-          <Breadcrumbs
+          {/* <Breadcrumbs
             icon="home"
             title={route[route.length - 1]}
             route={route}
             light={transparentNavbar ? light : false}
-          />
+          /> */}
           <Icon fontSize="medium" sx={navbarDesktopMenu} onClick={handleMiniSidenav}>
             {miniSidenav ? "menu_open" : "menu"}
           </Icon>
@@ -146,18 +160,18 @@ function DashboardNavbar({ absolute, light, isMini }) {
         {isMini ? null : (
           <ArgonBox sx={(theme) => navbarRow(theme, { isMini })}>
             <ArgonBox pr={1}>
-              <ArgonInput
+              {/* <ArgonInput
                 placeholder="Type here..."
                 startAdornment={
                   <Icon fontSize="small" style={{ marginRight: "6px" }}>
                     search
                   </Icon>
                 }
-              />
+              /> */}
             </ArgonBox>
             <ArgonBox color={light ? "white" : "inherit"}>
               <Link to="/authentication/sign-in/basic">
-                <IconButton sx={navbarIconButton} size="small">
+                <IconButton sx={navbarIconButton} size="small" onClick={handleLogout}>
                   <Icon
                     sx={({ palette: { dark, white } }) => ({
                       color: light && transparentNavbar ? white.main : dark.main,
@@ -170,7 +184,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
                     fontWeight="medium"
                     color={light && transparentNavbar ? "white" : "dark"}
                   >
-                    Sign in
+                    Đăng xuất
                   </ArgonTypography>
                 </IconButton>
               </Link>

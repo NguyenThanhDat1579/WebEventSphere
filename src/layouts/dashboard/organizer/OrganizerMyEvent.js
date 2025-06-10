@@ -1,101 +1,140 @@
-// @mui material components
-import Grid from "@mui/material/Grid";
-import Icon from "@mui/material/Icon";
-
-// Argon Dashboard 2 MUI components
+import { useEffect, useState } from "react";
+import SearchFilterBar from "./components/SearchFilterBar";
+import MyEventTable from "./components/MyEventTable";
 import ArgonBox from "components/ArgonBox";
 import ArgonTypography from "components/ArgonTypography";
-
-// Argon Dashboard 2 MUI example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
-import DetailedStatisticsCard from "examples/Cards/StatisticsCards/DetailedStatisticsCard";
-import SalesTable from "examples/Tables/SalesTable";
-import CategoriesList from "examples/Lists/CategoriesList";
-import GradientLineChart from "examples/Charts/LineCharts/GradientLineChart";
+import Grid from "@mui/material/Grid";
+import eventApi from "api/utils/eventApi";
 
-// Argon Dashboard 2 MUI base styles
-import typography from "assets/theme/base/typography";
+// Hàm chuyển đổi dữ liệu
+const transformEvents = (events) =>
+  events.map((event) => {
+    // Xử lý timestamp có thể là giây hoặc millisec
+    // Nếu timestamp lớn hơn 10^12 thì có thể là millisec, còn lại là giây
+    const convertTimestamp = (ts) => (ts > 1e12 ? new Date(ts) : new Date(ts / 1000)); // có thể set để hiển thị thời gian phù hợp
 
-// Dashboard layout components
-import Slider from "layouts/dashboard/components/Slider";
+    const timeStart = convertTimestamp(event.timeStart);
+    const timeEnd = convertTimestamp(event.timeEnd);
 
-// Data
-import gradientLineChartData from "layouts/dashboard/data/gradientLineChartData";
-import salesTableData from "layouts/dashboard/data/salesTableData";
-import categoriesListData from "layouts/dashboard/data/categoriesListData";
+    const ticketPrice = parseInt(event.ticketPrice, 10) || 0;
+    const soldTickets = event.soldTickets || 0;
+    const totalTickets = event.ticketQuantity || 0;
+
+    return {
+      id: event._id, // sửa lại lấy đúng _id
+      title: event.name,
+      avatar: event.avatar,
+      timeStart,
+      timeEnd,
+      location: "Đang cập nhật", // location giả định
+      soldTickets,
+      totalTickets,
+      ticketPrice,
+      revenue: ticketPrice * soldTickets,
+      status: timeEnd < new Date() ? "Ended" : "Published",
+    };
+  });
 
 function OrganizerMyEvent() {
-  const { size } = typography;
+  const [events, setEvents] = useState([]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [dateRange, setDateRange] = useState({ from: null, to: null });
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await eventApi.getEventOfOrganization(); // truyền token
+        if (response.data.status === 200) {
+          setEvents(response.data.events); // cập nhật danh sách sự kiện
+          setTotalRevenue(response.data.totalRevenue);
+          setTotalTickets(response.data.totalTickets);
+        } else {
+          console.error("Lấy sự kiện thất bại");
+        }
+      } catch (error) {
+        console.error("Lỗi khi gọi API lấy sự kiện", error);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
+  const transformedEvents = transformEvents(events);
+
+  const filteredEvents = transformedEvents.filter((event) => {
+    const nameMatch = event.title.toLowerCase().includes(search.toLowerCase());
+
+    const now = new Date();
+    let statusMatch = true;
+    if (statusFilter === "ongoing") {
+      // ongoing là hiện tại nằm trong khoảng timeStart đến timeEnd
+      statusMatch = event.timeStart <= now && now <= event.timeEnd;
+    } else if (statusFilter === "upcoming") {
+      // sắp diễn ra: bắt đầu sau hiện tại
+      statusMatch = event.timeStart > now;
+    } else if (statusFilter === "ended") {
+      // đã kết thúc: thời gian kết thúc trước hiện tại
+      statusMatch = event.timeEnd < now;
+    }
+    if (statusFilter === "ongoing") {
+      // ongoing là hiện tại nằm trong khoảng timeStart đến timeEnd
+      statusMatch = event.timeStart <= now && now <= event.timeEnd;
+    } else if (statusFilter === "upcoming") {
+      // sắp diễn ra: bắt đầu sau hiện tại
+      statusMatch = event.timeStart > now;
+    } else if (statusFilter === "ended") {
+      // đã kết thúc: thời gian kết thúc trước hiện tại
+      statusMatch = event.timeEnd < now;
+    }
+    if (statusFilter === "ongoing") {
+      // ongoing là hiện tại nằm trong khoảng timeStart đến timeEnd
+      statusMatch = event.timeStart <= now && now <= event.timeEnd;
+    } else if (statusFilter === "upcoming") {
+      // sắp diễn ra: bắt đầu sau hiện tại
+      statusMatch = event.timeStart > now;
+    } else if (statusFilter === "ended") {
+      // đã kết thúc: thời gian kết thúc trước hiện tại
+      statusMatch = event.timeEnd < now;
+    }
+
+    let dateMatch = true;
+    if (dateRange.from && event.timeStart < dateRange.from) dateMatch = false;
+    if (dateRange.to && event.timeStart > dateRange.to) dateMatch = false;
+
+    return nameMatch && statusMatch && dateMatch;
+  });
+
+  const handleSearch = (value) => setSearch(value);
+  const handleStatusFilter = (value) => setStatusFilter(value);
+  const handleDateRange = (range) => setDateRange(range);
+
   return (
     <DashboardLayout>
       <DashboardNavbar />
       <ArgonBox py={3}>
-        <Grid container spacing={3} mb={3}>
-          <Grid item xs={12} md={6} lg={3}>
-            <DetailedStatisticsCard
-              title="today's money"
-              count="$53,000"
-              icon={{ color: "info", component: <i className="ni ni-money-coins" /> }}
-              percentage={{ color: "success", count: "+55%", text: "since yesterday" }}
-            />
-          </Grid>
-          <Grid item xs={12} md={6} lg={3}>
-            <DetailedStatisticsCard
-              title="today's users"
-              count="2,300"
-              icon={{ color: "error", component: <i className="ni ni-world" /> }}
-              percentage={{ color: "success", count: "+3%", text: "since last week" }}
-            />
-          </Grid>
-          <Grid item xs={12} md={6} lg={3}>
-            <DetailedStatisticsCard
-              title="new clients"
-              count="+3,462"
-              icon={{ color: "success", component: <i className="ni ni-paper-diploma" /> }}
-              percentage={{ color: "error", count: "-2%", text: "since last quarter" }}
-            />
-          </Grid>
-          <Grid item xs={12} md={6} lg={3}>
-            <DetailedStatisticsCard
-              title="sales"
-              count="$103,430"
-              icon={{ color: "warning", component: <i className="ni ni-cart" /> }}
-              percentage={{ color: "success", count: "+5%", text: "than last month" }}
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <SearchFilterBar
+              onSearch={handleSearch}
+              onStatusFilter={handleStatusFilter}
+              onDateRange={handleDateRange}
             />
           </Grid>
         </Grid>
-        <Grid container spacing={3} mb={3}>
-          <Grid item xs={12} lg={7}>
-            <GradientLineChart
-              title="Sales Overview"
-              description={
-                <ArgonBox display="flex" alignItems="center">
-                  <ArgonBox fontSize={size.lg} color="success" mb={0.3} mr={0.5} lineHeight={0}>
-                    <Icon sx={{ fontWeight: "bold" }}>arrow_upward</Icon>
-                  </ArgonBox>
-                  <ArgonTypography variant="button" color="text" fontWeight="medium">
-                    4% more{" "}
-                    <ArgonTypography variant="button" color="text" fontWeight="regular">
-                      in 2022
-                    </ArgonTypography>
-                  </ArgonTypography>
-                </ArgonBox>
-              }
-              chart={gradientLineChartData}
-            />
-          </Grid>
-          <Grid item xs={12} lg={5}>
-            <Slider />
-          </Grid>
-        </Grid>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={8}>
-            <SalesTable title="Sales by Country" rows={salesTableData} />
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <CategoriesList title="categories" categories={categoriesListData} />
+
+        <Grid container spacing={2} mt={1}>
+          <Grid item xs={12}>
+            {filteredEvents.length === 0 ? (
+              <ArgonTypography variant="body2" color="text" mt={2}>
+                Không có sự kiện nào phù hợp với bộ lọc.
+              </ArgonTypography>
+            ) : (
+              <MyEventTable events={filteredEvents} />
+            )}
           </Grid>
         </Grid>
       </ArgonBox>
@@ -103,4 +142,5 @@ function OrganizerMyEvent() {
     </DashboardLayout>
   );
 }
+
 export default OrganizerMyEvent;

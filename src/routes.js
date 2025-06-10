@@ -15,7 +15,7 @@ import RevenueAndReporting from "layouts/dashboard/admin/RevenueAndReporting";
 import OrganizerDashboard from "layouts/dashboard/organizer/OrganizerDashboard";
 import OrganizerMyEvent from "layouts/dashboard/organizer/OrganizerMyEvent";
 import OrganizerRevenue from "layouts/dashboard/organizer/OrganizerRevenue";
-import OrganizerCreateNewEvent from "layouts/dashboard/organizer/OrganizerCreateNewEvent";
+import OrganizerCreateNewEvent from "layouts/dashboard/organizer/OrganizerCreateNewEvent/OrganizerCreateNewEvent";
 import OrganizerTicketsAndAttendees from "layouts/dashboard/organizer/OrganizerTicketsAndAttendees";
 import UserManagement from "layouts/tables/admin/UserManagement";
 import OrganizerManagement from "layouts/tables/admin/OrganizerManagement";
@@ -34,7 +34,7 @@ const routes = [
   },
   {
     type: "route",
-    name: "Admin Dashboard",
+    name: "Tổng quan",
     key: "admin-dashboard",
     route: "/dashboard-admin",
     icon: <ArgonBox component="i" color="primary" fontSize="14px" className="ni ni-tv-2" />,
@@ -80,7 +80,7 @@ const routes = [
 
   {
     type: "route",
-    name: "Organizer Dashboard",
+    name: "Tổng quan",
     key: "organizer-dashboard",
     route: "/dashboard-organizer",
     icon: <ArgonBox component="i" color="primary" fontSize="14px" className="ni ni-tv-2" />,
@@ -135,6 +135,7 @@ const routes = [
       <ArgonBox component="i" color="warning" fontSize="14px" className="ni ni-calendar-grid-58" />
     ),
     component: <Tables />,
+    hidden: true,
   },
   {
     type: "route",
@@ -143,6 +144,7 @@ const routes = [
     route: "/billing",
     icon: <ArgonBox component="i" color="success" fontSize="14px" className="ni ni-credit-card" />,
     component: <Billing />,
+    hidden: true,
   },
   // {
   //   type: "route",
@@ -160,7 +162,7 @@ const routes = [
   //   icon: <ArgonBox component="i" color="error" fontSize="14px" className="ni ni-world-2" />,
   //   component: <RTL />,
   // },
-  { type: "title", title: "Account Pages", key: "account-pages" },
+  { type: "title", title: "Cài đặt", key: "account-pages" },
   {
     type: "route",
     name: "Profile",
@@ -168,10 +170,11 @@ const routes = [
     route: "/profile",
     icon: <ArgonBox component="i" color="dark" fontSize="14px" className="ni ni-single-02" />,
     component: <Profile />,
+    hidden: true,
   },
   {
     type: "route",
-    name: "Admin Settings",
+    name: "Thông tin của bạn",
     key: "admin-profile",
     route: "/profile-admin",
     icon: <ArgonBox component="i" color="dark" fontSize="14px" className="ni ni-single-02" />,
@@ -180,7 +183,7 @@ const routes = [
   },
   {
     type: "route",
-    name: "Organizer Settings",
+    name: "Thông tin của bạn",
     key: "organizer-profile",
     route: "/profile-organizer",
     icon: <ArgonBox component="i" color="dark" fontSize="14px" className="ni ni-single-02" />,

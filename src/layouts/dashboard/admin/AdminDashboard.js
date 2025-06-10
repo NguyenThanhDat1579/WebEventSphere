@@ -70,7 +70,7 @@ function AdminDashboard() {
               title="Tổng doanh thu"
               count={`$${totalRevenue.toLocaleString()}`}
               icon={{ color: "info", component: <i className="ni ni-money-coins" /> }}
-              percentage={{ color: "success", count: "+8%", text: "so với tháng trước" }}
+              percentage={{}}
             />
           </Grid>
           <Grid item xs={12} md={6} lg={3}>
@@ -78,7 +78,7 @@ function AdminDashboard() {
               title="Tổng vé đã bán"
               count={totalTickets}
               icon={{ color: "success", component: <i className="ni ni-tag" /> }}
-              percentage={{ color: "success", count: "+5%", text: "so với tuần trước" }}
+              percentage={{}}
             />
           </Grid>
           <Grid item xs={12} md={6} lg={3}>
@@ -86,16 +86,14 @@ function AdminDashboard() {
               title="Số sự kiện"
               count={totalEvents}
               icon={{ color: "warning", component: <i className="ni ni-calendar-grid-58" /> }}
-              percentage={{ color: "info", count: "+3%", text: "trong tháng này" }}
-            />
+              percentage={{}} />
           </Grid>
           <Grid item xs={12} md={6} lg={3}>
             <DetailedStaticsCard
               title="Sự kiện đã kết thúc"
               count={endedEvents}
               icon={{ color: "error", component: <i className="ni ni-fat-remove" /> }}
-              percentage={{ color: "error", count: "-1%", text: "giảm so với tháng trước" }}
-            />
+              percentage={{}} />
           </Grid>
         </Grid>
 

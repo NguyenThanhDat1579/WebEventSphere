@@ -1,34 +1,28 @@
-const eventsTableData = (eventList) => {
+import ArgonButton from "components/ArgonButton";
+
+const eventsTableData = (data, onDetailClick) => {
   const columns = [
-    { name: "name", align: "left", width: "25%" },
-    { name: "location", align: "left", width: "25%" },
-    { name: "time", align: "center", width: "30%" },
-    { name: "avatar", align: "center", width: "20%" },
+    { name: "tên", align: "left" },
+    { name: "giá vé", align: "center" },
+    { name: "đã bán", align: "center" },
+    { name: "trạng thái", align: "center" },
+    { name: "chi tiết", align: "center" }, // 👈 thêm cột chi tiết
   ];
 
-  const rows = eventList.map((event) => ({
-    name: (
-      <div style={{ maxWidth: "200px", whiteSpace: "normal", wordWrap: "break-word" }}>
-        {event.name}
-      </div>
-    ),
-    location: (
-      <div style={{ maxWidth: "200px", whiteSpace: "normal", wordWrap: "break-word" }}>
-        {event.location}
-      </div>
-    ),
-    time: new Date(event.timeStart).toLocaleString() + " - " + new Date(event.timeEnd).toLocaleString(),
-    avatar: (
-      <img
-        src={event.avatar}
-        alt={event.name}
-        style={{
-          width: "50px",
-          height: "50px",
-          borderRadius: "8px",
-          objectFit: "cover",
-        }}
-      />
+  const rows = data.map((event) => ({
+    tên: event.name,
+    "giá vé": event.ticketPrice ? event.ticketPrice.toLocaleString() : "Chưa rõ",
+    "đã bán": event.soldTickets,
+    "trạng thái": event.status || "Chưa rõ",
+    "chi tiết": (
+      <ArgonButton
+        variant="outlined"
+        size="small"
+        color="info"
+        onClick={() => onDetailClick(event._id)}
+      >
+        Chi tiết
+      </ArgonButton>
     ),
   }));
 

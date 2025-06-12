@@ -1,6 +1,8 @@
 import React, { useState, useRef } from "react";
 import { Box, Typography, Popper, Paper, MenuList, MenuItem } from "@mui/material";
 import PropTypes from "prop-types";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+
 const SelectMenu = ({ label = "Chọn", value, onChange, options = [] }) => {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef(null);
@@ -21,20 +23,28 @@ const SelectMenu = ({ label = "Chọn", value, onChange, options = [] }) => {
         onClick={handleToggle}
         sx={{
           border: "1px solid #ccc",
-          borderRadius: 1,
-          p: 1,
+          borderRadius: 1.8,
+          p: 0.6,
+          pl: 1.4,
           width: "100%",
           cursor: "pointer",
           position: "relative",
           zIndex: 10,
-          borderRadius: 1.8,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between", // 👈 label bên trái, icon bên phải
         }}
       >
-        <Typography variant="body2" color={value ? "textPrimary" : "textSecondary"}>
+        <Typography
+          variant="body2"
+          color={value ? "textPrimary" : "textSecondary"}
+          noWrap
+          sx={{ flexGrow: 1 }}
+        >
           {value ? options.find((o) => o.value === value)?.label : label}
         </Typography>
+        <KeyboardArrowDownIcon fontSize="small" />
       </Box>
-
       <Popper
         open={open}
         anchorEl={anchorRef.current}

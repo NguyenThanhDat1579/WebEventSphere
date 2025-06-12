@@ -2,20 +2,14 @@ import React from "react";
 import { Box, Typography } from "@mui/material";
 import PropTypes from "prop-types";
 import TabInfoEvent from "../OrganizerCreateNewEvent/components/tabs/TabInfoEvent";
+import TabScheduleAndTickets from "./components/tabs/TabScheduleAndTickets";
 export default function EventTabContent({ tabIndex }) {
   const renderTabContent = () => {
     switch (tabIndex) {
       case 0:
         return <TabInfoEvent />;
       case 1:
-        return (
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              Thời gian & Loại vé
-            </Typography>
-            <Typography>Chọn ngày tổ chức, thời gian bắt đầu và cấu hình các loại vé.</Typography>
-          </Box>
-        );
+        return <TabScheduleAndTickets />;
       case 2:
         return (
           <Box>

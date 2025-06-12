@@ -37,11 +37,12 @@ function OrganizerDashboard() {
   const [events, setEvents] = useState([]);
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalTickets, setTotalTickets] = useState(0);
-
+  //event.ticketPrice
   const eventRows = events.map((event, index) => ({
     "Tên sự kiện": [event.avatar, event.name],
     "Ngày bắt đầu": new Date(event.timeStart * 1000).toLocaleDateString("vi-VN"), // định dạng thành dd/mm/yyyy
-    "Giá vé": event.ticketPrice.toLocaleString("vi-VN") + " ₫",
+    "Giá vé":
+      event.ticketPrice != null ? event.ticketPrice.toLocaleString("vi-VN") + " ₫" : "Miễn phí",
     "Số lượng": `${event.soldTickets}/${event.ticketQuantity}`,
   }));
 
@@ -157,6 +158,8 @@ function OrganizerDashboard() {
           setEvents(response.data.events); // cập nhật danh sách sự kiện
           setTotalRevenue(response.data.totalRevenue);
           setTotalTickets(response.data.totalTickets);
+          console.log("response: ", response);
+          console.log("response1: ", JSON.stringify(response, null, 2));
         } else {
           console.error("Lấy sự kiện thất bại");
         }

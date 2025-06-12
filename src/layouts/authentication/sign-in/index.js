@@ -2,7 +2,7 @@ import { useState } from "react";
 import authApi from "../../../api/utils/authApi";
 import { saveTokens } from "../../../api/token/authTokens.js";
 import { useDispatch } from "react-redux";
-import { setUserData } from "../../../store/slices/authSlice";
+import { setUserData } from "../../../redux/store/slices/authSlice";
 import { useNavigate } from "react-router-dom";
 // react-router-dom components
 import { Link } from "react-router-dom";

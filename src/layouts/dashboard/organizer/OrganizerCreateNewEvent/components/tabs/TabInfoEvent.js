@@ -13,38 +13,96 @@ import {
   MenuItem,
   Popper,
   MenuList,
+  Chip,
 } from "@mui/material";
+import IconButton from "@mui/material/IconButton";
+import CloseIcon from "@mui/icons-material/Close";
+import AddIcon from "@mui/icons-material/Add";
+import axios from "axios";
 import SelectMenu from "../SelectMenu";
 import TinyMCEEditor from "../TinyMCEEditor";
-export default function TabInfoEvent() {
-  const [eventLogo, setEventLogo] = useState(null);
-  const [eventBanner, setEventBanner] = useState(null);
-  const [organizerLogo, setOrganizerLogo] = useState(null);
+import { useDispatch, useSelector } from "react-redux";
+import CustomTextField from "../CustomTextField";
+import categoryApi from "api/utils/categoryApi";
+import {
+  setEventName as setEventNameAction,
+  setEventLogo as setEventLogoAction,
+  setEventBanner as setEventBannerAction,
+  setEventImages,
+  setAddressName as setAddressNameAction,
+  setFullAddress as setFullAddressAction,
+  setCategory as setCategoryAction,
+  setTags as setTagsAction,
+  setLatitude as setLatitudeAction,
+  setLongitude as setLongitudeAction,
+  setDescription as setDescriptionAction,
+  setOrganizerName as setOrganizerNameAction,
+  setOrganizerDescription as setOrganizerDescriptionAction,
+  setOrganizerLogo as setOrganizerLogoAction,
+  setUserId,
+  resetEventInfo,
+} from "../../../../../../redux/store/slices/eventInfoSlice";
 
-  const handleImageUpload = (event, setImage) => {
-    const file = event.target.files[0];
-    if (file) {
-      setImage(URL.createObjectURL(file));
+export default function TabInfoEvent() {
+  const dispatch = useDispatch();
+  const userId = useSelector((state) => state.auth.id);
+
+  const [eventLogo, setEventLogo] = useState(null);
+  const eventInfo = useSelector((state) => state.eventInfo);
+
+  useEffect(() => {
+    console.log("eventInfo đã cập nhật:", eventInfo);
+  }, [eventInfo]);
+
+  const handleImageUpload = async (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "event_upload");
+    formData.append("cloud_name", "deoqppiun");
+
+    try {
+      const response = await fetch("https://api.cloudinary.com/v1_1/deoqppiun/image/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+      const imageUrl = data.secure_url;
+
+      // Gán đúng state dựa trên type
+      switch (type) {
+        case "logo":
+          setEventLogo(imageUrl);
+          break;
+        case "banner":
+          setEventBanner(imageUrl);
+          break;
+        case "gallery":
+          setImages((prev) => [...prev, imageUrl]);
+          break;
+        default:
+          console.warn("Loại ảnh không xác định:", type);
+      }
+    } catch (err) {
+      console.error("Lỗi upload ảnh lên Cloudinary:", err);
     }
   };
+
+  const [eventBanner, setEventBanner] = useState(null);
+  const [images, setImages] = useState([]);
+
+  const handleRemoveImage = (indexToRemove) => {
+    setImages((prev) => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  const [organizerLogo, setOrganizerLogo] = useState(null);
 
   const [eventName, setEventName] = useState("");
 
-  const handleEventNameChange = (e) => {
-    // Giới hạn tối đa 100 ký tự
-    if (e.target.value.length <= 100) {
-      setEventName(e.target.value);
-    }
-  };
-
   const [addressName, setaddressName] = useState("");
-
-  const handleAddressNameChange = (e) => {
-    // Giới hạn tối đa 80 ký tự
-    if (e.target.value.length <= 80) {
-      setaddressName(e.target.value);
-    }
-  };
 
   const [province, setProvince] = useState("");
   const [district, setDistrict] = useState("");
@@ -53,6 +111,37 @@ export default function TabInfoEvent() {
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
+
+  const getCoordinatesFromAddress = async (fullAddress) => {
+    const apiKey = "pJ2xud8j3xprqVfQZLFKjGV51MPH60VjRuZh1i3F"; // Thay bằng API key của bạn
+
+    try {
+      const response = await axios.get("https://rsapi.goong.io/Geocode", {
+        params: {
+          address: fullAddress,
+          api_key: apiKey,
+        },
+      });
+
+      const location = response.data.results?.[0]?.geometry?.location;
+
+      if (location) {
+        const { lat, lng } = location;
+        return {
+          latitude: lat,
+          longitude: lng,
+        };
+      } else {
+        console.warn("Không tìm thấy tọa độ.");
+        return null;
+      }
+    } catch (error) {
+      console.error("Lỗi khi gọi API toạ độ:", error);
+      return null;
+    }
+  };
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
 
   // Lấy danh sách tỉnh
   useEffect(() => {
@@ -97,21 +186,45 @@ export default function TabInfoEvent() {
 
   const [address, setAddress] = useState("");
 
-  const handleAddress = (e) => {
-    // Giới hạn tối đa 80 ký tự
-    if (e.target.value.length <= 80) {
-      setAddress(e.target.value);
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await categoryApi.getAllCategories();
+        if (response.data.status) {
+          const formattedCategories = response.data.data.map((item) => ({
+            label: item.name,
+            value: item._id,
+          }));
+          setCategories(formattedCategories); // cập nhật dạng {label, value}
+        } else {
+          console.error("Lấy danh mục thất bại");
+        }
+      } catch (error) {
+        console.error("Lỗi khi gọi API lấy danh mục", error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+  const [categories, setCategories] = useState("");
+  const [category, setCategory] = useState("");
+
+  const [tagInput, setTagInput] = useState("");
+  const [tags, setTags] = useState([]);
+
+  const handleAddTag = () => {
+    const trimmed = tagInput.trim();
+    if (trimmed && !tags.includes(trimmed)) {
+      setTags([...tags, trimmed]);
+      setTagInput("");
     }
   };
 
-  const categories = [
-    { label: "Hội thảo", value: "hoithao" },
-    { label: "Triển lãm", value: "trienlam" },
-    { label: "Hội chợ", value: "hoicho" },
-    { label: "Giải trí", value: "giaitri" },
-    { label: "Thể thao", value: "thethao" },
-  ];
-  const [category, setCategory] = useState("");
+  const handleRemoveTag = (index) => {
+    const newTags = [...tags];
+    newTags.splice(index, 1);
+    setTags(newTags);
+  };
 
   const initialContent = `
   <h4>Giới thiệu sự kiện:</h4>
@@ -132,7 +245,6 @@ export default function TabInfoEvent() {
 
   const [organizerName, setOrganizerName] = useState("");
   const [organizerDescription, setOrganizerDescription] = useState("");
-  const [organizerNameLogo, setOrganizerNameLogoLogo] = useState(null);
 
   const handleOrganizerNameChange = (e) => {
     setOrganizerName(e.target.value);
@@ -140,6 +252,43 @@ export default function TabInfoEvent() {
 
   const handleOrganizerDescriptionChange = (e) => {
     setOrganizerDescription(e.target.value);
+  };
+
+  const handleSaveEventInfos = async () => {
+    const provinceName = provinces.find((p) => p.value === province)?.label || "";
+    const districtName = districts.find((d) => d.value === district)?.label || "";
+    const wardName = wards.find((w) => w.value === ward)?.label || "";
+    const fullAddress = `${address}, ${wardName}, ${districtName}, ${provinceName}`;
+    try {
+      const coords = await getCoordinatesFromAddress(fullAddress);
+
+      if (coords?.latitude && coords?.longitude) {
+        setLatitude(coords.latitude);
+        setLongitude(coords.longitude);
+
+        // Dispatch chỉ khi có toạ độ hợp lệ
+        dispatch(setEventLogoAction(eventLogo));
+        dispatch(setEventBannerAction(eventBanner));
+        dispatch(setEventImages(images));
+        dispatch(setEventNameAction(eventName));
+        dispatch(setFullAddressAction(fullAddress));
+        dispatch(setCategoryAction(category));
+        dispatch(setTagsAction(tags));
+        dispatch(setLatitudeAction(coords.latitude));
+        dispatch(setLongitudeAction(coords.longitude));
+        dispatch(setDescriptionAction(description));
+        dispatch(setUserId(userId));
+      } else {
+        console.warn("Không có toạ độ hợp lệ để lưu.");
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy tọa độ:", error);
+    }
+
+    // dispatch(setAddressNameAction(addressName));
+    // dispatch(setOrganizerLogoAction(organizerLogo));
+    // dispatch(setOrganizerNameAction(organizerName));
+    // dispatch(setOrganizerDescriptionAction(organizerDescription));
   };
 
   return (
@@ -161,29 +310,45 @@ export default function TabInfoEvent() {
                 alignItems: "center",
                 justifyContent: "center",
                 height: 370,
+                overflow: "hidden",
               }}
             >
-              <Box textAlign="center">
-                <Typography>Thêm logo sự kiện</Typography>
-                <Typography variant="body2" fontWeight="bold" color="black">
-                  (720x958)
-                </Typography>
-              </Box>
+              {eventLogo ? (
+                // Nếu đã có ảnh
+                <Box
+                  sx={{
+                    width: "90%",
+                    textAlign: "center",
+                  }}
+                >
+                  <img
+                    src={eventLogo}
+                    alt="Logo sự kiện"
+                    style={{
+                      width: "100%",
+                      maxHeight: 150,
+                      objectFit: "contain",
+                      borderRadius: 8,
+                    }}
+                  />
+                </Box>
+              ) : (
+                // Nếu chưa có ảnh, hiển thị hướng dẫn
+                <Box textAlign="center">
+                  <Typography>Thêm logo sự kiện</Typography>
+                  <Typography variant="body2" fontWeight="bold" color="black">
+                    (720x958)
+                  </Typography>
+                </Box>
+              )}
+
               <input
                 hidden
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleImageUpload(e, setEventLogo)}
+                onChange={(e) => handleImageUpload(e, "logo")}
               />
             </Button>
-
-            {eventLogo && (
-              <img
-                src={eventLogo}
-                alt="Logo sự kiện"
-                style={{ marginTop: 8, width: "100%", maxHeight: 150, objectFit: "contain" }}
-              />
-            )}
           </Grid>
 
           <Grid item xs={12} sm={8.5}>
@@ -201,91 +366,101 @@ export default function TabInfoEvent() {
                 textTransform: "none",
               }}
             >
-              <Box textAlign="center">
-                <Typography>Thêm ảnh nền sự kiện</Typography>
-                <Typography fontWeight={800} color="black">
-                  (1280x720)
-                </Typography>
-              </Box>
+              {eventBanner ? (
+                <Box sx={{ width: "90%", textAlign: "center" }}>
+                  <img
+                    src={eventBanner}
+                    alt="Ảnh nền sự kiện"
+                    style={{
+                      width: "100%",
+                      maxHeight: 150,
+                      objectFit: "contain",
+                      borderRadius: 8,
+                    }}
+                  />
+                </Box>
+              ) : (
+                <Box textAlign="center">
+                  <Typography>Thêm ảnh nền sự kiện</Typography>
+                  <Typography variant="body2" fontWeight="bold" color="black">
+                    (1920x1080)
+                  </Typography>
+                </Box>
+              )}
               <input
                 hidden
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleImageUpload(e, setEventBanner)}
+                onChange={(e) => handleImageUpload(e, "banner")}
               />
             </Button>
+          </Grid>
+          <Grid item xs={12}>
+            <Box sx={{ mb: 4, mt: 5 }}>
+              {/* Nút thêm ảnh nằm trên */}
 
-            {eventBanner && (
-              <img
-                src={eventBanner}
-                alt="Ảnh nền sự kiện"
-                style={{ marginTop: 8, width: "100%", maxHeight: 150, objectFit: "cover" }}
-              />
-            )}
+              <Button variant="outlined" component="label">
+                Thêm ảnh
+                <input
+                  hidden
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e, "gallery")}
+                />
+              </Button>
+
+              {/* Danh sách ảnh đã upload nằm dưới và cuộn ngang */}
+              <Box sx={{ overflowX: "auto", mt: 2, pr: 5, pt: 3 }}>
+                <Grid container spacing={2} sx={{ flexWrap: "nowrap" }}>
+                  {images.map((url, index) => (
+                    <Grid item key={index} sx={{ position: "relative" }}>
+                      <img
+                        src={url}
+                        alt={`image-${index}`}
+                        style={{
+                          width: 384,
+                          height: 216,
+                          borderRadius: 8,
+                          objectFit: "cover",
+                        }}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={() => handleRemoveImage(index)}
+                        sx={{
+                          position: "absolute",
+                          top: 3,
+                          right: -10,
+                          bgcolor: "white",
+                          borderRadius: "50%",
+                          width: 24,
+                          height: 24,
+                          boxShadow: 1,
+                          p: 0.5,
+                          "&:hover": { bgcolor: "error.main", color: "white" },
+                        }}
+                      >
+                        <CloseIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+            </Box>
           </Grid>
 
           <Grid item xs={12}>
             <Typography variant="h6" gutterBottom>
               Tên sự kiện
             </Typography>
-            <Box sx={{ width: "100%", position: "relative" }}>
-              <TextField
-                placeholder="Nhập tên sự kiện"
-                size="small"
-                value={eventName}
-                onChange={handleEventNameChange}
-                fullWidth
-                inputProps={{ maxLength: 100, style: { paddingBottom: 24, paddingLeft: 0 } }} // thêm khoảng trống dưới input để hiện số ký tự
-              />
-              <Typography
-                sx={{
-                  position: "absolute",
-                  bottom: 6,
-                  right: 8,
-                  fontSize: 12,
-                  color: "gray",
-                  pointerEvents: "none",
-                  userSelect: "none",
-                  padding: "0 4px",
-                }}
-              >
-                {eventName.length} / 100
-              </Typography>
-            </Box>
-          </Grid>
-        </Grid>
-      </Paper>
 
-      <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom>
-          Tên địa điểm
-        </Typography>
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Box sx={{ width: "100%", position: "relative" }}>
-              <TextField
-                placeholder="Nhập tên địa điểm"
-                size="small"
-                value={addressName}
-                onChange={handleAddressNameChange}
-                fullWidth
-                inputProps={{ maxLength: 80, style: { paddingBottom: 24, paddingLeft: 0 } }} // thêm khoảng trống dưới input để hiện số ký tự
-              />
-              <Typography
-                sx={{
-                  position: "absolute",
-                  bottom: 6,
-                  right: 8,
-                  fontSize: 12,
-                  color: "gray",
-                  pointerEvents: "none",
-                  userSelect: "none",
-                  padding: "0 4px",
-                }}
-              >
-                {eventName.length} / 80
-              </Typography>
-            </Box>
+            <CustomTextField
+              value={eventName}
+              onChange={(e) => setEventName(e.target.value)}
+              placeholder="Nhập tên sự kiện"
+              maxLength={100}
+              maxWidth="100%"
+            />
           </Grid>
         </Grid>
       </Paper>
@@ -301,35 +476,14 @@ export default function TabInfoEvent() {
             <Typography variant="h6" gutterBottom>
               Tên địa điểm
             </Typography>
-            <Box sx={{ width: "100%", position: "relative" }}>
-              <TextField
-                placeholder="Nhập tên địa điểm"
-                size="medium"
-                value={address}
-                onChange={handleAddress}
-                fullWidth
-                inputProps={{
-                  maxLength: 80,
-                  style: { paddingBottom: 24, paddingLeft: 0 },
-                }}
-              />
-              <Typography
-                sx={{
-                  position: "absolute",
-                  bottom: 9,
-                  right: 8,
-                  fontSize: 12,
-                  color: "gray",
-                  pointerEvents: "none",
-                  userSelect: "none",
-                  padding: "0 4px",
-                }}
-              >
-                {eventName.length} / 80
-              </Typography>
-            </Box>
+            <CustomTextField
+              value={addressName}
+              onChange={(e) => setaddressName(e.target.value)}
+              placeholder="Nhập tên địa điểm"
+              maxLength={80}
+              maxWidth="100%"
+            />
           </Grid>
-
           {/* Tỉnh / Thành */}
           <Grid item xs={12} sm={6}>
             <Typography variant="h6" gutterBottom>
@@ -346,7 +500,6 @@ export default function TabInfoEvent() {
               options={provinces}
             />
           </Grid>
-
           {/* Quận / Huyện */}
           <Grid item xs={12} sm={6}>
             <Typography variant="h6" gutterBottom>
@@ -362,7 +515,6 @@ export default function TabInfoEvent() {
               options={province ? districts : []}
             />
           </Grid>
-
           {/* Phường / Xã */}
           <Grid item xs={12} sm={6}>
             <Typography variant="h6" gutterBottom>
@@ -381,33 +533,13 @@ export default function TabInfoEvent() {
             <Typography variant="h6" gutterBottom>
               Số nhà, đường
             </Typography>
-            <Box sx={{ width: "100%", position: "relative" }}>
-              <TextField
-                placeholder="Nhập tên địa điểm"
-                size="medium"
-                value={addressName}
-                onChange={handleAddressNameChange}
-                fullWidth
-                inputProps={{
-                  maxLength: 80,
-                  style: { paddingBottom: 24, paddingLeft: 0 },
-                }}
-              />
-              <Typography
-                sx={{
-                  position: "absolute",
-                  bottom: 9,
-                  right: 8,
-                  fontSize: 12,
-                  color: "gray",
-                  pointerEvents: "none",
-                  userSelect: "none",
-                  padding: "0 4px",
-                }}
-              >
-                {eventName.length} / 80
-              </Typography>
-            </Box>
+            <CustomTextField
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Nhập số nhà, đường"
+              maxLength={80}
+              maxWidth="100%"
+            />
           </Grid>
         </Grid>
       </Paper>
@@ -418,14 +550,48 @@ export default function TabInfoEvent() {
         </Typography>
 
         <Grid container spacing={3}>
-          {/* Phường / Xã */}
           <Grid item xs={12} sm={12}>
             <SelectMenu
               label="Chọn thể loại"
-              value={category}
-              onChange={(val) => setCategory(val)}
+              value={category} // là _id
+              onChange={(val) => setCategory(val)} // val là _id được chọn
               options={categories}
             />
+          </Grid>
+          <Grid item xs={12} sm={12}>
+            <Typography variant="h6" gutterBottom>
+              Tag
+            </Typography>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <CustomTextField
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                placeholder="Nhập tag"
+                maxWidth={200}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddTag();
+                  }
+                }}
+              />
+              <IconButton color="primary" onClick={handleAddTag}>
+                <AddIcon />
+              </IconButton>
+            </Box>
+
+            <Box sx={{ mt: 2, display: "flex", flexWrap: "wrap", gap: 1 }}>
+              {tags.map((tag, index) => (
+                <Chip
+                  key={index}
+                  label={tag}
+                  onDelete={() => handleRemoveTag(index)}
+                  deleteIcon={<CloseIcon />}
+                  color="primary"
+                  variant="outlined"
+                />
+              ))}
+            </Box>
           </Grid>
         </Grid>
       </Paper>
@@ -436,18 +602,21 @@ export default function TabInfoEvent() {
         </Typography>
         <Grid container spacing={3}>
           <Grid item xs={12} sm={12}>
-            <TinyMCEEditor value={initialContent} onChange={setDescription} />
+            <TinyMCEEditor
+              value={description || initialContent}
+              onChange={(value) => setDescription(value)}
+            />
           </Grid>
         </Grid>
       </Paper>
 
-      <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
+      {/* <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom>
           Thông tin Ban Tổ Chức
         </Typography>
 
         <Grid container spacing={3}>
-          {/* Logo ban tổ chức (bên trái) */}
+     
           <Grid item xs={12} sm={2}>
             <Button
               variant="outlined"
@@ -461,37 +630,39 @@ export default function TabInfoEvent() {
                 height: 220,
               }}
             >
-              <Box textAlign="center">
-                <Typography>Thêm logo ban tổ chức</Typography>
-                <Typography variant="body2" fontWeight="bold" color="black">
-                  (275x275)
-                </Typography>
-              </Box>
+              {organizerLogo ? (
+                <Box sx={{ width: "90%", textAlign: "center" }}>
+                  <img
+                    src={organizerLogo}
+                    alt="Logo ban tổ chức"
+                    style={{
+                      width: "100%",
+                      maxHeight: 150,
+                      objectFit: "contain",
+                      borderRadius: 8,
+                    }}
+                  />
+                </Box>
+              ) : (
+                <Box textAlign="center">
+                  <Typography>Thêm logo ban tổ chức</Typography>
+                  <Typography variant="body2" fontWeight="bold" color="black">
+                    (512x512)
+                  </Typography>
+                </Box>
+              )}
               <input
                 hidden
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleImageUpload(e, setEventLogo)}
+                onChange={(e) => handleImageUpload(e, setOrganizerLogo)}
               />
             </Button>
-
-            {eventLogo && (
-              <img
-                src={eventLogo}
-                alt="Logo ban tổ chức"
-                style={{
-                  marginTop: 8,
-                  width: "100%",
-                  maxHeight: 150,
-                  objectFit: "contain",
-                }}
-              />
-            )}
           </Grid>
 
-          {/* Tên + thông tin ban tổ chức (bên phải) */}
+  
           <Grid item xs={12} sm={10}>
-            {/* Tên ban tổ chức */}
+   
             <Typography variant="h6" gutterBottom>
               Tên ban tổ chức
             </Typography>
@@ -503,7 +674,7 @@ export default function TabInfoEvent() {
                 onChange={handleOrganizerNameChange}
                 fullWidth
                 inputProps={{
-                  maxLength: 100,
+                  maxLength: 80,
                   style: { paddingBottom: 24, paddingLeft: 0 },
                 }}
               />
@@ -523,7 +694,7 @@ export default function TabInfoEvent() {
               </Typography>
             </Box>
 
-            {/* Thông tin mô tả ban tổ chức */}
+       
             <Typography variant="h6" gutterBottom>
               Thông tin ban tổ chức
             </Typography>
@@ -537,7 +708,8 @@ export default function TabInfoEvent() {
             />
           </Grid>
         </Grid>
-      </Paper>
+      </Paper> 
+   */}
       <Box
         sx={{
           display: "flex",
@@ -549,6 +721,7 @@ export default function TabInfoEvent() {
         <Button
           variant="outlined"
           color="primary"
+          onClick={handleSaveEventInfos}
           sx={{
             borderColor: "primary.main",
             color: "primary.main",

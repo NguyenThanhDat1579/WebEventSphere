@@ -10,7 +10,10 @@ import {
   TextField,
   IconButton,
   Grid,
+  Alert,
+  Snackbar,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -25,6 +28,8 @@ import {
   setTicketQuantity as setTicketQuantityAction,
   setTypeBase,
   setZones as setZonesAction,
+  setShowtimes,
+  resetEventInfo,
   setDescription,
   setEventBanner,
   setEventImages,
@@ -41,6 +46,8 @@ export default function ScheduleSection() {
     tickets: [],
   });
   const [openDialog, setOpenDialog] = useState(false);
+  const [successAlertOpen, setSuccessAlertOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleTimeChange = (field, value) => {
     setPerformance((prev) => ({
@@ -64,6 +71,9 @@ export default function ScheduleSection() {
   const [ticketPriceZone, setTicketPriceZone] = useState("");
   const [ticketQuantity, setTicketQuantity] = useState("");
   const [price, setPrice] = useState("");
+  const [localShowtimes, setLocalShowtimes] = useState([]);
+  const [showtimeStart, setShowtimeStart] = useState("");
+  const [showtimeEnd, setShowtimeEnd] = useState("");
   const dispatch = useDispatch();
   const eventInfo = useSelector((state) => state.eventInfo);
 
@@ -72,6 +82,7 @@ export default function ScheduleSection() {
     console.log("TimeStart: ", startTime);
   }, [eventInfo]);
 
+  console.log("showtime", localShowtimes);
   function toUnixTimestamp(datetimeString) {
     if (!datetimeString) return null;
 
@@ -86,6 +97,31 @@ export default function ScheduleSection() {
   const handleEndTimeChange = (e) => {
     setEndTime(e.target.value);
   };
+
+  const handleAddShowtime = () => {
+    const startTimestamp = new Date(showtimeStart).getTime();
+    const endTimestamp = new Date(showtimeEnd).getTime();
+
+    setLocalShowtimes((prev) => [...prev, { startTime: startTimestamp, endTime: endTimestamp }]);
+
+    setShowtimeStart("");
+    setShowtimeEnd("");
+  };
+
+  const handleRemoveShowtime = (indexToRemove) => {
+    setLocalShowtimes((prev) => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  const formatTime = (isoString) => {
+    const date = new Date(isoString);
+    const dd = String(date.getDate()).padStart(2, "0");
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const yyyy = date.getFullYear();
+    const hh = String(date.getHours()).padStart(2, "0");
+    const min = String(date.getMinutes()).padStart(2, "0");
+    return `${hh}:${min}, ${dd}/${mm}/${yyyy}`;
+  };
+
   const handleChangeTypeBase = (e) => {
     setTicketForm({ ...ticketForm, typeBase: e.target.value });
     // Reset zones mỗi khi đổi typeBase
@@ -99,22 +135,15 @@ export default function ScheduleSection() {
       return;
     }
 
-    console.log("📋 Danh sách zones hiện tại:", zones);
     const newZone = {
       name: zoneName,
-      showtimes: [
-        {
-          ticketPrice: Number(ticketPriceZone),
-          ticketQuantity: Number(ticketQuantity),
-          totalTicketCount: Number(ticketQuantity),
-          price: Number(ticketPriceZone),
-        },
-      ],
+      totalTicketCount: Number(ticketQuantity),
+      price: Number(ticketPriceZone),
     };
 
     setZones((prev) => [...prev, newZone]);
 
-    // Reset form nhập zone
+    // Reset form
     setZoneName("");
     setTicketPriceZone("");
     setTicketQuantity("");
@@ -161,20 +190,10 @@ export default function ScheduleSection() {
     }
     if (ticketForm.typeBase === "zone") {
       dispatch(setTypeBase(ticketForm.typeBase));
-      const newZones = zones.map((zone) => ({
-        ...zone,
-        showtimes: zone.showtimes.map((showtime) => ({
-          ...showtime,
-          startTime: toUnixTimestamp(startTime),
-          endTime: toUnixTimestamp(endTime),
-        })),
-      }));
 
-      console.log("✅ newZones đã thêm startTime và endTime:", newZones);
-      console.log("time " + toUnixTimestamp(startTime) + "end " + toUnixTimestamp(endTime));
-      // Ghi đè zone cũ bằng zone có thời gian mới
-      setZones(newZones);
-      dispatch(setZonesAction(newZones));
+      zones.forEach((zone) => {
+        dispatch(setZonesAction(zone));
+      });
     }
 
     if (ticketForm.typeBase === "seat") {
@@ -218,6 +237,7 @@ export default function ScheduleSection() {
 
     dispatch(setTimeStart(toUnixTimestamp(startTime)));
     dispatch(setTimeEnd(toUnixTimestamp(endTime)));
+    dispatch(setShowtimes(localShowtimes));
   };
 
   const handleOpenTicketDialog = () => setOpenDialog(true);
@@ -230,11 +250,21 @@ export default function ScheduleSection() {
 
   const submitEvent = async () => {
     try {
-      // Gửi lên API
       console.log("📦 Payload gửi đi:", JSON.stringify(eventInfo, null, 2));
 
       const response = await eventApi.addEvent(eventInfo);
       console.log("✅ API Response:", response.data);
+
+      if (response.data?.status === true) {
+        dispatch(resetEventInfo());
+        // Hiện alert
+        setSuccessAlertOpen(true);
+
+        // Tự chuyển về Dashboard sau 1 giây (để user thấy alert một chút)
+        setTimeout(() => {
+          navigate("/dashboard-organizer");
+        }, 1000);
+      }
     } catch (error) {
       console.error("❌ Lỗi khi tạo sự kiện:", error);
       if (error.response) {
@@ -301,6 +331,70 @@ export default function ScheduleSection() {
                   value={ticketQuantity}
                   onChange={(e) => setTicketQuantity(e.target.value)}
                 />
+                <Box mt={4}>
+                  <Typography variant="h6" gutterBottom>
+                    Tạo suất chiếu
+                  </Typography>
+
+                  <Box display="flex" gap={2} flexWrap="wrap" mb={2}>
+                    <CustomTextField
+                      label="Thời gian bắt đầu"
+                      type="datetime-local"
+                      value={showtimeStart}
+                      onChange={(e) => setShowtimeStart(e.target.value)}
+                    />
+
+                    <CustomTextField
+                      label="Thời gian kết thúc"
+                      type="datetime-local"
+                      value={showtimeEnd}
+                      onChange={(e) => setShowtimeEnd(e.target.value)}
+                    />
+
+                    <Button variant="contained" onClick={handleAddShowtime}>
+                      Tạo suất chiếu
+                    </Button>
+                  </Box>
+
+                  {localShowtimes.length > 0 && (
+                    <Box>
+                      <Typography variant="subtitle1" gutterBottom>
+                        Danh sách suất chiếu:
+                      </Typography>
+                      <ul style={{ paddingLeft: 0 }}>
+                        {localShowtimes.map((show, index) => (
+                          <li
+                            key={index}
+                            style={{
+                              listStyle: "none",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              padding: "8px 12px",
+                              border: "1px solid #ccc",
+                              borderRadius: 8,
+                              marginBottom: 8,
+                              backgroundColor: "#f9f9f9",
+                            }}
+                          >
+                            <span>
+                              <strong>Bắt đầu:</strong> {formatTime(show.startTime)} —{" "}
+                              <strong>Kết thúc:</strong> {formatTime(show.endTime)}
+                            </span>
+                            <IconButton
+                              aria-label="Xoá suất chiếu"
+                              size="small"
+                              color="error"
+                              onClick={() => handleRemoveShowtime(index)}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </li>
+                        ))}
+                      </ul>
+                    </Box>
+                  )}
+                </Box>
               </Box>
             )}
 
@@ -369,9 +463,8 @@ export default function ScheduleSection() {
                         }}
                       >
                         <Box>
-                          Khu vực: {zone.name} - Giá vé:{" "}
-                          {zone.showtimes[0].ticketPrice.toLocaleString()} - Số lượng:{" "}
-                          {zone.showtimes[0].ticketQuantity.toLocaleString()}
+                          Khu vực: {zone.name} – Giá vé: {zone.price.toLocaleString()} – Số lượng:{" "}
+                          {zone.totalTicketCount.toLocaleString()}
                         </Box>
 
                         <IconButton
@@ -385,6 +478,71 @@ export default function ScheduleSection() {
                       </Box>
                     ))}
                   </ul>
+                </Box>
+
+                <Box mt={4}>
+                  <Typography variant="h6" gutterBottom>
+                    Tạo suất chiếu
+                  </Typography>
+
+                  <Box display="flex" gap={2} flexWrap="wrap" mb={2}>
+                    <CustomTextField
+                      label="Thời gian bắt đầu"
+                      type="datetime-local"
+                      value={showtimeStart}
+                      onChange={(e) => setShowtimeStart(e.target.value)}
+                    />
+
+                    <CustomTextField
+                      label="Thời gian kết thúc"
+                      type="datetime-local"
+                      value={showtimeEnd}
+                      onChange={(e) => setShowtimeEnd(e.target.value)}
+                    />
+
+                    <Button variant="contained" onClick={handleAddShowtime}>
+                      Tạo suất chiếu
+                    </Button>
+                  </Box>
+
+                  {localShowtimes.length > 0 && (
+                    <Box>
+                      <Typography variant="subtitle1" gutterBottom>
+                        Danh sách suất chiếu:
+                      </Typography>
+                      <ul style={{ paddingLeft: 0 }}>
+                        {localShowtimes.map((show, index) => (
+                          <li
+                            key={index}
+                            style={{
+                              listStyle: "none",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              padding: "8px 12px",
+                              border: "1px solid #ccc",
+                              borderRadius: 8,
+                              marginBottom: 8,
+                              backgroundColor: "#f9f9f9",
+                            }}
+                          >
+                            <span>
+                              <strong>Bắt đầu:</strong> {formatTime(show.startTime)} —{" "}
+                              <strong>Kết thúc:</strong> {formatTime(show.endTime)}
+                            </span>
+                            <IconButton
+                              aria-label="Xoá suất chiếu"
+                              size="small"
+                              color="error"
+                              onClick={() => handleRemoveShowtime(index)}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </li>
+                        ))}
+                      </ul>
+                    </Box>
+                  )}
                 </Box>
               </Box>
             )}
@@ -429,6 +587,74 @@ export default function ScheduleSection() {
                       onChange={(e) => setSeatPrice(Number(e.target.value))}
                     />
                   </Grid>
+                  <Box sx={{ mt: 4 }}>
+                    <Typography variant="h6" gutterBottom>
+                      Suất chiếu
+                    </Typography>
+
+                    <Grid container spacing={2} alignItems="center">
+                      <Grid item xs={12} sm={5}>
+                        <CustomTextField
+                          label="Thời gian bắt đầu"
+                          type="datetime-local"
+                          value={showtimeStart}
+                          onChange={(e) => setShowtimeStart(e.target.value)}
+                          fullWidth
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={5}>
+                        <CustomTextField
+                          label="Thời gian kết thúc"
+                          type="datetime-local"
+                          value={showtimeEnd}
+                          onChange={(e) => setShowtimeEnd(e.target.value)}
+                          fullWidth
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={2}>
+                        <Button
+                          variant="contained"
+                          onClick={handleAddShowtime}
+                          disabled={!showtimeStart || !showtimeEnd}
+                          fullWidth
+                        >
+                          Thêm
+                        </Button>
+                      </Grid>
+                    </Grid>
+
+                    {localShowtimes.length > 0 && (
+                      <Box sx={{ mt: 2 }}>
+                        {localShowtimes.map((show, index) => (
+                          <Box
+                            key={index}
+                            sx={{
+                              mt: 1,
+                              p: 1,
+                              border: "1px solid #ccc",
+                              borderRadius: 1,
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                            }}
+                          >
+                            <Typography variant="body2">
+                              Bắt đầu: {new Date(show.startTime).toLocaleString("vi-VN")} – Kết
+                              thúc: {new Date(show.endTime).toLocaleString("vi-VN")}
+                            </Typography>
+                            <Button
+                              variant="outlined"
+                              color="error"
+                              size="small"
+                              onClick={() => handleRemoveShowtime(index)}
+                            >
+                              Xoá
+                            </Button>
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
                   <Grid item xs={12}>
                     <Typography variant="h6" gutterBottom>
                       Tạo sơ đồ ghế
@@ -529,12 +755,64 @@ export default function ScheduleSection() {
           handleSubmitTicket={handleSubmitTicket}
         />
       </Box>
-      <Button variant="contained" color="success" onClick={handleSaveZoneOrSeat}>
-        Lưu khu vực
-      </Button>
-      <Button variant="contained" color="success" onClick={submitEvent}>
-        Gửi
-      </Button>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3 }}>
+        <Button
+          variant="outlined"
+          onClick={handleSaveZoneOrSeat}
+          sx={{
+            color: "#1976D2",
+            borderColor: "#1976D2",
+            backgroundColor: "#fff",
+            "&:hover": {
+              backgroundColor: "#1976D2",
+              color: "#fff",
+            },
+          }}
+        >
+          Lưu khu vực
+        </Button>
+
+        <Button
+          variant="contained"
+          onClick={() => {
+            handleSaveZoneOrSeat();
+            submitEvent();
+          }}
+          sx={{
+            backgroundColor: "#1976D2",
+            color: "#fff",
+            border: "1px solid #1976D2",
+            "&:hover": {
+              backgroundColor: "#fff",
+              color: "#1976D2",
+            },
+          }}
+        >
+          Gửi
+        </Button>
+        <Button
+          variant="contained"
+          onClick={() => {
+            dispatch(resetEventInfo());
+          }}
+          sx={{
+            backgroundColor: "#1976D2",
+            color: "#fff",
+            border: "1px solid #1976D2",
+            "&:hover": {
+              backgroundColor: "#fff",
+              color: "#1976D2",
+            },
+          }}
+        >
+          Xoá
+        </Button>
+        <Snackbar open={successAlertOpen} anchorOrigin={{ vertical: "top", horizontal: "center" }}>
+          <Alert severity="success" sx={{ width: "100%" }}>
+            Tạo sự kiện thành công!
+          </Alert>
+        </Snackbar>
+      </Box>
     </LocalizationProvider>
   );
 }

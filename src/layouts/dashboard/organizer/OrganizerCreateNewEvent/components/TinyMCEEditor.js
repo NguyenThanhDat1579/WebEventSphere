@@ -6,7 +6,7 @@ const TinyMCEEditor = ({ value, onChange }) => {
 
   useEffect(() => {
     if (!window.tinymce) {
-      console.error("TinyMCE script chưa được load!");
+      console.error("TinyMCE chưa được load! Vui lòng kiểm tra script CDN.");
       return;
     }
 
@@ -14,21 +14,22 @@ const TinyMCEEditor = ({ value, onChange }) => {
 
     window.tinymce.init({
       target: editorRef.current,
+      height: 500,
       menubar: false,
-      branding: false, // Tắt logo TinyMCE
-      height: 600,
-      placeholder: "Nhập nội dung mô tả sự kiện tại đây...",
+      branding: false,
+      placeholder: "Nhập mô tả sự kiện tại đây...",
       plugins: [
-        "advlist autolink lists link image charmap print preview anchor",
+        "advlist autolink lists link image charmap preview anchor",
         "searchreplace visualblocks code fullscreen",
-        "insertdatetime media table paste code help wordcount",
+        "insertdatetime media table paste help wordcount",
+        "fontselect fontsizeselect formatselect", // ✅ cần plugin để hiển thị nút
       ],
       toolbar:
-        "undo redo | fontselect fontsizeselect | bold italic underline strikethrough | " +
-        "forecolor backcolor | alignleft aligncenter alignright alignjustify | " +
-        "bullist numlist outdent indent | image | removeformat | help",
+        "undo redo | formatselect fontselect fontsizeselect | " +
+        "bold italic underline strikethrough forecolor backcolor | " +
+        "alignleft aligncenter alignright alignjustify | " +
+        "bullist numlist outdent indent | link image | removeformat | preview",
 
-      fontsize_formats: "8pt 10pt 12pt 14pt 18pt 24pt 36pt",
       font_formats:
         "Arial=arial,helvetica,sans-serif;" +
         "Courier New=courier new,courier,monospace;" +
@@ -37,9 +38,38 @@ const TinyMCEEditor = ({ value, onChange }) => {
         "Times New Roman=times new roman,times;" +
         "Verdana=verdana,geneva;",
 
-      images_upload_url: "/upload-image", // tùy chỉnh nếu có backend
+      fontsize_formats: "12px 14px 16px 18px 24px 36px",
+
       automatic_uploads: true,
       file_picker_types: "image",
+
+      // ✅ Upload trực tiếp lên Cloudinary
+      images_upload_handler: async (blobInfo, success, failure) => {
+        try {
+          const formData = new FormData();
+          formData.append("file", blobInfo.blob());
+          formData.append("upload_preset", "event_upload"); // Preset phải là unsigned
+
+          const response = await fetch("https://api.cloudinary.com/v1_1/deoqppiun/image/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!response.ok) {
+            throw new Error(`Upload lỗi: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          if (data.secure_url) {
+            success(data.secure_url); // URL ảnh chèn vào HTML
+          } else {
+            failure("Không nhận được secure_url từ Cloudinary");
+          }
+        } catch (err) {
+          console.error("❌ Upload thất bại:", err);
+          failure("Upload thất bại: " + err.message);
+        }
+      },
 
       setup: (editor) => {
         editor.on("Change KeyUp", () => {

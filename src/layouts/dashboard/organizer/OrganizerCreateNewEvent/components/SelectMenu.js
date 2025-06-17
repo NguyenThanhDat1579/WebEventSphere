@@ -3,7 +3,14 @@ import { Box, Typography, Popper, Paper, MenuList, MenuItem } from "@mui/materia
 import PropTypes from "prop-types";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 
-const SelectMenu = ({ label = "Chọn", value, onChange, options = [] }) => {
+const SelectMenu = ({
+  label = "Chọn",
+  value,
+  onChange,
+  options = [],
+  error = false,
+  helperText = "",
+}) => {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef(null);
 
@@ -22,7 +29,7 @@ const SelectMenu = ({ label = "Chọn", value, onChange, options = [] }) => {
         ref={anchorRef}
         onClick={handleToggle}
         sx={{
-          border: "1px solid #ccc",
+          border: error ? "1px solid red" : "1px solid #ccc", // ✅ viền đỏ nếu lỗi
           borderRadius: 1.8,
           p: 0.6,
           pl: 1.4,
@@ -32,7 +39,10 @@ const SelectMenu = ({ label = "Chọn", value, onChange, options = [] }) => {
           zIndex: 10,
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between", // 👈 label bên trái, icon bên phải
+          justifyContent: "space-between",
+          "&:hover": {
+            borderColor: error ? "red" : "#888",
+          },
         }}
       >
         <Typography
@@ -45,6 +55,14 @@ const SelectMenu = ({ label = "Chọn", value, onChange, options = [] }) => {
         </Typography>
         <KeyboardArrowDownIcon fontSize="small" />
       </Box>
+
+      {/* Hiển thị helperText nếu có lỗi */}
+      {error && helperText && (
+        <Typography variant="caption" color="error" sx={{ mt: "4px", ml: "4px", display: "block" }}>
+          {helperText}
+        </Typography>
+      )}
+
       <Popper
         open={open}
         anchorEl={anchorRef.current}
@@ -54,7 +72,7 @@ const SelectMenu = ({ label = "Chọn", value, onChange, options = [] }) => {
         <Paper
           elevation={3}
           sx={{
-            width: anchorRef.current?.offsetWidth || "auto", // ✅ Set width same as Box
+            width: anchorRef.current?.offsetWidth || "auto",
           }}
         >
           <MenuList
@@ -81,7 +99,6 @@ const SelectMenu = ({ label = "Chọn", value, onChange, options = [] }) => {
   );
 };
 
-export default SelectMenu;
 SelectMenu.propTypes = {
   label: PropTypes.string.isRequired,
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
@@ -92,4 +109,7 @@ SelectMenu.propTypes = {
       value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
     })
   ).isRequired,
+  error: PropTypes.bool,
+  helperText: PropTypes.string,
 };
+export default SelectMenu;

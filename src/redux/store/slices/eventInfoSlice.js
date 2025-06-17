@@ -33,6 +33,7 @@ const initialState = {
   // Cấu trúc vé
   typeBase: null,
   zones: [],
+  showtimes: [],
 };
 
 const eventInfoSlice = createSlice({
@@ -92,7 +93,11 @@ const eventInfoSlice = createSlice({
       state.typeBase = action.payload;
     },
     setZones: (state, action) => {
-      state.zones.push(action.payload);
+      state.zones.push(action.payload); // payload là object
+    },
+
+    setShowtimes: (state, action) => {
+      state.showtimes = action.payload;
     },
     resetEventInfo: () => initialState,
   },
@@ -117,6 +122,7 @@ export const {
   setUserId,
   setTypeBase,
   setZones,
+  setShowtimes,
   resetEventInfo,
 } = eventInfoSlice.actions;
 

@@ -38,15 +38,106 @@ function OrganizerDashboard() {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalTickets, setTotalTickets] = useState(0);
   //event.ticketPrice
-  const eventRows = events.map((event, index) => ({
-    "Tên sự kiện": [event.avatar, event.name],
-    "Ngày bắt đầu": new Date(event.timeStart * 1000).toLocaleDateString("vi-VN"), // định dạng thành dd/mm/yyyy
-    "Giá vé":
-      event.ticketPrice != null ? event.ticketPrice.toLocaleString("vi-VN") + " ₫" : "Miễn phí",
-    "Số lượng": `${event.soldTickets}/${event.ticketQuantity}`,
-  }));
-
   const currentTime = Math.floor(Date.now() / 1000); // thời gian hiện tại tính bằng giây
+  const now = Date.now();
+
+  const oneWeekLater = now + 7 * 24 * 60 * 60 * 1000;
+  const formatDateTime = (timestamp) => {
+    const date = new Date(timestamp > 1e12 ? timestamp : timestamp * 1000);
+
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+
+    const weekdayNames = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+    const weekday = weekdayNames[date.getDay()];
+
+    return `${hours}:${minutes}, ${weekday}, ${day} tháng ${month} ${year}`;
+  };
+
+  const upcomingEvents = events
+    .filter((event) => {
+      const startTime = event.timeStart > 1e12 ? event.timeStart : event.timeStart * 1000;
+      return startTime > now && startTime <= oneWeekLater;
+    })
+    .sort((a, b) => {
+      const aTime = a.timeStart > 1e12 ? a.timeStart : a.timeStart * 1000;
+      const bTime = b.timeStart > 1e12 ? b.timeStart : b.timeStart * 1000;
+      return aTime - bTime;
+    });
+
+  const getEventStatusLabel = (event) => {
+    // Đảm bảo timeStart và timeEnd là kiểu Date hợp lệ
+    const start = new Date(event.timeStart > 1e12 ? event.timeStart : event.timeStart * 1000);
+    const end = new Date(event.timeEnd > 1e12 ? event.timeEnd : event.timeEnd * 1000);
+    const now = new Date();
+
+    const oneWeek = 7 * 24 * 60 * 60 * 1000;
+    const timeUntilStart = start - now;
+
+    if (now >= start && now <= end) {
+      return { label: "Đang diễn ra", color: "#2e7d32" }; // xanh đậm
+    } else if (timeUntilStart <= oneWeek && timeUntilStart > 0) {
+      return { label: "Sắp diễn ra", color: "#d32f2f" }; // đỏ
+    } else if (timeUntilStart > oneWeek) {
+      return { label: "Chưa diễn ra", color: "#f9a825" }; // vàng
+    } else if (now > end) {
+      return { label: "Đã kết thúc", color: "#757575" }; // xám
+    }
+
+    // Nếu không rơi vào bất kỳ trường hợp nào
+    return {
+      label: "Không xác định",
+      color: "#9e9e9e", // xám
+    };
+  };
+
+  const eventRows = upcomingEvents
+    .map((event) => {
+      const status = getEventStatusLabel(event);
+      if (!status) return null; // bỏ qua nếu sự kiện đã kết thúc
+
+      return {
+        "Tên sự kiện": [
+          event.avatar,
+          <>
+            <strong>{event.name}</strong>
+            <div style={{ color: status.color, fontSize: "0.75rem" }}>{status.label}</div>
+          </>,
+        ],
+        "Ngày bắt đầu": formatDateTime(event.timeStart),
+        "Giá vé":
+          event.ticketPrice != null ? event.ticketPrice.toLocaleString("vi-VN") + " ₫" : "Miễn phí",
+        "Số lượng": `${event.soldTickets}/${event.ticketQuantity}`,
+      };
+    })
+    .filter(Boolean); // lọc null
+
+  // const oneWeekInSeconds = 7 * 24 * 60 * 60;
+
+  // const upcomingEvents = events
+  //   .filter((event) => {
+  //     const timeUntilStart = event.timeStart - currentTime;
+  //     return timeUntilStart > 0 && timeUntilStart <= oneWeekInSeconds;
+  //   })
+  //   .sort((a, b) => a.timeStart - b.timeStart);
+
+  // const eventRows = upcomingEvents.map((event) => ({
+  //   "Tên sự kiện": [
+  //     event.avatar,
+  //     <>
+  //       <strong>{event.name}</strong>
+  //       <div style={{ color: "red", fontSize: "0.75rem" }}>Sắp diễn ra</div>
+  //     </>,
+  //   ],
+  //   "Ngày bắt đầu": new Date(event.timeStart * 1000).toLocaleDateString("vi-VN"),
+  //   "Giá vé":
+  //     event.ticketPrice != null ? event.ticketPrice.toLocaleString("vi-VN") + " ₫" : "Miễn phí",
+  //   "Số lượng": `${event.soldTickets}/${event.ticketQuantity}`,
+  // }));
 
   const ongoingEventsCount = events.filter(
     (event) => currentTime >= event.timeStart && currentTime <= event.timeEnd
@@ -234,7 +325,7 @@ function OrganizerDashboard() {
         </Grid>
         <Grid container spacing={3}>
           <Grid item xs={12} md={8}>
-            <SalesTable title="Danh sách sự kiện" rows={eventRows} />
+            <SalesTable title="Sự kiện sắp diễn ra" rows={eventRows} />
           </Grid>
           <Grid item xs={12} md={4}>
             <CategoriesList

@@ -48,6 +48,7 @@ function Illustration() {
         console.log("Organizer đăng nhập", userData);
         await saveTokens(userData.token, userData.refreshToken);
         dispatch(setUserData(userData)); // Lưu role từ API (role = 2)
+        localStorage.setItem("userData", JSON.stringify(userData));
         navigate("/dashboard-organizer");
       } else {
         console.log("Đăng nhập không phải organizer", userData);

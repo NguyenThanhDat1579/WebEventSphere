@@ -62,6 +62,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
     // Optionally: Xoá thêm localStorage nếu có dùng
     localStorage.removeItem("token");
     localStorage.removeItem("role");
+    localStorage.removeItem("userData");
     // Navigate về trang đăng nhập
     navigate("/authentication/sign-in");
     setTimeout(() => {

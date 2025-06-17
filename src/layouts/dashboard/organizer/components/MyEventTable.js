@@ -10,32 +10,65 @@ import {
   Button,
   Avatar,
   Box,
+  Chip,
+  Typography,
 } from "@mui/material";
 import { format } from "date-fns";
 import ArgonTypography from "components/ArgonTypography";
 
-function MyEventTable({ events }) {
-  const formatCurrency = (value) =>
-    new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(value);
+function MyEventTable({ events, onViewDetail }) {
+  const formatDateTime = (timestamp) => {
+    const date = new Date(timestamp > 1e12 ? timestamp : timestamp * 1000);
+
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+
+    const weekdayNames = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+    const weekday = weekdayNames[date.getDay()];
+
+    return `${hours}:${minutes}, ${weekday}, ${day} tháng ${month} ${year}`;
+  };
+
+  const getStatusChip = (event) => {
+    const now = new Date();
+    const start = new Date(event.timeStart > 1e12 ? event.timeStart : event.timeStart * 1000);
+    const end = new Date(event.timeEnd > 1e12 ? event.timeEnd : event.timeEnd * 1000);
+
+    const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+    const timeUntilStart = start.getTime() - now.getTime();
+
+    if (now >= start && now <= end) {
+      return <Chip label="Đang diễn ra" color="success" size="small" />;
+    } else if (timeUntilStart > 0 && timeUntilStart <= oneWeekMs) {
+      return <Chip label="Sắp diễn ra" color="error" size="small" />;
+    } else if (timeUntilStart > oneWeekMs) {
+      return <Chip label="Chưa diễn ra" color="warning" size="small" />;
+    } else {
+      return <Chip label="Đã kết thúc" color="default" size="small" />;
+    }
+  };
 
   return (
-    <TableContainer component={Paper} sx={{ boxShadow: 1, overflowX: "auto" }}>
-      <Table size="medium" sx={{ minWidth: 800, tableLayout: "fixed" }}>
+    <TableContainer component={Paper} sx={{ boxShadow: 2, overflowX: "auto", mt: -3 }}>
+      <Table size="medium" sx={{ minWidth: 700, tableLayout: "fixed" }}>
         <TableBody>
           <TableRow>
-            <TableCell sx={{ width: "20%", fontWeight: "bold" }}>Sự kiện</TableCell>
-            <TableCell sx={{ width: "10%", fontWeight: "bold" }}>Thời gian</TableCell>
-            <TableCell sx={{ width: "10%", fontWeight: "bold" }}>Trạng thái</TableCell>
-            <TableCell sx={{ width: "15%", fontWeight: "bold", textAlign: "center" }}>
-              Vé đã bán
+            <TableCell sx={{ width: "35%", fontWeight: "bold", fontSize: "1rem" }}>
+              Sự kiện
             </TableCell>
-            <TableCell sx={{ width: "15%", fontWeight: "bold", textAlign: "right" }}>
-              Doanh thu
+            <TableCell sx={{ width: "30%", fontWeight: "bold", fontSize: "1rem" }}>
+              Thời gian
             </TableCell>
-            <TableCell sx={{ width: "10%", fontWeight: "bold", textAlign: "center" }}>
+            <TableCell sx={{ width: "15%", fontWeight: "bold", fontSize: "1rem" }}>
+              Trạng thái
+            </TableCell>
+            <TableCell
+              sx={{ width: "20%", fontWeight: "bold", fontSize: "1rem", textAlign: "center" }}
+            >
               Chi tiết
             </TableCell>
           </TableRow>
@@ -45,58 +78,57 @@ function MyEventTable({ events }) {
               key={event.id}
               hover
               sx={{
-                backgroundColor: index % 2 === 0 ? "#f9f9f9" : "#fff",
-                borderBottom: "1px solid #ddd",
-                "&:hover": {
-                  backgroundColor: "#e3f2fd",
-                },
+                backgroundColor: index % 2 === 0 ? "#f8f9fa" : "#fff",
+                borderBottom: "1px solid #e0e0e0",
+                "&:hover": { backgroundColor: "#e3f2fd" },
               }}
             >
-              {/* Avatar + Title */}
               <TableCell>
-                <Box display="flex" alignItems="center" gap={1}>
+                <Box display="flex" alignItems="center" gap={1.5}>
                   <Avatar
                     src={event.avatar}
                     alt={event.title}
                     variant="rounded"
-                    sx={{ width: 48, height: 48 }}
+                    sx={{ width: 48, height: 48, borderRadius: 2 }}
                   />
-                  <ArgonTypography
-                    variant="body2"
-                    fontWeight="medium"
-                    sx={{ whiteSpace: "normal" }}
-                  >
-                    {event.title}
-                  </ArgonTypography>
+                  <Box>
+                    <ArgonTypography variant="subtitle2" fontWeight="bold">
+                      {event.title}
+                    </ArgonTypography>
+                  </Box>
                 </Box>
               </TableCell>
 
               <TableCell>
-                {`${format(new Date(event.timeStart * 1000), "dd/MM/yyyy")} - ${format(
-                  new Date(event.timeEnd * 1000),
-                  "dd/MM/yyyy"
-                )}`}
-              </TableCell>
-
-              <TableCell>
                 <ArgonTypography
-                  variant="caption"
-                  color={event.status === "Published" ? "success" : "warning"}
-                  fontWeight="medium"
+                  color="text.primary"
+                  sx={{ fontWeight: "600", fontSize: "0.8rem", whiteSpace: "nowrap" }}
                 >
-                  {event.status === "Published" ? "Đang diễn ra" : "Đã kết thúc"}
+                  Bắt đầu: {formatDateTime(event.timeStart)}
+                  <br />
+                  Kết thúc: {formatDateTime(event.timeEnd)}
                 </ArgonTypography>
               </TableCell>
 
-              <TableCell sx={{ textAlign: "center" }}>
-                {event.soldTickets} / {event.totalTickets}
-              </TableCell>
-
-              <TableCell sx={{ textAlign: "right" }}>{formatCurrency(event.revenue)}</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>{getStatusChip(event)}</TableCell>
 
               <TableCell sx={{ textAlign: "center" }}>
-                <Button color="info" size="small">
-                  Chi tiết
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => onViewDetail(event.id)}
+                  sx={{
+                    backgroundColor: "#1A73E8", // màu xanh lam đậm
+                    color: "#fff",
+                    borderColor: "#1A73E8",
+                    "&:hover": {
+                      backgroundColor: "#fff",
+                      color: "#1A73E8",
+                      borderColor: "#1A73E8",
+                    },
+                  }}
+                >
+                  Xem chi tiết
                 </Button>
               </TableCell>
             </TableRow>
@@ -113,14 +145,11 @@ MyEventTable.propTypes = {
       id: PropTypes.string.isRequired,
       title: PropTypes.string.isRequired,
       avatar: PropTypes.string,
-      timeStart: PropTypes.number.isRequired, // Thêm
+      timeStart: PropTypes.number.isRequired,
       timeEnd: PropTypes.number.isRequired,
-      status: PropTypes.oneOf(["Published", "Ended"]).isRequired,
-      soldTickets: PropTypes.number.isRequired,
-      totalTickets: PropTypes.number.isRequired,
-      revenue: PropTypes.number.isRequired,
     })
   ).isRequired,
+  onViewDetail: PropTypes.func.isRequired,
 };
 
 export default MyEventTable;

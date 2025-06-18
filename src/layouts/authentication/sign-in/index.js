@@ -46,8 +46,15 @@ function Illustration() {
 
       if (userData && userData.role === 2) {
         console.log("Organizer đăng nhập", userData);
-        await saveTokens(userData.token, userData.refreshToken);
-        dispatch(setUserData(userData)); // Lưu role từ API (role = 2)
+
+        // ✅ In token ra để kiểm tra
+        console.log("Access Token:", userData.token);
+        console.log("Refresh Token:", userData.refreshToken);
+
+        // ✅ Lưu token KHÔNG cần await
+        saveTokens(userData.token, userData.refreshToken);
+
+        dispatch(setUserData(userData));
         localStorage.setItem("userData", JSON.stringify(userData));
         navigate("/dashboard-organizer");
       } else {

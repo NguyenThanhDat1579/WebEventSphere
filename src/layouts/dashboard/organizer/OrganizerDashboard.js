@@ -31,75 +31,41 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
 function OrganizerDashboard() {
-  const { size } = typography;
   const token = useSelector((state) => state.auth.token);
   const [categories, setCategories] = useState([]);
   const [events, setEvents] = useState([]);
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalTickets, setTotalTickets] = useState(0);
-  //event.ticketPrice
-  const currentTime = Math.floor(Date.now() / 1000); // thời gian hiện tại tính bằng giây
   const now = Date.now();
-
   const oneWeekLater = now + 7 * 24 * 60 * 60 * 1000;
+
   const formatDateTime = (timestamp) => {
     const date = new Date(timestamp > 1e12 ? timestamp : timestamp * 1000);
-
     const hours = String(date.getHours()).padStart(2, "0");
     const minutes = String(date.getMinutes()).padStart(2, "0");
-
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
-
     const weekdayNames = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
     const weekday = weekdayNames[date.getDay()];
-
     return `${hours}:${minutes}, ${weekday}, ${day} tháng ${month} ${year}`;
   };
 
-  const upcomingEvents = events
-    .filter((event) => {
-      const startTime = event.timeStart > 1e12 ? event.timeStart : event.timeStart * 1000;
-      return startTime > now && startTime <= oneWeekLater;
-    })
-    .sort((a, b) => {
-      const aTime = a.timeStart > 1e12 ? a.timeStart : a.timeStart * 1000;
-      const bTime = b.timeStart > 1e12 ? b.timeStart : b.timeStart * 1000;
-      return aTime - bTime;
-    });
-
   const getEventStatusLabel = (event) => {
-    // Đảm bảo timeStart và timeEnd là kiểu Date hợp lệ
-    const start = new Date(event.timeStart > 1e12 ? event.timeStart : event.timeStart * 1000);
-    const end = new Date(event.timeEnd > 1e12 ? event.timeEnd : event.timeEnd * 1000);
-    const now = new Date();
-
-    const oneWeek = 7 * 24 * 60 * 60 * 1000;
-    const timeUntilStart = start - now;
-
-    if (now >= start && now <= end) {
-      return { label: "Đang diễn ra", color: "#2e7d32" }; // xanh đậm
-    } else if (timeUntilStart <= oneWeek && timeUntilStart > 0) {
-      return { label: "Sắp diễn ra", color: "#d32f2f" }; // đỏ
-    } else if (timeUntilStart > oneWeek) {
-      return { label: "Chưa diễn ra", color: "#f9a825" }; // vàng
-    } else if (now > end) {
-      return { label: "Đã kết thúc", color: "#757575" }; // xám
-    }
-
-    // Nếu không rơi vào bất kỳ trường hợp nào
-    return {
-      label: "Không xác định",
-      color: "#9e9e9e", // xám
-    };
+    const start = event.timeStart > 1e12 ? event.timeStart : event.timeStart * 1000;
+    const end = event.timeEnd > 1e12 ? event.timeEnd : event.timeEnd * 1000;
+    if (now >= start && now <= end) return { label: "Đang diễn ra", color: "#2e7d32" };
+    if (start > now && start <= oneWeekLater) return { label: "Sắp diễn ra", color: "#d32f2f" };
+    if (start > oneWeekLater) return { label: "Chưa diễn ra", color: "#f9a825" };
+    if (now > end) return { label: "Đã kết thúc", color: "#757575" };
+    return { label: "Không xác định", color: "#9e9e9e" };
   };
 
-  const eventRows = upcomingEvents
-    .map((event) => {
+  const renderEventRows = (eventList) =>
+    eventList.map((event) => {
       const status = getEventStatusLabel(event);
-      if (!status) return null; // bỏ qua nếu sự kiện đã kết thúc
-
+      const totalSold = event.showtimes?.reduce((acc, show) => acc + show.soldTickets, 0) || 0;
+      const firstStartTime = event.showtimes?.[0]?.startTime || event.timeStart;
       return {
         "Tên sự kiện": [
           event.avatar,
@@ -108,62 +74,43 @@ function OrganizerDashboard() {
             <div style={{ color: status.color, fontSize: "0.75rem" }}>{status.label}</div>
           </>,
         ],
-        "Ngày bắt đầu": formatDateTime(event.timeStart),
+        "Ngày bắt đầu": formatDateTime(firstStartTime),
         "Giá vé":
           event.ticketPrice != null ? event.ticketPrice.toLocaleString("vi-VN") + " ₫" : "Miễn phí",
-        "Số lượng": `${event.soldTickets}/${event.ticketQuantity}`,
+        "Số lượng": `${totalSold}/${event.ticketQuantity ?? "?"}`,
       };
+    });
+
+  const upcomingEvents = events.filter((event) => {
+    const start = event.timeStart > 1e12 ? event.timeStart : event.timeStart * 1000;
+    return start > now && start <= oneWeekLater;
+  });
+  const ongoingEvents = events
+    .filter((event) => {
+      const start = event.timeStart > 1e12 ? event.timeStart : event.timeStart * 1000;
+      const end = event.timeEnd > 1e12 ? event.timeEnd : event.timeEnd * 1000;
+      return now >= start && now <= end;
     })
-    .filter(Boolean); // lọc null
+    .sort((a, b) => a.timeStart - b.timeStart);
 
-  // const oneWeekInSeconds = 7 * 24 * 60 * 60;
-
-  // const upcomingEvents = events
-  //   .filter((event) => {
-  //     const timeUntilStart = event.timeStart - currentTime;
-  //     return timeUntilStart > 0 && timeUntilStart <= oneWeekInSeconds;
-  //   })
-  //   .sort((a, b) => a.timeStart - b.timeStart);
-
-  // const eventRows = upcomingEvents.map((event) => ({
-  //   "Tên sự kiện": [
-  //     event.avatar,
-  //     <>
-  //       <strong>{event.name}</strong>
-  //       <div style={{ color: "red", fontSize: "0.75rem" }}>Sắp diễn ra</div>
-  //     </>,
-  //   ],
-  //   "Ngày bắt đầu": new Date(event.timeStart * 1000).toLocaleDateString("vi-VN"),
-  //   "Giá vé":
-  //     event.ticketPrice != null ? event.ticketPrice.toLocaleString("vi-VN") + " ₫" : "Miễn phí",
-  //   "Số lượng": `${event.soldTickets}/${event.ticketQuantity}`,
-  // }));
-
-  const ongoingEventsCount = events.filter(
-    (event) => currentTime >= event.timeStart && currentTime <= event.timeEnd
-  ).length;
+  const ongoingEventsCount = events.filter((event) => {
+    const start = event.timeStart > 1e12 ? event.timeStart : event.timeStart * 1000;
+    const end = event.timeEnd > 1e12 ? event.timeEnd : event.timeEnd * 1000;
+    return now >= start && now <= end;
+  }).length;
 
   const chartDataByDate = {};
-
   events.forEach((event) => {
-    // Xác định nếu timeStart là giây hay mili giây
     const timeStart = event.timeStart > 1e12 ? event.timeStart : event.timeStart * 1000;
-    const date = new Date(timeStart).toLocaleDateString("vi-VN"); // Ví dụ: 29/05/2025
-
+    const date = new Date(timeStart).toLocaleDateString("vi-VN");
     const revenue = event.soldTickets * event.ticketPrice;
-
-    if (chartDataByDate[date]) {
-      chartDataByDate[date] += revenue;
-    } else {
-      chartDataByDate[date] = revenue;
-    }
+    chartDataByDate[date] = (chartDataByDate[date] || 0) + revenue;
   });
 
   const sortedDates = Object.keys(chartDataByDate).sort(
     (a, b) =>
       new Date(a.split("/").reverse().join("/")) - new Date(b.split("/").reverse().join("/"))
   );
-
   const chartLabels = sortedDates;
   const chartValues = sortedDates.map((date) => chartDataByDate[date]);
 
@@ -173,95 +120,10 @@ function OrganizerDashboard() {
       {
         label: "Doanh thu (₫)",
         data: chartValues,
-        color: "success", // nếu chart hỗ trợ, hoặc bỏ nếu không cần
+        color: "success",
       },
     ],
   };
-
-  //   const chartDataByDate = {};
-
-  // events.forEach((event) => {
-  //   const timeStart = event.timeStart > 1e12 ? event.timeStart : event.timeStart * 1000;
-  //   const timeEnd = event.timeEnd > 1e12 ? event.timeEnd : event.timeEnd * 1000;
-
-  //   const revenue = event.soldTickets * event.ticketPrice;
-
-  //   const startDate = new Date(timeStart);
-  //   const endDate = new Date(timeEnd);
-
-  //   // Tính số ngày giữa start và end
-  //   const days = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-  //   const dailyRevenue = revenue / days;
-
-  //   // Phân bổ doanh thu theo từng ngày
-  //   for (let i = 0; i < days; i++) {
-  //     const currentDate = new Date(startDate);
-  //     currentDate.setDate(startDate.getDate() + i);
-  //     const dateKey = currentDate.toLocaleDateString("vi-VN"); // dd/mm/yyyy
-
-  //     if (chartDataByDate[dateKey]) {
-  //       chartDataByDate[dateKey] += dailyRevenue;
-  //     } else {
-  //       chartDataByDate[dateKey] = dailyRevenue;
-  //     }
-  //   }
-  // });
-
-  // // Sắp xếp ngày tăng dần
-  // const sortedDates = Object.keys(chartDataByDate).sort(
-  //   (a, b) =>
-  //     new Date(a.split("/").reverse().join("/")) -
-  //     new Date(b.split("/").reverse().join("/"))
-  // );
-
-  // const chartLabels = sortedDates;
-  // const chartValues = sortedDates.map((date) => chartDataByDate[date]);
-
-  // const gradientLineChartData = {
-  //   labels: chartLabels,
-  //   datasets: [
-  //     {
-  //       label: "Doanh thu (₫)",
-  //       data: chartValues,
-  //       color: "success", // nếu chart hỗ trợ, hoặc bỏ
-  //     },
-  //   ],
-  // };
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await categoryApi.getAllCategories();
-        if (response.data.status) {
-          setCategories(response.data.data); // cập nhật state categories
-        } else {
-          console.error("Lấy danh mục thất bại");
-        }
-      } catch (error) {
-        console.error("Lỗi khi gọi API lấy danh mục", error);
-      }
-    };
-
-    const fetchEvents = async () => {
-      try {
-        const response = await eventApi.getEventOfOrganization(); // truyền token
-        if (response.data.status === 200) {
-          setEvents(response.data.events); // cập nhật danh sách sự kiện
-          setTotalRevenue(response.data.totalRevenue);
-          setTotalTickets(response.data.totalTickets);
-          console.log("response: ", response);
-          console.log("response1: ", JSON.stringify(response, null, 2));
-        } else {
-          console.error("Lấy sự kiện thất bại");
-        }
-      } catch (error) {
-        console.error("Lỗi khi gọi API lấy sự kiện", error);
-      }
-    };
-
-    fetchCategories();
-    fetchEvents();
-  }, []);
 
   const getCategoryIcon = (name) => {
     switch (name.toLowerCase()) {
@@ -283,6 +145,26 @@ function OrganizerDashboard() {
         return "category";
     }
   };
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await eventApi.getEventOfOrganization();
+        if (response.data.status === 200) {
+          setEvents(response.data.events);
+          setTotalRevenue(response.data.totalRevenue);
+          setTotalTickets(response.data.totalTickets);
+        } else {
+          console.error("Lấy sự kiện thất bại");
+        }
+      } catch (error) {
+        console.error("Lỗi khi gọi API lấy sự kiện", error);
+      }
+    };
+    fetchEvents();
+  }, []);
+
+  const eventRows = renderEventRows(upcomingEvents);
 
   return (
     <DashboardLayout>
@@ -319,30 +201,34 @@ function OrganizerDashboard() {
           </Grid>
         </Grid>
         <Grid container spacing={3} mb={3}>
-          <Grid item xs={12} lg={12}>
+          <Grid item xs={12}>
             <GradientLineChart title="Tổng quan doanh thu" chart={gradientLineChartData} />
           </Grid>
         </Grid>
         <Grid container spacing={3}>
-          <Grid item xs={12} md={8}>
-            <SalesTable title="Sự kiện sắp diễn ra" rows={eventRows} />
+          <Grid item xs={12} md={12}>
+            <SalesTable
+              title="Sự kiện đang và sắp diễn ra"
+              rows={renderEventRows([...ongoingEvents, ...upcomingEvents])}
+            />
           </Grid>
-          <Grid item xs={12} md={4}>
+          {/* <Grid item xs={12} md={4}>
             <CategoriesList
               title="Loại sự kiện"
               categories={categories.map((category) => ({
                 color: "dark",
-                icon: getCategoryIcon(category.name), // ánh xạ icon từ name
+                icon: getCategoryIcon(category.name),
                 name: category.name,
                 description: "Danh mục sự kiện",
-                route: "/", // thêm nếu cần
+                route: "/",
               }))}
             />
-          </Grid>
+          </Grid> */}
         </Grid>
       </ArgonBox>
       <Footer />
     </DashboardLayout>
   );
 }
+
 export default OrganizerDashboard;

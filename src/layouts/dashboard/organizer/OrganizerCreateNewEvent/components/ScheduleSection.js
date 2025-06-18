@@ -19,6 +19,8 @@ import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import TicketDialog from "../components/TicketDialog";
 import CustomTextField from "./CustomTextField";
+import CustomDateTimePicker from "./CustomDateTimePicker";
+
 import DeleteIcon from "@mui/icons-material/Delete";
 import eventApi from "../../../../../api/utils/eventApi";
 import {
@@ -39,6 +41,8 @@ import {
   setTags,
   setUserId,
 } from "../../../../../redux/store/slices/eventInfoSlice";
+import { format, parse } from "date-fns";
+import dayjs from "dayjs";
 export default function ScheduleSection() {
   const [performance, setPerformance] = useState({
     startTime: null,
@@ -76,7 +80,7 @@ export default function ScheduleSection() {
   const [showtimeEnd, setShowtimeEnd] = useState("");
   const dispatch = useDispatch();
   const eventInfo = useSelector((state) => state.eventInfo);
-
+  const [startDateTime, setStartDateTime] = useState(dayjs());
   useEffect(() => {
     console.log("eventInfo đã cập nhật:", eventInfo);
     console.log("TimeStart: ", startTime);
@@ -183,6 +187,10 @@ export default function ScheduleSection() {
   };
 
   const handleSaveZoneOrSeat = () => {
+    if (localShowtimes.length === 0) {
+      alert("Vui lòng tạo ít nhất một suất chiếu trước khi lưu!");
+      return;
+    }
     if (ticketForm.typeBase === "none") {
       dispatch(setTypeBase(ticketForm.typeBase));
       dispatch(setTicketPrice(Number(price)));
@@ -278,6 +286,13 @@ export default function ScheduleSection() {
       <Box>
         <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
           <Box display="flex" flexDirection="column" gap={2}>
+            <CustomDateTimePicker
+              label="Thời gian bắt đầu"
+              value={startDateTime}
+              onChange={(newValue) => setStartDateTime(newValue)}
+              name="startTime"
+            />
+
             <CustomTextField
               label="Thời gian bắt đầu"
               type="datetime-local"

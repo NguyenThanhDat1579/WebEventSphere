@@ -42,13 +42,13 @@ function MyEventTable({ events, onViewDetail }) {
     const timeUntilStart = start.getTime() - now.getTime();
 
     if (now >= start && now <= end) {
-      return <Chip label="Đang diễn ra" color="success" size="small" />;
+      return <Chip label="Đang diễn ra" color="success" size="small" sx={{ color: "#fff" }} />;
     } else if (timeUntilStart > 0 && timeUntilStart <= oneWeekMs) {
-      return <Chip label="Sắp diễn ra" color="error" size="small" />;
+      return <Chip label="Sắp diễn ra" color="error" size="small" sx={{ color: "#fff" }} />;
     } else if (timeUntilStart > oneWeekMs) {
-      return <Chip label="Chưa diễn ra" color="warning" size="small" />;
+      return <Chip label="Chưa diễn ra" color="warning" size="small" sx={{ color: "#fff" }} />;
     } else {
-      return <Chip label="Đã kết thúc" color="default" size="small" />;
+      return <Chip label="Đã kết thúc" color="default" size="small" sx={{ color: "#fff" }} />;
     }
   };
 
@@ -92,7 +92,9 @@ function MyEventTable({ events, onViewDetail }) {
                     sx={{ width: 48, height: 48, borderRadius: 2 }}
                   />
                   <Box>
-                    <ArgonTypography variant="subtitle2" fontWeight="bold">
+                    <ArgonTypography
+                      sx={{ fontWeight: "600", fontSize: "0.9rem", whiteSpace: "wrap" }}
+                    >
                       {event.title}
                     </ArgonTypography>
                   </Box>

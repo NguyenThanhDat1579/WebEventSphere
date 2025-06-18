@@ -1,6 +1,6 @@
 // src/api/eventApi.js
 import axiosInstance from "../axiosInstance";
-
+import { getTokens } from "../token/authTokens";
 const eventApi = {
   getEventOfOrganization: () => {
     return axiosInstance.get("/users/eventOfOrganization");

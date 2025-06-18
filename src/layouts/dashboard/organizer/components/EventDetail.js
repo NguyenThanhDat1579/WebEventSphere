@@ -171,58 +171,82 @@ const EventDetail = ({ eventId, onClose }) => {
 
         <Grid container spacing={3}>
           <Grid item xs={6}>
-            <Typography variant="h6">Ảnh đại diện Sự kiện</Typography>
-            {isEditing ? (
-              <>
-                <Button onClick={() => document.getElementById("avatar-upload").click()}>
-                  Chọn ảnh
-                </Button>
-                <input
-                  id="avatar-upload"
-                  type="file"
-                  hidden
-                  onChange={(e) => handleImageUpload(e, "avatar")}
-                />
-                <img
-                  src={initialFormData.avatar}
-                  alt="Avatar"
-                  style={{ width: 200, borderRadius: 8, marginTop: 10 }}
-                />
-              </>
-            ) : (
-              initialFormData.avatar && (
-                <img src={formData.avatar} alt="Avatar" style={{ width: 200, borderRadius: 8 }} />
-              )
+            <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Typography variant="h6">Ảnh đại diện Sự kiện</Typography>
+              {isEditing && (
+                <>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => document.getElementById("avatar-upload").click()}
+                    sx={{
+                      backgroundColor: "#1976D2",
+                      color: "#fff",
+                      border: "1px solid #1976D2",
+                      "&:hover": {
+                        backgroundColor: "#fff",
+                        color: "#1976D2",
+                      },
+                    }}
+                  >
+                    Thay đổi
+                  </Button>
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    hidden
+                    onChange={(e) => handleImageUpload(e, "avatar")}
+                  />
+                </>
+              )}
+            </Box>
+
+            {initialFormData.avatar && (
+              <img
+                src={initialFormData.avatar}
+                alt="Avatar"
+                style={{ width: 200, borderRadius: 8, marginTop: 10 }}
+              />
             )}
           </Grid>
 
           <Grid item xs={6}>
-            <Typography variant="h6">Banner Sự kiện</Typography>
-            {isEditing ? (
-              <>
-                <Button onClick={() => document.getElementById("banner-upload").click()}>
-                  Chọn ảnh
-                </Button>
-                <input
-                  id="banner-upload"
-                  type="file"
-                  hidden
-                  onChange={(e) => handleImageUpload(e, "banner")}
-                />
-                <img
-                  src={initialFormData.banner}
-                  alt="Banner"
-                  style={{ width: 200, borderRadius: 8, marginTop: 10 }}
-                />
-              </>
-            ) : (
-              initialFormData.banner && (
-                <img
-                  src={initialFormData.banner}
-                  alt="Banner"
-                  style={{ width: 200, borderRadius: 8 }}
-                />
-              )
+            <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Typography variant="h6">Banner Sự kiện</Typography>
+              {isEditing && (
+                <>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => document.getElementById("banner-upload").click()}
+                    sx={{
+                      backgroundColor: "#1976D2",
+                      color: "#fff",
+                      border: "1px solid #1976D2",
+                      "&:hover": {
+                        backgroundColor: "#fff",
+                        color: "#1976D2",
+                      },
+                    }}
+                  >
+                    Thay đổi
+                  </Button>
+                  <input
+                    id="banner-upload"
+                    type="file"
+                    hidden
+                    onChange={(e) => handleImageUpload(e, "banner")}
+                  />
+                </>
+              )}
+            </Box>
+
+            {initialFormData.banner && (
+              <img
+                src={initialFormData.banner}
+                alt="Banner"
+                style={{ width: 200, borderRadius: 8, marginTop: 10 }}
+              />
             )}
           </Grid>
         </Grid>
@@ -411,6 +435,7 @@ const EventDetail = ({ eventId, onClose }) => {
                       onDelete={() => handleDeleteTag(tag)}
                       sx={{ mr: 1, mb: 1 }}
                       color="primary"
+                      variant="outlined"
                     />
                   ))}
                 </Box>
@@ -426,11 +451,37 @@ const EventDetail = ({ eventId, onClose }) => {
         </Grid>
 
         <Box mt={4} display="flex" justifyContent="space-between">
-          <Button variant="outlined" color="secondary" onClick={onClose}>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={onClose}
+            sx={{
+              backgroundColor: "#fff",
+              color: "#1976D2",
+              border: "1px solid #1976D2",
+              "&:hover": {
+                backgroundColor: "#1976D2",
+                color: "#fff",
+              },
+            }}
+          >
             ← Quay lại
           </Button>
           {!isEditing ? (
-            <Button variant="contained" color="primary" onClick={() => setIsEditing(true)}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => setIsEditing(true)}
+              sx={{
+                backgroundColor: "#1976D2",
+                color: "#fff",
+                border: "1px solid #1976D2",
+                "&:hover": {
+                  backgroundColor: "#fff",
+                  color: "#1976D2",
+                },
+              }}
+            >
               Chỉnh sửa
             </Button>
           ) : (
@@ -442,6 +493,15 @@ const EventDetail = ({ eventId, onClose }) => {
                   setInitialFormData(formData);
                   setIsEditing(false);
                 }}
+                sx={{
+                  backgroundColor: "#fff",
+                  color: "#1976D2",
+                  border: "1px solid #1976D2",
+                  "&:hover": {
+                    backgroundColor: "#1976D2",
+                    color: "#fff",
+                  },
+                }}
               >
                 Hủy
               </Button>
@@ -450,6 +510,16 @@ const EventDetail = ({ eventId, onClose }) => {
                 color="success"
                 onClick={handleUpdate}
                 disabled={!isChanged || isSaving}
+                sx={{
+                  backgroundColor: "#1976D2",
+                  color: "#fff",
+                  border: "1px solid rgb(233,236,239)",
+                  "&:hover": {
+                    backgroundColor: "#fff",
+                    color: "#1976D2",
+                    borderColor: "#1976D2",
+                  },
+                }}
               >
                 {isSaving ? "Đang lưu..." : "Xác nhận"}
               </Button>

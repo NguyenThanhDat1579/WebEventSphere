@@ -45,12 +45,19 @@ import {
   resetEventInfo,
 } from "../../../../../../redux/store/slices/eventInfoSlice";
 
+import {
+  setProvince as setProvinceAction,
+  setDistrict as setDistrictAction,
+  setWard as setWardAction,
+  setAddress as setAddressAction,
+} from "../../../../../../redux/store/slices/eventAddressSlice";
+
 export default function TabInfoEvent({ setTabIndex }) {
   // 1. Redux và thư viện
   const dispatch = useDispatch();
   const userId = useSelector((state) => state.auth.id);
   const eventInfo = useSelector((state) => state.eventInfo);
-
+  const { province, district, ward, address } = useSelector((state) => state.eventAddress);
   // 2. State
   const [formData, setFormData] = useState({
     eventName: "",
@@ -70,9 +77,9 @@ export default function TabInfoEvent({ setTabIndex }) {
   const [eventBanner, setEventBanner] = useState(null);
   const [images, setImages] = useState([]);
 
-  const [province, setProvince] = useState("");
-  const [district, setDistrict] = useState("");
-  const [ward, setWard] = useState("");
+  const [selectedProvince, setSelectedProvince] = useState(province || "");
+  const [selectedDistrict, setSelectedDistrict] = useState(district || "");
+  const [selectedWard, setSelectedWard] = useState(ward || "");
 
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
@@ -93,6 +100,21 @@ export default function TabInfoEvent({ setTabIndex }) {
   // 3. useEffect – Theo dõi và load dữ liệu
   useEffect(() => {
     console.log("eventInfo đã cập nhật:", eventInfo);
+    if (eventInfo?.name) {
+      setFormData((prev) => ({
+        ...prev,
+        eventName: eventInfo.name || "",
+      }));
+    }
+    if (eventInfo?.tags) {
+      setTags(eventInfo.tags);
+    }
+    if (address) {
+      setFormData((prev) => ({
+        ...prev,
+        address: address || "",
+      }));
+    }
   }, [eventInfo]);
 
   useEffect(() => {
@@ -108,8 +130,8 @@ export default function TabInfoEvent({ setTabIndex }) {
   }, []);
 
   useEffect(() => {
-    if (!province) return;
-    fetch(`https://provinces.open-api.vn/api/p/${province}?depth=2`)
+    if (!selectedProvince) return;
+    fetch(`https://provinces.open-api.vn/api/p/${selectedProvince}?depth=2`)
       .then((res) => res.json())
       .then((data) => {
         const options = data.districts.map((item) => ({
@@ -118,11 +140,11 @@ export default function TabInfoEvent({ setTabIndex }) {
         }));
         setDistricts(options);
       });
-  }, [province]);
+  }, [selectedProvince]);
 
   useEffect(() => {
-    if (!district) return;
-    fetch(`https://provinces.open-api.vn/api/d/${district}?depth=2`)
+    if (!selectedDistrict) return;
+    fetch(`https://provinces.open-api.vn/api/d/${selectedDistrict}?depth=2`)
       .then((res) => res.json())
       .then((data) => {
         const options = data.wards.map((item) => ({
@@ -131,7 +153,7 @@ export default function TabInfoEvent({ setTabIndex }) {
         }));
         setWards(options);
       });
-  }, [district]);
+  }, [selectedDistrict]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -260,20 +282,22 @@ export default function TabInfoEvent({ setTabIndex }) {
     const newErrors = {};
     let hasError = false;
 
-    if (!eventBanner) {
-      newErrors.eventBanner = "Vui lòng tải lên ảnh nền sự kiện";
-      hasError = true;
-    }
+    // if (!eventBanner) {
+    //   newErrors.eventBanner = "Vui lòng tải lên ảnh nền sự kiện";
+    //   hasError = true;
+    // }
     if (!formData.eventName.trim()) {
       newErrors.eventName = "Vui lòng nhập tên sự kiện";
       hasError = true;
     }
-    if (!formData.addressName.trim()) {
-      newErrors.addressName = "Vui lòng nhập tên địa điểm";
-      hasError = true;
-    }
-    if (!province) {
-      newErrors.province = "Vui lòng chọn tỉnh/thành";
+
+    // if (!formData.addressName.trim()) {
+    //   newErrors.addressName = "Vui lòng nhập tên địa điểm";
+    //   hasError = true;
+    // }
+
+    if (!selectedProvince) {
+      newErrors.selectedProvince = "Vui lòng chọn tỉnh/thành";
       hasError = true;
     }
     if (!formData.address.trim()) {
@@ -291,10 +315,15 @@ export default function TabInfoEvent({ setTabIndex }) {
     setErrors(newErrors);
     if (hasError) return;
 
-    const provinceName = provinces.find((p) => p.value === province)?.label || "";
-    const districtName = districts.find((d) => d.value === district)?.label || "";
-    const wardName = wards.find((w) => w.value === ward)?.label || "";
+    const provinceName = provinces.find((p) => p.value === selectedProvince)?.label || "";
+    const districtName = districts.find((d) => d.value === selectedDistrict)?.label || "";
+    const wardName = wards.find((w) => w.value === selectedWard)?.label || "";
     const fullAddress = `${formData.address}, ${wardName}, ${districtName}, ${provinceName}`;
+
+    dispatch(setProvinceAction(selectedProvince));
+    dispatch(setDistrictAction(selectedDistrict));
+    dispatch(setWardAction(selectedWard));
+    dispatch(setAddressAction(formData.address));
 
     try {
       const coords = await getCoordinatesFromAddress(fullAddress);
@@ -456,11 +485,11 @@ export default function TabInfoEvent({ setTabIndex }) {
               </Typography>
             )}
           </Grid>
+          <Typography variant="h6" gutterBottom sx={{ mt: 5, px: 3, mb: -6 }}>
+            <span style={{ color: "red" }}>*</span> Hình ảnh liên quan
+          </Typography>
 
           <Grid container spacing={2} sx={{ flexWrap: "nowrap", overflowX: "auto", mt: 2, p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              <span style={{ color: "red" }}>*</span> Hình ảnh liên quan
-            </Typography>
             {/* Danh sách ảnh nằm bên trái */}
             {images.map((url, index) => (
               <Grid item key={index} sx={{ position: "relative" }}>
@@ -557,7 +586,7 @@ export default function TabInfoEvent({ setTabIndex }) {
 
         <Grid container spacing={3}>
           {/* Tên địa điểm */}
-          <Grid item xs={12}>
+          {/* <Grid item xs={12}>
             <CustomTextField
               name="addressName"
               label={
@@ -573,7 +602,7 @@ export default function TabInfoEvent({ setTabIndex }) {
               error={!!errors.addressName}
               helperText={errors.addressName}
             />
-          </Grid>
+          </Grid> */}
           {/* Tỉnh / Thành */}
           <Grid item xs={12} sm={6}>
             <Typography variant="h6" gutterBottom>
@@ -581,15 +610,15 @@ export default function TabInfoEvent({ setTabIndex }) {
             </Typography>
             <SelectMenu
               label="Chọn tỉnh / thành phố"
-              value={province}
+              value={selectedProvince}
               onChange={(val) => {
-                setProvince(val);
-                setDistrict("");
-                setWard("");
-                setErrors((prev) => ({ ...prev, province: "" })); // ✅ xóa lỗi khi chọn
+                setSelectedProvince(val);
+                setSelectedDistrict("");
+                setSelectedWard("");
               }}
               options={provinces}
             />
+
             {errors.province && (
               <Typography sx={{ color: "red", fontSize: 13, mt: 0.5 }}>
                 {errors.province}
@@ -601,14 +630,15 @@ export default function TabInfoEvent({ setTabIndex }) {
             <Typography variant="h6" gutterBottom>
               Quận/Huyện
             </Typography>
+
             <SelectMenu
               label="Chọn quận / huyện"
-              value={district}
+              value={selectedDistrict}
               onChange={(val) => {
-                setDistrict(val);
-                setWard("");
+                setSelectedDistrict(val);
+                setSelectedWard("");
               }}
-              options={province ? districts : []}
+              options={selectedProvince ? districts : []}
             />
           </Grid>
           {/* Phường / Xã */}
@@ -618,9 +648,9 @@ export default function TabInfoEvent({ setTabIndex }) {
             </Typography>
             <SelectMenu
               label="Chọn phường / xã"
-              value={ward}
-              onChange={(val) => setWard(val)}
-              options={district ? wards : []}
+              value={selectedWard}
+              onChange={(val) => setSelectedWard(val)}
+              options={selectedDistrict ? wards : []}
             />
           </Grid>
 
@@ -644,12 +674,12 @@ export default function TabInfoEvent({ setTabIndex }) {
       </Paper>
 
       <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom>
+        {/* <Typography variant="h6" gutterBottom>
           <span style={{ color: "red" }}>*</span> Thể loại sự kiện
-        </Typography>
+        </Typography> */}
 
         <Grid container spacing={3}>
-          <Grid item xs={12} sm={12}>
+          {/* <Grid item xs={12} sm={12}>
             <SelectMenu
               label={"Chọn thể loại"}
               value={category}
@@ -661,7 +691,7 @@ export default function TabInfoEvent({ setTabIndex }) {
               error={!!errors.category}
               helperText={errors.category}
             />
-          </Grid>
+          </Grid> */}
           <Grid item xs={12} sm={12}>
             <Typography variant="h6" gutterBottom>
               <span style={{ color: "red" }}>*</span> Tag
@@ -673,7 +703,7 @@ export default function TabInfoEvent({ setTabIndex }) {
                   value={tagInput}
                   onChange={(e) => {
                     setTagInput(e.target.value);
-                    if (tagError) setTagError(""); // xoá lỗi khi người dùng gõ lại
+                    if (tagError) setTagError(""); // Xoá lỗi khi người dùng gõ lại
                   }}
                   placeholder="Nhập tag"
                   maxWidth={200}
@@ -688,9 +718,22 @@ export default function TabInfoEvent({ setTabIndex }) {
                   }}
                 />
 
-                <IconButton color="primary" onClick={handleAddTag}>
-                  <AddIcon />
-                </IconButton>
+                <Button
+                  variant="contained"
+                  onClick={handleAddTag}
+                  disabled={!tagInput.trim()} // ✅ Disable nếu tagInput rỗng hoặc toàn khoảng trắng
+                  sx={{
+                    backgroundColor: "#1976D2",
+                    color: "#fff",
+                    border: "1px solid #1976D2",
+                    "&:hover": {
+                      backgroundColor: "#fff",
+                      color: "#1976D2",
+                    },
+                  }}
+                >
+                  Thêm tag
+                </Button>
               </Box>
 
               {/* ✅ Thêm dòng này để hiển thị lỗi */}
@@ -744,11 +787,12 @@ export default function TabInfoEvent({ setTabIndex }) {
           color="primary"
           onClick={handleSaveEventInfos}
           sx={{
-            borderColor: "primary.main",
-            color: "primary.main",
+            color: "#1976D2",
+            borderColor: "#1976D2",
+            backgroundColor: "#fff",
             "&:hover": {
-              backgroundColor: "primary.main",
-              color: "#FFFFFF",
+              backgroundColor: "#1976D2",
+              color: "#fff",
             },
           }}
         >
@@ -758,13 +802,12 @@ export default function TabInfoEvent({ setTabIndex }) {
         <Button
           variant="contained"
           sx={{
-            backgroundColor: "white",
-            color: "#FFFFFF",
-            border: "1px solid",
-            borderColor: "primary.main",
+            backgroundColor: "#1976D2",
+            color: "#fff",
+            border: "1px solid #1976D2",
             "&:hover": {
-              backgroundColor: "#f5f5f5",
-              color: "primary.main",
+              backgroundColor: "#fff",
+              color: "#1976D2",
             },
           }}
           onClick={async () => {

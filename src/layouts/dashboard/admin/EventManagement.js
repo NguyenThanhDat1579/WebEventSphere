@@ -17,11 +17,17 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import Table from "examples/Tables/Table";
 import eventApi from "api/eventApi";
+import { Chip } from "@mui/material";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
+
 
 function EventManagement() {
   const [columns, setColumns] = useState([
     { name: "tên sự kiện", align: "left" },
     { name: "trạng thái", align: "center" },
+    { name: "trạng thái diễn ra", align: "center" },
     { name: "hành động", align: "center" },
   ]);
   const [rows, setRows] = useState([]);
@@ -35,18 +41,31 @@ function EventManagement() {
         const res = await eventApi.getAllHome();
         if (res.data.status) {
           const data = res.data.data;
+          console.log(data);
           const mappedRows = data.map((event) => ({
             "tên sự kiện": event.name,
+            "trạng thái diễn ra": getTimelineStatus(event.timeStart, event.timeEnd),
             "trạng thái": renderStatus(event.status || "Chưa duyệt"),
             "hành động": (
               <Button
-                variant="outlined"
-                size="small"
-                onClick={() => handleRowClick(event._id)}
-              >
-                Chi tiết
-              </Button>
+  variant="outlined"
+  size="small"
+  startIcon={<InfoOutlinedIcon />}
+  onClick={() => handleRowClick(event._id)}
+  sx={{
+    color: "#2196f3",
+    borderColor: "#2196f3",
+    "&:hover": {
+      borderColor: "#1976d2",
+      backgroundColor: "rgba(33, 150, 243, 0.04)",
+    },
+  }}
+>
+  Chi tiết
+</Button>
+
             ),
+
           }));
           setRows(mappedRows);
         }
@@ -61,13 +80,14 @@ function EventManagement() {
   const renderStatus = (status) => {
     switch (status) {
       case "Đã duyệt":
-        return <Typography color="success.main">{status}</Typography>;
+        return <Chip label="Đã duyệt" color="success" />;
       case "Từ chối":
-        return <Typography color="error.main">{status}</Typography>;
+        return <Chip label="Từ chối" color="error" />;
       default:
-        return <Typography color="warning.main">Chưa duyệt</Typography>;
+        return <Chip label="Chưa duyệt" color="warning" />;
     }
   };
+
 
   const handleRowClick = async (id) => {
     setLoadingDetail(true);
@@ -96,9 +116,9 @@ function EventManagement() {
     const updatedRows = rows.map((row) =>
       row["tên sự kiện"] === selectedEvent.name
         ? {
-            ...row,
-            "trạng thái": renderStatus(newStatus),
-          }
+          ...row,
+          "trạng thái": renderStatus(newStatus),
+        }
         : row
     );
     setRows(updatedRows);
@@ -112,11 +132,31 @@ function EventManagement() {
     // Đóng dialog
     setOpenDialog(false);
   };
+const getTimelineStatus = (start, end) => {
+  const now = Date.now();
+  if (now < start) return <Chip label="Sắp diễn ra" color="info" />;
+  if (now > end) return <Chip label="Đã diễn ra" color="default" />;
+  return <Chip label="Đang diễn ra" color="primary" />;
+};
 
   return (
     <DashboardLayout>
       <DashboardNavbar />
-      <ArgonBox py={3}>
+      <ArgonBox
+        p={2}
+        sx={{
+          "& .MuiTableRow-root:hover": {
+            backgroundColor: "#f5f5f5",
+          },
+          "& .MuiTableCell-root": {
+            padding: "12px 16px",
+          },
+          "& .MuiTableHead-root": {
+            backgroundColor: "#e0e0e0",
+          },
+        }}
+      >
+
         <Grid container spacing={3}>
           <Grid item xs={12}>
             <Card>
@@ -165,8 +205,22 @@ function EventManagement() {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => updateEventStatus("Từ chối")} color="error">Từ chối</Button>
-          <Button onClick={() => updateEventStatus("Đã duyệt")} color="primary" variant="contained">Duyệt</Button>
+          <Button
+            onClick={() => updateEventStatus("Từ chối")}
+            color="error"
+            startIcon={<CancelIcon />}
+          >
+            Từ chối
+          </Button>
+          <Button
+            onClick={() => updateEventStatus("Đã duyệt")}
+            color="success"
+            variant="contained"
+            startIcon={<CheckCircleIcon />}
+          >
+            Duyệt
+          </Button>
+
         </DialogActions>
       </Dialog>
 

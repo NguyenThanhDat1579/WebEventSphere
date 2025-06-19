@@ -1,8 +1,8 @@
 import React from "react";
 import { Tabs, Tab, Box } from "@mui/material";
 import PropTypes from "prop-types";
-const tabLabels = ["Thông tin sự kiện", "Thời gian & Loại vé", "Cài đặt", "Thông tin thanh toán"];
-
+const tabLabels = ["Thông tin sự kiện", "Thời gian & Loại vé"];
+//  "Cài đặt", "Thông tin thanh toán"
 export default function TabsHeader({ tabIndex, setTabIndex }) {
   const handleTabChange = (_, newIndex) => {
     setTabIndex(newIndex);

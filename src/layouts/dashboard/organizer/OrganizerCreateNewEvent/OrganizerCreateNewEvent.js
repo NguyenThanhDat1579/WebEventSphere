@@ -28,7 +28,7 @@ export default function OrganizerCreateNewEvent() {
               }}
             >
               <TabsHeader tabIndex={tabIndex} setTabIndex={setTabIndex} />
-              <EventTabContent tabIndex={tabIndex} />
+              <EventTabContent tabIndex={tabIndex} setTabIndex={setTabIndex} />
             </Paper>
           </Grid>
         </Grid>

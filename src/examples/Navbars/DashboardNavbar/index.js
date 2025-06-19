@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 // react-router components
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { clearUserData } from "../../../store/slices/authSlice"; // cập nhật đúng đường dẫn
+import { clearUserData } from "../../../redux/store/slices/authSlice"; // cập nhật đúng đường dẫn
 
 // prop-types is a library for typechecking of props.
 import PropTypes from "prop-types";
@@ -62,6 +62,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
     // Optionally: Xoá thêm localStorage nếu có dùng
     localStorage.removeItem("token");
     localStorage.removeItem("role");
+    localStorage.removeItem("userData");
     // Navigate về trang đăng nhập
     navigate("/authentication/sign-in");
     setTimeout(() => {

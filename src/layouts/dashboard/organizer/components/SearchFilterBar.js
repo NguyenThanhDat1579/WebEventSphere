@@ -95,8 +95,8 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, isMini = false
           <Box p={2} borderRadius={2} bgcolor="#fff">
             <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={viLocale}>
               <Box
-                mb={6}
-                p={2}
+                mb={1}
+                p={1}
                 borderRadius={2}
                 bgcolor="#fff"
                 display="flex"
@@ -243,12 +243,12 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, isMini = false
                   sx={{
                     backgroundColor: "#1976d2",
                     color: "#fff",
-                    border: "1px solid transparent", // viền trong suốt ban đầu để giữ kích thước
+                    border: "1px solid transparent",
                     boxSizing: "border-box",
                     "&:hover": {
                       backgroundColor: "#fff",
                       color: "#1565c0",
-                      borderColor: "#1565c0", // đổi màu viền khi hover
+                      borderColor: "#1565c0",
                     },
                   }}
                 >

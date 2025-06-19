@@ -1,7 +1,16 @@
 import React, { useState, useRef } from "react";
 import { Box, Typography, Popper, Paper, MenuList, MenuItem } from "@mui/material";
 import PropTypes from "prop-types";
-const SelectMenu = ({ label = "Chọn", value, onChange, options = [] }) => {
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+
+const SelectMenu = ({
+  label = "Chọn",
+  value,
+  onChange,
+  options = [],
+  error = false,
+  helperText = "",
+}) => {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef(null);
 
@@ -20,20 +29,39 @@ const SelectMenu = ({ label = "Chọn", value, onChange, options = [] }) => {
         ref={anchorRef}
         onClick={handleToggle}
         sx={{
-          border: "1px solid #ccc",
-          borderRadius: 1,
-          p: 1,
+          border: error ? "1px solid red" : "1px solid #ccc", // ✅ viền đỏ nếu lỗi
+          borderRadius: 1.8,
+          p: 0.6,
+          pl: 1.4,
           width: "100%",
           cursor: "pointer",
           position: "relative",
           zIndex: 10,
-          borderRadius: 1.8,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          "&:hover": {
+            borderColor: error ? "red" : "#888",
+          },
         }}
       >
-        <Typography variant="body2" color={value ? "textPrimary" : "textSecondary"}>
+        <Typography
+          variant="body2"
+          color={value ? "textPrimary" : "textSecondary"}
+          noWrap
+          sx={{ flexGrow: 1 }}
+        >
           {value ? options.find((o) => o.value === value)?.label : label}
         </Typography>
+        <KeyboardArrowDownIcon fontSize="small" />
       </Box>
+
+      {/* Hiển thị helperText nếu có lỗi */}
+      {error && helperText && (
+        <Typography variant="caption" color="error" sx={{ mt: "4px", ml: "4px", display: "block" }}>
+          {helperText}
+        </Typography>
+      )}
 
       <Popper
         open={open}
@@ -44,7 +72,7 @@ const SelectMenu = ({ label = "Chọn", value, onChange, options = [] }) => {
         <Paper
           elevation={3}
           sx={{
-            width: anchorRef.current?.offsetWidth || "auto", // ✅ Set width same as Box
+            width: anchorRef.current?.offsetWidth || "auto",
           }}
         >
           <MenuList
@@ -71,7 +99,6 @@ const SelectMenu = ({ label = "Chọn", value, onChange, options = [] }) => {
   );
 };
 
-export default SelectMenu;
 SelectMenu.propTypes = {
   label: PropTypes.string.isRequired,
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
@@ -82,4 +109,7 @@ SelectMenu.propTypes = {
       value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
     })
   ).isRequired,
+  error: PropTypes.bool,
+  helperText: PropTypes.string,
 };
+export default SelectMenu;

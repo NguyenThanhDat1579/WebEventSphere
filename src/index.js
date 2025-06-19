@@ -5,7 +5,7 @@ import App from "App";
 import { Provider } from "react-redux";
 import { ThemeProvider } from "@mui/material/styles";
 import theme from "assets/theme";
-import store from "../src/store/index";
+import store from "../src/redux/store";
 
 // Soft UI Context Provider
 import { ArgonControllerProvider } from "context";
@@ -32,5 +32,3 @@ root.render(
     </Provider>
   </ThemeProvider>
 );
-
-

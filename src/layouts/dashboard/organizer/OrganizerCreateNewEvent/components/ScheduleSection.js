@@ -286,26 +286,31 @@ export default function ScheduleSection() {
       <Box>
         <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
           <Box display="flex" flexDirection="column" gap={2}>
-            <CustomDateTimePicker
+            {/* <CustomDateTimePicker
               label="Thời gian bắt đầu"
               value={startDateTime}
               onChange={(newValue) => setStartDateTime(newValue)}
               name="startTime"
-            />
-
-            <CustomTextField
-              label="Thời gian bắt đầu"
-              type="datetime-local"
-              value={startTime}
-              onChange={handleStartTimeChange}
-            />
-
-            <CustomTextField
-              label="Thời gian kết thúc"
-              type="datetime-local"
-              value={endTime}
-              onChange={handleEndTimeChange}
-            />
+            /> */}
+            <Grid container spacing={3}>
+              {/* Tên địa điểm */}
+              <Grid item xs={12} sm={6}>
+                <CustomTextField
+                  label="Thời gian bắt đầu bán vé"
+                  type="datetime-local"
+                  value={startTime}
+                  onChange={handleStartTimeChange}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <CustomTextField
+                  label="Thời gian kết thúc bán vé"
+                  type="datetime-local"
+                  value={endTime}
+                  onChange={handleEndTimeChange}
+                />
+              </Grid>
+            </Grid>
             <Box>
               <Typography variant="h6" gutterBottom>
                 Hình thức loại vé
@@ -366,7 +371,21 @@ export default function ScheduleSection() {
                       onChange={(e) => setShowtimeEnd(e.target.value)}
                     />
 
-                    <Button variant="contained" onClick={handleAddShowtime}>
+                    <Button
+                      variant="contained"
+                      onClick={handleAddShowtime}
+                      sx={{
+                        width: "150px",
+                        height: "50px",
+                        backgroundColor: "#1976D2",
+                        color: "#fff",
+                        border: "1px solid #1976D2",
+                        "&:hover": {
+                          backgroundColor: "#fff",
+                          color: "#1976D2",
+                        },
+                      }}
+                    >
                       Tạo suất chiếu
                     </Button>
                   </Box>
@@ -454,7 +473,19 @@ export default function ScheduleSection() {
                   onChange={(e) => setTicketQuantity(e.target.value)}
                 />
 
-                <Button variant="contained" onClick={handleAddZone}>
+                <Button
+                  variant="contained"
+                  onClick={handleAddZone}
+                  sx={{
+                    backgroundColor: "#1976D2",
+                    color: "#fff",
+                    border: "1px solid #1976D2",
+                    "&:hover": {
+                      backgroundColor: "#fff",
+                      color: "#1976D2",
+                    },
+                  }}
+                >
                   Thêm khu vực
                 </Button>
 
@@ -515,7 +546,21 @@ export default function ScheduleSection() {
                       onChange={(e) => setShowtimeEnd(e.target.value)}
                     />
 
-                    <Button variant="contained" onClick={handleAddShowtime}>
+                    <Button
+                      variant="contained"
+                      onClick={handleAddShowtime}
+                      sx={{
+                        width: "150px",
+                        height: "50px",
+                        backgroundColor: "#1976D2",
+                        color: "#fff",
+                        border: "1px solid #1976D2",
+                        "&:hover": {
+                          backgroundColor: "#fff",
+                          color: "#1976D2",
+                        },
+                      }}
+                    >
                       Tạo suất chiếu
                     </Button>
                   </Box>
@@ -602,74 +647,79 @@ export default function ScheduleSection() {
                       onChange={(e) => setSeatPrice(Number(e.target.value))}
                     />
                   </Grid>
-                  <Box sx={{ mt: 4 }}>
-                    <Typography variant="h6" gutterBottom>
-                      Suất chiếu
-                    </Typography>
 
-                    <Grid container spacing={2} alignItems="center">
-                      <Grid item xs={12} sm={5}>
-                        <CustomTextField
-                          label="Thời gian bắt đầu"
-                          type="datetime-local"
-                          value={showtimeStart}
-                          onChange={(e) => setShowtimeStart(e.target.value)}
-                          fullWidth
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={5}>
-                        <CustomTextField
-                          label="Thời gian kết thúc"
-                          type="datetime-local"
-                          value={showtimeEnd}
-                          onChange={(e) => setShowtimeEnd(e.target.value)}
-                          fullWidth
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={2}>
-                        <Button
-                          variant="contained"
-                          onClick={handleAddShowtime}
-                          disabled={!showtimeStart || !showtimeEnd}
-                          fullWidth
+                  <Typography variant="h6" gutterBottom>
+                    Suất chiếu
+                  </Typography>
+                  <Grid item xs={12} sm={5}>
+                    <CustomTextField
+                      label="Thời gian bắt đầu"
+                      type="datetime-local"
+                      value={showtimeStart}
+                      onChange={(e) => setShowtimeStart(e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={5}>
+                    <CustomTextField
+                      label="Thời gian kết thúc"
+                      type="datetime-local"
+                      value={showtimeEnd}
+                      onChange={(e) => setShowtimeEnd(e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={3} sx={{ mt: 1 }}>
+                    <Button
+                      variant="contained"
+                      onClick={handleAddShowtime}
+                      disabled={!showtimeStart || !showtimeEnd}
+                      fullWidth
+                      sx={{
+                        backgroundColor: "#1976D2",
+                        color: "#fff",
+                        border: "1px solid #1976D2",
+                        "&:hover": {
+                          backgroundColor: "#fff",
+                          color: "#1976D2",
+                        },
+                      }}
+                    >
+                      Thêm
+                    </Button>
+                  </Grid>
+                  {localShowtimes.length > 0 && (
+                    <Box sx={{ mt: 2 }}>
+                      {localShowtimes.map((show, index) => (
+                        <Box
+                          key={index}
+                          sx={{
+                            mt: 1,
+                            p: 1,
+                            border: "1px solid #ccc",
+                            borderRadius: 1,
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
                         >
-                          Thêm
-                        </Button>
-                      </Grid>
-                    </Grid>
-
-                    {localShowtimes.length > 0 && (
-                      <Box sx={{ mt: 2 }}>
-                        {localShowtimes.map((show, index) => (
-                          <Box
-                            key={index}
-                            sx={{
-                              mt: 1,
-                              p: 1,
-                              border: "1px solid #ccc",
-                              borderRadius: 1,
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                            }}
+                          <Typography variant="body2">
+                            Bắt đầu: {new Date(show.startTime).toLocaleString("vi-VN")} – Kết thúc:{" "}
+                            {new Date(show.endTime).toLocaleString("vi-VN")}
+                          </Typography>
+                          <Button
+                            variant="outlined"
+                            color="error"
+                            size="small"
+                            onClick={() => handleRemoveShowtime(index)}
                           >
-                            <Typography variant="body2">
-                              Bắt đầu: {new Date(show.startTime).toLocaleString("vi-VN")} – Kết
-                              thúc: {new Date(show.endTime).toLocaleString("vi-VN")}
-                            </Typography>
-                            <Button
-                              variant="outlined"
-                              color="error"
-                              size="small"
-                              onClick={() => handleRemoveShowtime(index)}
-                            >
-                              Xoá
-                            </Button>
-                          </Box>
-                        ))}
-                      </Box>
-                    )}
-                  </Box>
+                            Xoá
+                          </Button>
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
+
                   <Grid item xs={12}>
                     <Typography variant="h6" gutterBottom>
                       Tạo sơ đồ ghế
@@ -731,7 +781,15 @@ export default function ScheduleSection() {
                       <Button
                         variant="outlined"
                         onClick={handleToggleAllSeats}
-                        sx={{ mt: 2, mr: 2 }}
+                        sx={{
+                          backgroundColor: "#1976D2",
+                          color: "#fff",
+                          border: "1px solid #1976D2",
+                          "&:hover": {
+                            backgroundColor: "#fff",
+                            color: "#1976D2",
+                          },
+                        }}
                       >
                         {selectedSeats.length === rows * cols ? "Bỏ chọn tất cả" : "Chọn tất cả"}
                       </Button>

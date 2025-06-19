@@ -453,7 +453,7 @@ export default function TabInfoEvent({ setTabIndex }) {
                     alt="Ảnh nền sự kiện"
                     style={{
                       width: "100%",
-                      maxHeight: 150,
+                      maxHeight: 360,
                       objectFit: "contain",
                       borderRadius: 8,
                     }}

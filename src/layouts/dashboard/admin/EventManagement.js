@@ -43,30 +43,22 @@ function EventManagement() {
           const data = res.data.data;
           console.log(data);
           const mappedRows = data.map((event) => ({
+            id: event._id,
             "tên sự kiện": event.name,
             "trạng thái diễn ra": getTimelineStatus(event.timeStart, event.timeEnd),
             "trạng thái": renderStatus(event.status || "Chưa duyệt"),
             "hành động": (
               <Button
-  variant="outlined"
-  size="small"
-  startIcon={<InfoOutlinedIcon />}
-  onClick={() => handleRowClick(event._id)}
-  sx={{
-    color: "#2196f3",
-    borderColor: "#2196f3",
-    "&:hover": {
-      borderColor: "#1976d2",
-      backgroundColor: "rgba(33, 150, 243, 0.04)",
-    },
-  }}
->
-  Chi tiết
-</Button>
-
+                variant="outlined"
+                size="small"
+                startIcon={<InfoOutlinedIcon />}
+                onClick={() => handleRowClick(event._id)}
+              >
+                Chi tiết
+              </Button>
             ),
-
           }));
+
           setRows(mappedRows);
         }
       } catch (err) {
@@ -109,35 +101,29 @@ function EventManagement() {
     setSelectedEvent(null);
   };
 
-  const updateEventStatus = (newStatus) => {
-    if (!selectedEvent) return;
+const updateEventStatus = (newStatus) => {
+  if (!selectedEvent) return;
 
-    // Cập nhật UI rows
-    const updatedRows = rows.map((row) =>
-      row["tên sự kiện"] === selectedEvent.name
-        ? {
-          ...row,
-          "trạng thái": renderStatus(newStatus),
-        }
-        : row
-    );
-    setRows(updatedRows);
+  const updatedRows = rows.map((row) =>
+    row.id === selectedEvent._id
+      ? { ...row, "trạng thái": renderStatus(newStatus) }
+      : row
+  );
+  setRows(updatedRows);
 
-    // (Tùy chọn) Gọi API thật nếu cần sau này:
-    // await eventApi.updateStatus(selectedEvent._id, newStatus);
+  // Cập nhật selectedEvent
+  setSelectedEvent({ ...selectedEvent, status: newStatus });
 
-    // Cập nhật selectedEvent tạm thời
-    setSelectedEvent({ ...selectedEvent, status: newStatus });
-
-    // Đóng dialog
-    setOpenDialog(false);
-  };
-const getTimelineStatus = (start, end) => {
-  const now = Date.now();
-  if (now < start) return <Chip label="Sắp diễn ra" color="info" />;
-  if (now > end) return <Chip label="Đã diễn ra" color="default" />;
-  return <Chip label="Đang diễn ra" color="primary" />;
+  // Đóng dialog
+  setOpenDialog(false);
 };
+
+  const getTimelineStatus = (start, end) => {
+    const now = Date.now();
+    if (now < start) return <Chip label="Sắp diễn ra" color="info" />;
+    if (now > end) return <Chip label="Đã diễn ra" color="default" />;
+    return <Chip label="Đang diễn ra" color="primary" />;
+  };
 
   return (
     <DashboardLayout>

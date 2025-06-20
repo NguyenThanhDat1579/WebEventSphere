@@ -41,7 +41,10 @@ function OrganizerDashboard() {
   const eventRows = events.map((event, index) => ({
     "Tên sự kiện": [event.avatar, event.name],
     "Ngày bắt đầu": new Date(event.timeStart * 1000).toLocaleDateString("vi-VN"), // định dạng thành dd/mm/yyyy
-    "Giá vé": event.ticketPrice.toLocaleString("vi-VN") + " ₫",
+    "Giá vé": event.ticketPrice
+  ? event.ticketPrice.toLocaleString("vi-VN") + " ₫"
+  : "Chưa xác định",
+
     "Số lượng": `${event.soldTickets}/${event.ticketQuantity}`,
   }));
 
@@ -85,56 +88,6 @@ function OrganizerDashboard() {
       },
     ],
   };
-
-  //   const chartDataByDate = {};
-
-  // events.forEach((event) => {
-  //   const timeStart = event.timeStart > 1e12 ? event.timeStart : event.timeStart * 1000;
-  //   const timeEnd = event.timeEnd > 1e12 ? event.timeEnd : event.timeEnd * 1000;
-
-  //   const revenue = event.soldTickets * event.ticketPrice;
-
-  //   const startDate = new Date(timeStart);
-  //   const endDate = new Date(timeEnd);
-
-  //   // Tính số ngày giữa start và end
-  //   const days = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-  //   const dailyRevenue = revenue / days;
-
-  //   // Phân bổ doanh thu theo từng ngày
-  //   for (let i = 0; i < days; i++) {
-  //     const currentDate = new Date(startDate);
-  //     currentDate.setDate(startDate.getDate() + i);
-  //     const dateKey = currentDate.toLocaleDateString("vi-VN"); // dd/mm/yyyy
-
-  //     if (chartDataByDate[dateKey]) {
-  //       chartDataByDate[dateKey] += dailyRevenue;
-  //     } else {
-  //       chartDataByDate[dateKey] = dailyRevenue;
-  //     }
-  //   }
-  // });
-
-  // // Sắp xếp ngày tăng dần
-  // const sortedDates = Object.keys(chartDataByDate).sort(
-  //   (a, b) =>
-  //     new Date(a.split("/").reverse().join("/")) -
-  //     new Date(b.split("/").reverse().join("/"))
-  // );
-
-  // const chartLabels = sortedDates;
-  // const chartValues = sortedDates.map((date) => chartDataByDate[date]);
-
-  // const gradientLineChartData = {
-  //   labels: chartLabels,
-  //   datasets: [
-  //     {
-  //       label: "Doanh thu (₫)",
-  //       data: chartValues,
-  //       color: "success", // nếu chart hỗ trợ, hoặc bỏ
-  //     },
-  //   ],
-  // };
 
   useEffect(() => {
     const fetchCategories = async () => {

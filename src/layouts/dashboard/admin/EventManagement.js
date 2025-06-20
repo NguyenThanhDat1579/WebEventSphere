@@ -7,6 +7,7 @@ import {
   Button,
   Typography,
   CircularProgress,
+  Chip,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
@@ -17,19 +18,24 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import Table from "examples/Tables/Table";
 import eventApi from "api/eventApi";
-import { Chip } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 
-
 function EventManagement() {
   const [columns, setColumns] = useState([
+    { name: "ảnh", align: "center" },
     { name: "tên sự kiện", align: "left" },
-    { name: "trạng thái", align: "center" },
+    { name: "ngày bắt đầu", align: "center" },
+    { name: "giá vé", align: "center" },
+    { name: "số vé đã bán", align: "center" },
+    { name: "doanh thu", align: "center" },
     { name: "trạng thái diễn ra", align: "center" },
+    { name: "trạng thái", align: "center" },
     { name: "hành động", align: "center" },
   ]);
+
+
   const [rows, setRows] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
@@ -41,10 +47,28 @@ function EventManagement() {
         const res = await eventApi.getAllHome();
         if (res.data.status) {
           const data = res.data.data;
-          console.log(data);
+
           const mappedRows = data.map((event) => ({
             id: event._id,
-            "tên sự kiện": event.name,
+            "ảnh": (
+              <img
+                src={event.avatar}
+                alt={event.name}
+                style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover" }}
+              />
+            ),
+            "tên sự kiện": (
+              <Typography
+                variant="body2"
+                style={{ fontSize: 14, maxWidth: 160, wordBreak: "break-word", whiteSpace: "normal" }}
+              >
+                {event.name}
+              </Typography>
+            ),
+            "ngày bắt đầu": new Date(event.timeStart).toLocaleDateString("vi-VN"),
+            "giá vé": `${event.ticketPrice?.toLocaleString() || 0} ₫`,
+            "số vé đã bán": event.soldTickets,
+            "doanh thu": `${(event.ticketPrice * event.soldTickets)?.toLocaleString() || 0} ₫`,
             "trạng thái diễn ra": getTimelineStatus(event.timeStart, event.timeEnd),
             "trạng thái": renderStatus(event.status || "Chưa duyệt"),
             "hành động": (
@@ -59,6 +83,7 @@ function EventManagement() {
             ),
           }));
 
+
           setRows(mappedRows);
         }
       } catch (err) {
@@ -69,16 +94,54 @@ function EventManagement() {
     fetchEvents();
   }, []);
 
-  const renderStatus = (status) => {
-    switch (status) {
-      case "Đã duyệt":
-        return <Chip label="Đã duyệt" color="success" />;
-      case "Từ chối":
-        return <Chip label="Từ chối" color="error" />;
-      default:
-        return <Chip label="Chưa duyệt" color="warning" />;
-    }
+const renderStatus = (status) => {
+  const colorMap = {
+    "Đã duyệt": "#2e7d32",   // xanh lá
+    "Từ chối": "#d32f2f",    // đỏ
+    "Chưa duyệt": "#ed6c02", // cam
   };
+
+  return (
+    <Typography
+      variant="body"
+      sx={{
+        color: colorMap[status] || "#666",
+        fontWeight: "bold",
+        textAlign: "center",
+      }}
+    >
+      {status}
+    </Typography>
+  );
+};
+
+
+const getTimelineStatus = (start, end) => {
+  const now = Date.now();
+  const startTime = new Date(start).getTime();
+  const endTime = new Date(end).getTime();
+
+  if (now < startTime)
+    return (
+      <Typography variant="body" sx={{ color: "#0288d1", fontWeight: "bold", textAlign: "center" }}>
+        Sắp diễn ra
+      </Typography>
+    );
+
+  if (now > endTime)
+    return (
+      <Typography variant="body" sx={{ color: "#999", fontWeight: "bold", textAlign: "center" }}>
+        Đã diễn ra
+      </Typography>
+    );
+
+  return (
+    <Typography variant="body" sx={{ color: "#1976d2", fontWeight: "bold", textAlign: "center" }}>
+      Đang diễn ra
+    </Typography>
+  );
+};
+
 
 
   const handleRowClick = async (id) => {
@@ -101,48 +164,23 @@ function EventManagement() {
     setSelectedEvent(null);
   };
 
-const updateEventStatus = (newStatus) => {
-  if (!selectedEvent) return;
+  const updateEventStatus = (newStatus) => {
+    if (!selectedEvent) return;
 
-  const updatedRows = rows.map((row) =>
-    row.id === selectedEvent._id
-      ? { ...row, "trạng thái": renderStatus(newStatus) }
-      : row
-  );
-  setRows(updatedRows);
-
-  // Cập nhật selectedEvent
-  setSelectedEvent({ ...selectedEvent, status: newStatus });
-
-  // Đóng dialog
-  setOpenDialog(false);
-};
-
-  const getTimelineStatus = (start, end) => {
-    const now = Date.now();
-    if (now < start) return <Chip label="Sắp diễn ra" color="info" />;
-    if (now > end) return <Chip label="Đã diễn ra" color="default" />;
-    return <Chip label="Đang diễn ra" color="primary" />;
+    const updatedRows = rows.map((row) =>
+      row.id === selectedEvent._id
+        ? { ...row, "trạng thái": renderStatus(newStatus) }
+        : row
+    );
+    setRows(updatedRows);
+    setSelectedEvent({ ...selectedEvent, status: newStatus });
+    setOpenDialog(false);
   };
 
   return (
     <DashboardLayout>
       <DashboardNavbar />
-      <ArgonBox
-        p={2}
-        sx={{
-          "& .MuiTableRow-root:hover": {
-            backgroundColor: "#f5f5f5",
-          },
-          "& .MuiTableCell-root": {
-            padding: "12px 16px",
-          },
-          "& .MuiTableHead-root": {
-            backgroundColor: "#e0e0e0",
-          },
-        }}
-      >
-
+      <ArgonBox p={2}>
         <Grid container spacing={3}>
           <Grid item xs={12}>
             <Card>
@@ -151,16 +189,32 @@ const updateEventStatus = (newStatus) => {
               </ArgonBox>
               <ArgonBox
                 sx={{
-                  "& .MuiTableRow-root:not(:last-child)": {
-                    "& td": {
-                      borderBottom: ({ borders: { borderWidth, borderColor } }) =>
-                        `${borderWidth[1]} solid ${borderColor}`,
+                  overflowX: "auto",
+                  "& .MuiTableRow-root": {
+                    "&:nth-of-type(odd)": {
+                      backgroundColor: "#ffffff",
                     },
+                    "&:nth-of-type(even)": {
+                      backgroundColor: "#f7f7f7",
+                    },
+                    "&:hover": {
+                      backgroundColor: "#eaeaea",
+                    },
+                  },
+                  "& .MuiTableCell-root": {
+                    padding: "8px 12px",
+                    fontSize: 13,
+                    borderBottom: "1px solid #ddd",
+                  },
+                  "& .MuiTableHead-root": {
+                    backgroundColor: "#e0e0e0",
                   },
                 }}
               >
                 <Table columns={columns} rows={rows} />
               </ArgonBox>
+
+
             </Card>
           </Grid>
         </Grid>
@@ -191,22 +245,12 @@ const updateEventStatus = (newStatus) => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button
-            onClick={() => updateEventStatus("Từ chối")}
-            color="error"
-            startIcon={<CancelIcon />}
-          >
+          <Button onClick={() => updateEventStatus("Từ chối")} color="error" startIcon={<CancelIcon />}>
             Từ chối
           </Button>
-          <Button
-            onClick={() => updateEventStatus("Đã duyệt")}
-            color="success"
-            variant="contained"
-            startIcon={<CheckCircleIcon />}
-          >
+          <Button onClick={() => updateEventStatus("Đã duyệt")} color="success" variant="contained" startIcon={<CheckCircleIcon />}>
             Duyệt
           </Button>
-
         </DialogActions>
       </Dialog>
 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import authApi from "../../../api/utils/authApi";
 import { saveTokens } from "../../../api/token/authTokens.js";
 import { useDispatch } from "react-redux";
-import { setUserData } from "../../../store/slices/authSlice";
+import { setUserData } from "../../../redux/store/slices/authSlice";
 import { useNavigate } from "react-router-dom";
 // react-router-dom components
 import { Link } from "react-router-dom";
@@ -46,8 +46,16 @@ function Illustration() {
 
       if (userData && userData.role === 2) {
         console.log("Organizer đăng nhập", userData);
-        await saveTokens(userData.token, userData.refreshToken);
-        dispatch(setUserData(userData)); // Lưu role từ API (role = 2)
+
+        // ✅ In token ra để kiểm tra
+        console.log("Access Token:", userData.token);
+        console.log("Refresh Token:", userData.refreshToken);
+
+        // ✅ Lưu token KHÔNG cần await
+        saveTokens(userData.token, userData.refreshToken);
+
+        dispatch(setUserData(userData));
+        localStorage.setItem("userData", JSON.stringify(userData));
         navigate("/dashboard-organizer");
       } else {
         console.log("Đăng nhập không phải organizer", userData);

@@ -8,6 +8,8 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import Grid from "@mui/material/Grid";
 import eventApi from "api/utils/eventApi";
+import EventDetail from "./components/EventDetail";
+import CircularProgress from "@mui/material/CircularProgress";
 
 // Hàm chuyển đổi dữ liệu
 const transformEvents = (events) =>
@@ -43,13 +45,16 @@ function OrganizerMyEvent() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateRange, setDateRange] = useState({ from: null, to: null });
-
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isDetailView, setIsDetailView] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await eventApi.getEventOfOrganization(); // truyền token
+        setIsLoading(true); // bắt đầu loading
+        const response = await eventApi.getEventOfOrganization();
         if (response.data.status === 200) {
-          setEvents(response.data.events); // cập nhật danh sách sự kiện
+          setEvents(response.data.events);
           setTotalRevenue(response.data.totalRevenue);
           setTotalTickets(response.data.totalTickets);
         } else {
@@ -57,6 +62,8 @@ function OrganizerMyEvent() {
         }
       } catch (error) {
         console.error("Lỗi khi gọi API lấy sự kiện", error);
+      } finally {
+        setIsLoading(false); // kết thúc loading dù thành công hay thất bại
       }
     };
 
@@ -112,31 +119,46 @@ function OrganizerMyEvent() {
   const handleStatusFilter = (value) => setStatusFilter(value);
   const handleDateRange = (range) => setDateRange(range);
 
+  const handleViewDetail = (eventId) => {
+    setSelectedEvent(eventId); // chỉ lưu ID
+    setIsDetailView(true);
+  };
+
   return (
     <DashboardLayout>
       <DashboardNavbar />
-      <ArgonBox py={3}>
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <SearchFilterBar
-              onSearch={handleSearch}
-              onStatusFilter={handleStatusFilter}
-              onDateRange={handleDateRange}
-            />
-          </Grid>
-        </Grid>
+      <ArgonBox py={1} sx={{ position: "relative" }}>
+        {isDetailView && selectedEvent ? (
+          <EventDetail eventId={selectedEvent} onClose={() => setIsDetailView(false)} />
+        ) : (
+          <>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <SearchFilterBar
+                  onSearch={handleSearch}
+                  onStatusFilter={handleStatusFilter}
+                  onDateRange={handleDateRange}
+                />
+              </Grid>
+            </Grid>
 
-        <Grid container spacing={2} mt={1}>
-          <Grid item xs={12}>
-            {filteredEvents.length === 0 ? (
-              <ArgonTypography variant="body2" color="text" mt={2}>
-                Không có sự kiện nào phù hợp với bộ lọc.
-              </ArgonTypography>
-            ) : (
-              <MyEventTable events={filteredEvents} />
-            )}
-          </Grid>
-        </Grid>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                {isLoading ? (
+                  <ArgonBox display="flex" justifyContent="center" mt={4}>
+                    <CircularProgress />
+                  </ArgonBox>
+                ) : filteredEvents.length === 0 ? (
+                  <ArgonTypography variant="body2" color="text" mt={2}>
+                    Không có sự kiện nào phù hợp với bộ lọc.
+                  </ArgonTypography>
+                ) : (
+                  <MyEventTable events={filteredEvents} onViewDetail={handleViewDetail} />
+                )}
+              </Grid>
+            </Grid>
+          </>
+        )}
       </ArgonBox>
       <Footer />
     </DashboardLayout>

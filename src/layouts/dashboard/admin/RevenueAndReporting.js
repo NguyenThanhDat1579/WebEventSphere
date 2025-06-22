@@ -25,10 +25,10 @@ function RevenueAndReporting() {
   const { size } = typography;
 
   const [columns] = useState([
-    { name: "name", align: "left" },
-    { name: "soldTickets", align: "center" },
-    { name: "revenue", align: "center" },
-    { name: "status", align: "center" },
+    { name: "Tên", align: "left" },
+    { name: "Số vé đã bán", align: "center" },
+    { name: "Tổng doanh thu", align: "center" },
+    { name: "Trạng thái", align: "center" },
   ]);
 
   const [rows, setRows] = useState([]);

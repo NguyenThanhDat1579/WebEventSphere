@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import SignIn from "../src/layouts/authentication/sign-in";
+
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import Icon from "@mui/material/Icon";
@@ -17,8 +18,8 @@ import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 
 import routes from "routes";
-import { useSelector } from "react-redux";
-
+import { useSelector, useDispatch } from "react-redux";
+import { setUserData } from "../src/redux/store/slices/authSlice";
 import { useArgonController, setMiniSidenav, setOpenConfigurator } from "context";
 
 import brand from "assets/images/logo-ct.png";
@@ -28,9 +29,10 @@ import "assets/css/nucleo-svg.css";
 export default function App() {
   const navigate = useNavigate();
   const role = useSelector((state) => state.auth?.role);
+  const dispatch1 = useDispatch();
   console.log("Current user role:", role);
   const isAuthenticated = role !== null;
-
+  const [initializing, setInitializing] = useState(true);
   const [controller, dispatch] = useArgonController();
   const { miniSidenav, direction, layout, openConfigurator, sidenavColor, darkSidenav } =
     controller;
@@ -41,13 +43,25 @@ export default function App() {
   const redirectedRef = useRef(false);
   // Redirect đến sign-in nếu chưa đăng nhập và không ở trang sign-in
   useEffect(() => {
-    if (!isAuthenticated && pathname !== "/authentication/sign-in") {
+    const storedUserData = localStorage.getItem("userData");
+    if (storedUserData && !role) {
+      const parsedData = JSON.parse(storedUserData);
+      dispatch1(setUserData(parsedData));
+      console.log("User data restored from localStorage");
+    }
+    setInitializing(false); // kết thúc khởi tạo
+  }, [dispatch, role]);
+
+  // Chặn redirect trong khi đang khởi tạo
+  useEffect(() => {
+    if (!initializing && !isAuthenticated && pathname !== "/authentication/sign-in") {
       navigate("/authentication/sign-in");
     }
-  }, [isAuthenticated, pathname, navigate]);
+  }, [initializing, isAuthenticated, pathname, navigate]);
 
+  // Bỏ redirect tới dashboard khi chưa khôi phục xong
   useEffect(() => {
-    if (isAuthenticated && !redirectedRef.current) {
+    if (!initializing && isAuthenticated && !redirectedRef.current) {
       redirectedRef.current = true;
       if (role === 1) {
         navigate("/dashboard-admin");
@@ -57,7 +71,7 @@ export default function App() {
         navigate("/dashboard");
       }
     }
-  }, [isAuthenticated, role, navigate]);
+  }, [initializing, isAuthenticated, role, navigate]);
 
   // Cache RTL
   useMemo(() => {

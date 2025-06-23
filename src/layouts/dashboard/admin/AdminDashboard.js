@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 
 // @mui material components
-import Grid from "@mui/material/Grid";
 import Icon from "@mui/material/Icon";
-import Card from "@mui/material/Card";
-
+import { Grid, Card, CardContent, Typography, Box, Chip } from "@mui/material";
 // Argon components
 import ArgonBox from "components/ArgonBox";
 import ArgonTypography from "components/ArgonTypography";
@@ -29,6 +27,9 @@ import categoriesListData from "layouts/dashboard/data/categoriesListData";
 // Custom
 import Slider from "layouts/dashboard/components/Slider";
 import revenueApi from "api/revenue";
+import eventApi from "api/eventApi";
+import PropTypes from "prop-types";
+
 
 function AdminDashboard() {
   const { size } = typography;
@@ -36,6 +37,7 @@ function AdminDashboard() {
   const [totalTickets, setTotalTickets] = useState(0);
   const [totalEvents, setTotalEvents] = useState(0);
   const [endedEvents, setEndedEvents] = useState(0);
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
 
   useEffect(() => {
     const fetchRevenue = async () => {
@@ -57,8 +59,82 @@ function AdminDashboard() {
       }
     };
 
+    const fetchUpcomingEvents = async () => {
+      try {
+        const res = await eventApi.getAllHome();
+        if (res.data.status) {
+          const now = new Date().getTime();
+          const filtered = res.data.data.filter(event => new Date(event.timeEnd).getTime() > now);
+          setUpcomingEvents(filtered);
+        }
+      } catch (err) {
+        console.error("Lỗi khi lấy danh sách sự kiện sắp diễn ra:", err);
+      }
+    };
+
     fetchRevenue();
+    fetchUpcomingEvents();
   }, []);
+
+  const EventCard = ({ event }) => {
+    const status = (() => {
+      const now = Date.now();
+      const start = new Date(event.timeStart).getTime();
+      const end = new Date(event.timeEnd).getTime();
+
+      if (now < start) return "Sắp diễn ra";
+      if (now > end) return "Đã kết thúc";
+      return "Đang diễn ra";
+    })();
+
+    const statusColor = {
+      "Sắp diễn ra": "warning",
+      "Đang diễn ra": "success",
+      "Đã kết thúc": "default",
+    };
+
+    {upcomingEvents.map((event) => (
+  <EventCard key={event._id} event={event} />
+))}
+
+EventCard.propTypes = {
+  event: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    location: PropTypes.string.isRequired,
+    timeStart: PropTypes.string.isRequired,
+    timeEnd: PropTypes.string.isRequired,
+    avatar: PropTypes.string.isRequired,
+  }).isRequired,
+};
+
+
+    return (
+      <Grid item xs={12} sm={6} md={4}>
+        <Card sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+          <img
+            src={event.avatar}
+            alt={event.name}
+            style={{ width: "100%", height: 160, objectFit: "cover", borderTopLeftRadius: 4, borderTopRightRadius: 4 }}
+          />
+          <CardContent>
+            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+              {event.name}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {event.location}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {new Date(event.timeStart).toLocaleString()} - {new Date(event.timeEnd).toLocaleString()}
+            </Typography>
+            <Box mt={1}>
+              <Chip label={status} color={statusColor[status]} size="small" />
+            </Box>
+          </CardContent>
+        </Card>
+      </Grid>
+    );
+  };
 
   return (
     <DashboardLayout>
@@ -98,7 +174,7 @@ function AdminDashboard() {
         </Grid>
 
         <Grid container spacing={3} mb={3}>
-          <Grid item xs={12} lg={7}>
+          <Grid item xs={12} lg={12}>
             <GradientLineChart
               title="Tổng quan bán vé"
               description={
@@ -117,17 +193,24 @@ function AdminDashboard() {
               chart={gradientLineChartData}
             />
           </Grid>
-          <Grid item xs={12} lg={5}>
-            <Slider />
-          </Grid>
         </Grid>
 
         <Grid container spacing={3}>
-          <Grid item xs={12} md={8}>
-            <SalesTable title="Sales by Country" rows={salesTableData} />
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <CategoriesList title="categories" categories={categoriesListData} />
+
+
+          <Grid item xs={12} md={12}>
+            <Card sx={{ padding: 3, boxShadow: 3 }}>
+              <ArgonBox mt={4}>
+                <ArgonTypography variant="h5" fontWeight="bold" mb={2}>
+                  Sự kiện đang hoặc sắp diễn ra
+                </ArgonTypography>
+                <Grid container spacing={2}>
+                  {upcomingEvents.map((event) => (
+                    <EventCard key={event._id} event={event} />
+                  ))}
+                </Grid>
+              </ArgonBox>
+            </Card>
           </Grid>
         </Grid>
       </ArgonBox>

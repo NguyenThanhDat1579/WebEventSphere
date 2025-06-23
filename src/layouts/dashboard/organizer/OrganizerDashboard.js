@@ -39,6 +39,16 @@ function OrganizerDashboard() {
   const now = Date.now();
   const oneWeekLater = now + 7 * 24 * 60 * 60 * 1000;
 
+  const eventRows = events.map((event, index) => ({
+    "Tên sự kiện": [event.avatar, event.name],
+    "Ngày bắt đầu": new Date(event.timeStart * 1000).toLocaleDateString("vi-VN"), // định dạng thành dd/mm/yyyy
+    "Giá vé": event.ticketPrice
+  ? event.ticketPrice.toLocaleString("vi-VN") + " ₫"
+  : "Chưa xác định",
+
+    "Số lượng": `${event.soldTickets}/${event.ticketQuantity}`,
+  }));
+
   const formatDateTime = (timestamp) => {
     const date = new Date(timestamp > 1e12 ? timestamp : timestamp * 1000);
     const hours = String(date.getHours()).padStart(2, "0");
@@ -50,6 +60,7 @@ function OrganizerDashboard() {
     const weekday = weekdayNames[date.getDay()];
     return `${hours}:${minutes}, ${weekday}, ${day} tháng ${month} ${year}`;
   };
+
 
   const getEventStatusLabel = (event) => {
     const start = event.timeStart > 1e12 ? event.timeStart : event.timeStart * 1000;
@@ -125,6 +136,41 @@ function OrganizerDashboard() {
     ],
   };
 
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await categoryApi.getAllCategories();
+        if (response.data.status) {
+          setCategories(response.data.data); // cập nhật state categories
+        } else {
+          console.error("Lấy danh mục thất bại");
+        }
+      } catch (error) {
+        console.error("Lỗi khi gọi API lấy danh mục", error);
+      }
+    };
+
+    const fetchEvents = async () => {
+      try {
+        const response = await eventApi.getEventOfOrganization(); // truyền token
+        if (response.data.status === 200) {
+          setEvents(response.data.events); // cập nhật danh sách sự kiện
+          setTotalRevenue(response.data.totalRevenue);
+          setTotalTickets(response.data.totalTickets);
+        } else {
+          console.error("Lấy sự kiện thất bại");
+        }
+      } catch (error) {
+        console.error("Lỗi khi gọi API lấy sự kiện", error);
+      }
+    };
+
+    fetchCategories();
+    fetchEvents();
+  }, []);
+
+
   const getCategoryIcon = (name) => {
     switch (name.toLowerCase()) {
       case "thể thao":
@@ -164,7 +210,6 @@ function OrganizerDashboard() {
     fetchEvents();
   }, []);
 
-  const eventRows = renderEventRows(upcomingEvents);
 
   return (
     <DashboardLayout>
@@ -212,18 +257,7 @@ function OrganizerDashboard() {
               rows={renderEventRows([...ongoingEvents, ...upcomingEvents])}
             />
           </Grid>
-          {/* <Grid item xs={12} md={4}>
-            <CategoriesList
-              title="Loại sự kiện"
-              categories={categories.map((category) => ({
-                color: "dark",
-                icon: getCategoryIcon(category.name),
-                name: category.name,
-                description: "Danh mục sự kiện",
-                route: "/",
-              }))}
-            />
-          </Grid> */}
+
         </Grid>
       </ArgonBox>
       <Footer />

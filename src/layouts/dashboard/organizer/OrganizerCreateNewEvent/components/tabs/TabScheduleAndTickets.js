@@ -17,10 +17,6 @@ export default function TabScheduleAndTickets() {
     setPerformances(newList);
   };
 
-  const handleAddTicket = (ticket) => {
-    setTickets([...tickets, ticket]);
-  };
-
   return (
     <Box>
       <Typography variant="h6" gutterBottom>

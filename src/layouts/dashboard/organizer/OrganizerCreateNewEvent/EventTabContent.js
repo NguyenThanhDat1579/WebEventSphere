@@ -3,11 +3,11 @@ import { Box, Typography } from "@mui/material";
 import PropTypes from "prop-types";
 import TabInfoEvent from "../OrganizerCreateNewEvent/components/tabs/TabInfoEvent";
 import TabScheduleAndTickets from "./components/tabs/TabScheduleAndTickets";
-export default function EventTabContent({ tabIndex, setTabIndex }) {
+export default function EventTabContent({ tabIndex, onChangeTab }) {
   const renderTabContent = () => {
     switch (tabIndex) {
       case 0:
-        return <TabInfoEvent setTabIndex={setTabIndex} />;
+        return <TabInfoEvent onNext={() => onChangeTab(1)} />;
       case 1:
         return <TabScheduleAndTickets />;
       // case 2:
@@ -38,5 +38,5 @@ export default function EventTabContent({ tabIndex, setTabIndex }) {
 
 EventTabContent.propTypes = {
   tabIndex: PropTypes.number.isRequired,
-  setTabIndex: PropTypes.func.isRequired,
+  onChangeTab: PropTypes.func.isRequired,
 };

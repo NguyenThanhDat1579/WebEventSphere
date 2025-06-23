@@ -28,7 +28,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
 
 // Argon Dashboard 2 MUI components
-import ArgonBox from "components/ArgonBox";
+import  ArgonBox from "components/ArgonBox";
 import ArgonAvatar from "components/ArgonAvatar";
 import ArgonTypography from "components/ArgonTypography";
 
@@ -65,7 +65,7 @@ function Table({ columns, rows }) {
         pl={align === "left" ? pl : 3}
         pr={align === "right" ? pr : 3}
         textAlign={align}
-        fontSize={size.xxs}
+        fontSize="0.9rem"
         fontWeight={fontWeightBold}
         color="secondary"
         opacity={0.7}

@@ -95,6 +95,9 @@ const eventInfoSlice = createSlice({
     setZones: (state, action) => {
       state.zones.push(action.payload); // payload là object
     },
+    resetZones: (state) => {
+      state.zones = [];
+    },
 
     setShowtimes: (state, action) => {
       state.showtimes = action.payload;
@@ -124,6 +127,7 @@ export const {
   setZones,
   setShowtimes,
   resetEventInfo,
+  resetZones,
 } = eventInfoSlice.actions;
 
 export default eventInfoSlice.reducer;

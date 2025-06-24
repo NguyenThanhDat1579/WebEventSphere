@@ -14,6 +14,7 @@ import {
   Popper,
   MenuList,
   Chip,
+  CircularProgress,
 } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
@@ -52,7 +53,7 @@ import {
   setAddress as setAddressAction,
 } from "../../../../../../redux/store/slices/eventAddressSlice";
 
-export default function TabInfoEvent({ setTabIndex }) {
+export default function TabInfoEvent({ onNext }) {
   // 1. Redux và thư viện
   const dispatch = useDispatch();
   const userId = useSelector((state) => state.auth.id);
@@ -76,6 +77,9 @@ export default function TabInfoEvent({ setTabIndex }) {
   const [eventLogo, setEventLogo] = useState(null);
   const [eventBanner, setEventBanner] = useState(null);
   const [images, setImages] = useState([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [loadingBanner, setLoadingBanner] = useState(false);
+  const [loadingLogo, setLoadingLogo] = useState(false);
 
   const [selectedProvince, setSelectedProvince] = useState(province || "");
   const [selectedDistrict, setSelectedDistrict] = useState(district || "");
@@ -96,19 +100,30 @@ export default function TabInfoEvent({ setTabIndex }) {
   const [tagError, setTagError] = useState("");
 
   const [description, setDescription] = useState("");
-
+  const [readyToInitTiny, setReadyToInitTiny] = useState(false);
   // 3. useEffect – Theo dõi và load dữ liệu
   useEffect(() => {
     console.log("eventInfo đã cập nhật:", eventInfo);
+    if (eventInfo?.avatar) {
+      setEventLogo(eventInfo.avatar);
+    }
+    if (eventInfo?.banner) {
+      setEventBanner(eventInfo.banner);
+    }
+    if (eventInfo?.images) {
+      setImages([...eventInfo.images]);
+    }
+
     if (eventInfo?.name) {
       setFormData((prev) => ({
         ...prev,
-        eventName: eventInfo.name || "",
+        eventName: address || "",
       }));
     }
     if (eventInfo?.tags) {
       setTags(eventInfo.tags);
     }
+
     if (address) {
       setFormData((prev) => ({
         ...prev,
@@ -116,6 +131,16 @@ export default function TabInfoEvent({ setTabIndex }) {
       }));
     }
   }, [eventInfo]);
+  useEffect(() => {
+    const desc = eventInfo?.description?.trim();
+    if (desc && desc !== "") {
+      setDescription(desc);
+    } else {
+      setDescription(initialContent);
+    }
+
+    setReadyToInitTiny(true); // ✅ đảm bảo Tiny chỉ init khi đã có mô tả
+  }, [eventInfo?.description]);
 
   useEffect(() => {
     fetch("https://provinces.open-api.vn/api/?depth=1")
@@ -178,9 +203,39 @@ export default function TabInfoEvent({ setTabIndex }) {
 
   // 4. Xử lý ảnh
   const handleImageUpload = async (e, type) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
 
+    if (type === "gallery") {
+      setUploadingImages(true); // Bắt đầu loading
+      try {
+        const uploadPromises = files.map(async (file) => {
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("upload_preset", "event_upload");
+          formData.append("cloud_name", "deoqppiun");
+
+          const response = await fetch("https://api.cloudinary.com/v1_1/deoqppiun/image/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await response.json();
+          return data.secure_url;
+        });
+
+        const imageUrls = await Promise.all(uploadPromises);
+        setImages((prev) => [...prev, ...imageUrls]);
+      } catch (err) {
+        console.error("Lỗi upload ảnh lên Cloudinary:", err);
+      } finally {
+        setUploadingImages(false); // Kết thúc loading
+      }
+      return;
+    }
+
+    // ✅ Nếu không phải type "gallery", xử lý một ảnh đơn
+    const file = files[0];
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", "event_upload");
@@ -197,14 +252,51 @@ export default function TabInfoEvent({ setTabIndex }) {
 
       switch (type) {
         case "logo":
-          setEventLogo(imageUrl);
+          setLoadingLogo(true);
+          setEventLogo(null); // Tùy chọn: xóa ảnh cũ trong lúc loading
+          try {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("upload_preset", "event_upload");
+            formData.append("cloud_name", "deoqppiun");
+
+            const response = await fetch("https://api.cloudinary.com/v1_1/deoqppiun/image/upload", {
+              method: "POST",
+              body: formData,
+            });
+
+            const data = await response.json();
+            setEventLogo(data.secure_url);
+          } catch (err) {
+            console.error("Lỗi upload ảnh logo:", err);
+          } finally {
+            setLoadingLogo(false);
+          }
           break;
+
         case "banner":
-          setEventBanner(imageUrl);
+          setLoadingBanner(true);
+          setEventBanner(null); // Xóa ảnh cũ tạm thời nếu muốn
+          try {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("upload_preset", "event_upload");
+            formData.append("cloud_name", "deoqppiun");
+
+            const response = await fetch("https://api.cloudinary.com/v1_1/deoqppiun/image/upload", {
+              method: "POST",
+              body: formData,
+            });
+
+            const data = await response.json();
+            setEventBanner(data.secure_url);
+          } catch (err) {
+            console.error("Lỗi upload ảnh banner:", err);
+          } finally {
+            setLoadingBanner(false);
+          }
           break;
-        case "gallery":
-          setImages((prev) => [...prev, imageUrl]);
-          break;
+
         default:
           console.warn("Loại ảnh không xác định:", type);
       }
@@ -241,12 +333,20 @@ export default function TabInfoEvent({ setTabIndex }) {
   // 6. Xử lý tag
   const handleAddTag = () => {
     const trimmed = tagInput.trim();
+
     if (!trimmed) {
       setTagError("Vui lòng nhập tag");
       return;
     }
 
-    if (tags.includes(trimmed)) {
+    if (tags.length >= 5) {
+      setTagError("Chỉ được nhập tối đa 5 tag");
+      return;
+    }
+
+    const normalized = trimmed.toLowerCase();
+
+    if (tags.some((tag) => tag.toLowerCase() === normalized)) {
       setTagError("Tag đã tồn tại");
       return;
     }
@@ -313,7 +413,7 @@ export default function TabInfoEvent({ setTabIndex }) {
     }
 
     setErrors(newErrors);
-    if (hasError) return;
+    if (hasError) return false;
 
     const provinceName = provinces.find((p) => p.value === selectedProvince)?.label || "";
     const districtName = districts.find((d) => d.value === selectedDistrict)?.label || "";
@@ -352,6 +452,13 @@ export default function TabInfoEvent({ setTabIndex }) {
     return true;
   };
 
+  const handleNextClick = async () => {
+    const isValid = await handleSaveEventInfos();
+    if (isValid) {
+      onNext(); // do EventTabContent truyền xuống
+    }
+  };
+
   // 9. Nội dung mẫu RichText (editor)
   const initialContent = `
   <h4>Giới thiệu sự kiện:</h4>
@@ -388,14 +495,13 @@ export default function TabInfoEvent({ setTabIndex }) {
                 overflow: "hidden",
               }}
             >
-              {eventLogo ? (
-                // Nếu đã có ảnh
-                <Box
-                  sx={{
-                    width: "90%",
-                    textAlign: "center",
-                  }}
-                >
+              {loadingLogo ? (
+                <Box textAlign="center">
+                  <CircularProgress size={32} sx={{ color: "#1976D2", mb: 1 }} />
+                  <Typography sx={{ color: "#1976D2" }}>Đang tải logo...</Typography>
+                </Box>
+              ) : eventLogo ? (
+                <Box sx={{ width: "90%", textAlign: "center" }}>
                   <img
                     src={eventLogo}
                     alt="Logo sự kiện"
@@ -408,15 +514,9 @@ export default function TabInfoEvent({ setTabIndex }) {
                   />
                 </Box>
               ) : (
-                // Nếu chưa có ảnh, hiển thị hướng dẫn
                 <Box textAlign="center">
                   <Typography sx={{ color: "#1976D2" }}>Thêm logo sự kiện</Typography>
-                  <Typography
-                    variant="body2"
-                    fontWeight="bold"
-                    color="black"
-                    sx={{ color: "#1976D2" }}
-                  >
+                  <Typography variant="body2" fontWeight="bold" sx={{ color: "#1976D2" }}>
                     (720x958)
                   </Typography>
                 </Box>
@@ -430,7 +530,6 @@ export default function TabInfoEvent({ setTabIndex }) {
               />
             </Button>
           </Grid>
-
           <Grid item xs={12} sm={12}>
             <Button
               variant="outlined"
@@ -446,7 +545,12 @@ export default function TabInfoEvent({ setTabIndex }) {
                 textTransform: "none",
               }}
             >
-              {eventBanner ? (
+              {loadingBanner ? (
+                <Box textAlign="center">
+                  <CircularProgress size={32} sx={{ color: "#1976D2", mb: 1 }} />
+                  <Typography sx={{ color: "#1976D2" }}>Đang tải ảnh nền...</Typography>
+                </Box>
+              ) : eventBanner ? (
                 <Box sx={{ width: "90%", textAlign: "center" }}>
                   <img
                     src={eventBanner}
@@ -462,16 +566,12 @@ export default function TabInfoEvent({ setTabIndex }) {
               ) : (
                 <Box textAlign="center">
                   <Typography sx={{ color: "#1976D2" }}>Thêm ảnh nền sự kiện</Typography>
-                  <Typography
-                    variant="body2"
-                    fontWeight="bold"
-                    color="black"
-                    sx={{ color: "#1976D2" }}
-                  >
+                  <Typography variant="body2" fontWeight="bold" sx={{ color: "#1976D2" }}>
                     (1920x1080)
                   </Typography>
                 </Box>
               )}
+
               <input
                 hidden
                 type="file"
@@ -529,8 +629,8 @@ export default function TabInfoEvent({ setTabIndex }) {
               <Box
                 component="label"
                 sx={{
-                  width: 150,
-                  height: 150,
+                  width: 192,
+                  height: 108,
                   border: "2px dashed gray",
                   borderRadius: 2,
                   display: "flex",
@@ -545,14 +645,26 @@ export default function TabInfoEvent({ setTabIndex }) {
                   },
                 }}
               >
-                <AddIcon fontSize="large" />
-                <Typography variant="body2" fontWeight="medium">
-                  Thêm ảnh
-                </Typography>
+                {uploadingImages ? (
+                  <>
+                    <CircularProgress size={32} />
+                    <Typography variant="body2" mt={1}>
+                      Đang tải...
+                    </Typography>
+                  </>
+                ) : (
+                  <>
+                    <AddIcon fontSize="large" />
+                    <Typography variant="body2" fontWeight="medium">
+                      Thêm ảnh
+                    </Typography>
+                  </>
+                )}
                 <input
                   hidden
                   type="file"
                   accept="image/*"
+                  multiple
                   onChange={(e) => handleImageUpload(e, "gallery")}
                 />
               </Box>
@@ -674,24 +786,7 @@ export default function TabInfoEvent({ setTabIndex }) {
       </Paper>
 
       <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-        {/* <Typography variant="h6" gutterBottom>
-          <span style={{ color: "red" }}>*</span> Thể loại sự kiện
-        </Typography> */}
-
         <Grid container spacing={3}>
-          {/* <Grid item xs={12} sm={12}>
-            <SelectMenu
-              label={"Chọn thể loại"}
-              value={category}
-              onChange={(val) => {
-                setCategory(val);
-                setErrors((prev) => ({ ...prev, category: "" }));
-              }}
-              options={categories}
-              error={!!errors.category}
-              helperText={errors.category}
-            />
-          </Grid> */}
           <Grid item xs={12} sm={12}>
             <Typography variant="h6" gutterBottom>
               <span style={{ color: "red" }}>*</span> Tag
@@ -703,7 +798,7 @@ export default function TabInfoEvent({ setTabIndex }) {
                   value={tagInput}
                   onChange={(e) => {
                     setTagInput(e.target.value);
-                    if (tagError) setTagError(""); // Xoá lỗi khi người dùng gõ lại
+                    if (tagError) setTagError("");
                   }}
                   placeholder="Nhập tag"
                   maxWidth={200}
@@ -757,6 +852,9 @@ export default function TabInfoEvent({ setTabIndex }) {
                 />
               ))}
             </Box>
+            <Typography variant="caption" color="text.secondary">
+              {tags.length} / 5
+            </Typography>
           </Grid>
         </Grid>
       </Paper>
@@ -767,10 +865,7 @@ export default function TabInfoEvent({ setTabIndex }) {
         </Typography>
         <Grid container spacing={3}>
           <Grid item xs={12} sm={12}>
-            <TinyMCEEditor
-              value={description || initialContent}
-              onChange={(value) => setDescription(value)}
-            />
+            <TinyMCEEditor value={description} onChange={setDescription} ready={readyToInitTiny} />
           </Grid>
         </Grid>
       </Paper>
@@ -810,12 +905,7 @@ export default function TabInfoEvent({ setTabIndex }) {
               color: "#1976D2",
             },
           }}
-          onClick={async () => {
-            const isSaved = await handleSaveEventInfos();
-            if (isSaved) {
-              setTabIndex(1);
-            }
-          }}
+          onClick={handleNextClick}
         >
           Tiếp tục
         </Button>
@@ -824,5 +914,5 @@ export default function TabInfoEvent({ setTabIndex }) {
   );
 }
 TabInfoEvent.propTypes = {
-  setTabIndex: PropTypes.func.isRequired, // ✅ Thêm dòng này
+  onNext: PropTypes.func.isRequired,
 };

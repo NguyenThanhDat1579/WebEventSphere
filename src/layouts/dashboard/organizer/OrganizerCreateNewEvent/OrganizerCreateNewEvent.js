@@ -11,6 +11,10 @@ import EventTabContent from "./EventTabContent";
 
 export default function OrganizerCreateNewEvent() {
   const [tabIndex, setTabIndex] = useState(0);
+  const handleChangeTab = (targetIndex) => {
+    // Cho phép TabInfoEvent quyết định khi nào chuyển
+    setTabIndex(targetIndex);
+  };
 
   return (
     <DashboardLayout>
@@ -27,8 +31,8 @@ export default function OrganizerCreateNewEvent() {
                 minHeight: 300, // chiều cao cố định hoặc tối thiểu để dễ quan sát
               }}
             >
-              <TabsHeader tabIndex={tabIndex} setTabIndex={setTabIndex} />
-              <EventTabContent tabIndex={tabIndex} setTabIndex={setTabIndex} />
+              <TabsHeader tabIndex={tabIndex} onChangeTab={handleChangeTab} />
+              <EventTabContent tabIndex={tabIndex} onChangeTab={handleChangeTab} />
             </Paper>
           </Grid>
         </Grid>

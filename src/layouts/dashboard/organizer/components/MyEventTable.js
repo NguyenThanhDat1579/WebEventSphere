@@ -61,7 +61,7 @@ function MyEventTable({ events, onViewDetail }) {
               Sự kiện
             </TableCell>
             <TableCell sx={{ width: "30%", fontWeight: "bold", fontSize: "1rem" }}>
-              Thời gian
+              Ngày diễn ra
             </TableCell>
             <TableCell sx={{ width: "15%", fontWeight: "bold", fontSize: "1rem" }}>
               Trạng thái
@@ -106,9 +106,7 @@ function MyEventTable({ events, onViewDetail }) {
                   color="text.primary"
                   sx={{ fontWeight: "600", fontSize: "0.8rem", whiteSpace: "nowrap" }}
                 >
-                  Bắt đầu: {formatDateTime(event.timeStart)}
-                  <br />
-                  Kết thúc: {formatDateTime(event.timeEnd)}
+                  {formatDateTime(event.timeStart)}
                 </ArgonTypography>
               </TableCell>
 

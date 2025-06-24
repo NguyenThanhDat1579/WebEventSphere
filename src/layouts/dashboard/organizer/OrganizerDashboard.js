@@ -12,6 +12,7 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import DetailedStatisticsCard from "examples/Cards/StatisticsCards/DetailedStatisticsCard/index";
 import SalesTable from "examples/Tables/SalesTable";
+import EventTable from "../organizer/components/EventTable";
 import CategoriesList from "examples/Lists/CategoriesList";
 import GradientLineChart from "examples/Charts/LineCharts/GradientLineChart";
 
@@ -32,77 +33,10 @@ import { useSelector } from "react-redux";
 
 function OrganizerDashboard() {
   const token = useSelector((state) => state.auth.token);
-  const [categories, setCategories] = useState([]);
   const [events, setEvents] = useState([]);
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalTickets, setTotalTickets] = useState(0);
   const now = Date.now();
-  const oneWeekLater = now + 7 * 24 * 60 * 60 * 1000;
-
-  const eventRows = events.map((event, index) => ({
-    "Tên sự kiện": [event.avatar, event.name],
-    "Ngày bắt đầu": new Date(event.timeStart * 1000).toLocaleDateString("vi-VN"), // định dạng thành dd/mm/yyyy
-    "Giá vé": event.ticketPrice
-  ? event.ticketPrice.toLocaleString("vi-VN") + " ₫"
-  : "Chưa xác định",
-
-    "Số lượng": `${event.soldTickets}/${event.ticketQuantity}`,
-  }));
-
-  const formatDateTime = (timestamp) => {
-    const date = new Date(timestamp > 1e12 ? timestamp : timestamp * 1000);
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    const weekdayNames = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
-    const weekday = weekdayNames[date.getDay()];
-    return `${hours}:${minutes}, ${weekday}, ${day} tháng ${month} ${year}`;
-  };
-
-
-  const getEventStatusLabel = (event) => {
-    const start = event.timeStart > 1e12 ? event.timeStart : event.timeStart * 1000;
-    const end = event.timeEnd > 1e12 ? event.timeEnd : event.timeEnd * 1000;
-    if (now >= start && now <= end) return { label: "Đang diễn ra", color: "#2e7d32" };
-    if (start > now && start <= oneWeekLater) return { label: "Sắp diễn ra", color: "#d32f2f" };
-    if (start > oneWeekLater) return { label: "Chưa diễn ra", color: "#f9a825" };
-    if (now > end) return { label: "Đã kết thúc", color: "#757575" };
-    return { label: "Không xác định", color: "#9e9e9e" };
-  };
-
-  const renderEventRows = (eventList) =>
-    eventList.map((event) => {
-      const status = getEventStatusLabel(event);
-      const totalSold = event.showtimes?.reduce((acc, show) => acc + show.soldTickets, 0) || 0;
-      const firstStartTime = event.showtimes?.[0]?.startTime || event.timeStart;
-      return {
-        "Tên sự kiện": [
-          event.avatar,
-          <>
-            <strong>{event.name}</strong>
-            <div style={{ color: status.color, fontSize: "0.75rem" }}>{status.label}</div>
-          </>,
-        ],
-        "Ngày bắt đầu": formatDateTime(firstStartTime),
-        "Giá vé":
-          event.ticketPrice != null ? event.ticketPrice.toLocaleString("vi-VN") + " ₫" : "Miễn phí",
-        "Số lượng": `${totalSold}/${event.ticketQuantity ?? "?"}`,
-      };
-    });
-
-  const upcomingEvents = events.filter((event) => {
-    const start = event.timeStart > 1e12 ? event.timeStart : event.timeStart * 1000;
-    return start > now && start <= oneWeekLater;
-  });
-  const ongoingEvents = events
-    .filter((event) => {
-      const start = event.timeStart > 1e12 ? event.timeStart : event.timeStart * 1000;
-      const end = event.timeEnd > 1e12 ? event.timeEnd : event.timeEnd * 1000;
-      return now >= start && now <= end;
-    })
-    .sort((a, b) => a.timeStart - b.timeStart);
 
   const ongoingEventsCount = events.filter((event) => {
     const start = event.timeStart > 1e12 ? event.timeStart : event.timeStart * 1000;
@@ -114,7 +48,8 @@ function OrganizerDashboard() {
   events.forEach((event) => {
     const timeStart = event.timeStart > 1e12 ? event.timeStart : event.timeStart * 1000;
     const date = new Date(timeStart).toLocaleDateString("vi-VN");
-    const revenue = event.soldTickets * event.ticketPrice;
+    const revenue = event.revenue ?? 0;
+
     chartDataByDate[date] = (chartDataByDate[date] || 0) + revenue;
   });
 
@@ -136,70 +71,42 @@ function OrganizerDashboard() {
     ],
   };
 
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await categoryApi.getAllCategories();
-        if (response.data.status) {
-          setCategories(response.data.data); // cập nhật state categories
-        } else {
-          console.error("Lấy danh mục thất bại");
-        }
-      } catch (error) {
-        console.error("Lỗi khi gọi API lấy danh mục", error);
-      }
-    };
-
-    const fetchEvents = async () => {
-      try {
-        const response = await eventApi.getEventOfOrganization(); // truyền token
-        if (response.data.status === 200) {
-          setEvents(response.data.events); // cập nhật danh sách sự kiện
-          setTotalRevenue(response.data.totalRevenue);
-          setTotalTickets(response.data.totalTickets);
-        } else {
-          console.error("Lấy sự kiện thất bại");
-        }
-      } catch (error) {
-        console.error("Lỗi khi gọi API lấy sự kiện", error);
-      }
-    };
-
-    fetchCategories();
-    fetchEvents();
-  }, []);
-
-
-  const getCategoryIcon = (name) => {
-    switch (name.toLowerCase()) {
-      case "thể thao":
-        return "sports_soccer";
-      case "giải trí":
-        return "movie";
-      case "kịch":
-        return "theater_comedy";
-      case "hội thảo":
-        return "groups";
-      case "du lịch":
-        return "travel_explore";
-      case "âm nhạc":
-        return "music_note";
-      case "lịch sử":
-        return "history_edu";
-      default:
-        return "category";
-    }
-  };
-
   useEffect(() => {
     const fetchEvents = async () => {
       try {
         const response = await eventApi.getEventOfOrganization();
+        console.log("eve", response);
         if (response.data.status === 200) {
-          setEvents(response.data.events);
-          setTotalRevenue(response.data.totalRevenue);
-          setTotalTickets(response.data.totalTickets);
+          const rawEvents = response.data.events;
+
+          // ✅ Thêm dữ liệu tạm vào từng sự kiện
+          const enrichedEvents = rawEvents.map((event, index) => {
+            const soldTickets =
+              event.showtimes?.reduce((sum, show) => sum + show.soldTickets, 0) || 0;
+
+            const mockSoldTickets = soldTickets || Math.floor(Math.random() * 500); // 👈 dữ liệu mẫu nếu 0
+            const ticketQuantity = event.ticketQuantity ?? 500; // 👈 tạm set mặc định
+            const ticketPrice = event.ticketPrice ?? 100000; // 👈 giá vé tạm
+
+            const revenue = mockSoldTickets * ticketPrice;
+
+            return {
+              ...event,
+              soldTickets: mockSoldTickets,
+              ticketQuantity,
+              ticketPrice,
+              revenue,
+            };
+          });
+
+          setEvents(enrichedEvents);
+
+          // Nếu cần tính tổng
+          const totalRevenue = enrichedEvents.reduce((sum, e) => sum + e.revenue, 0);
+          const totalTickets = enrichedEvents.reduce((sum, e) => sum + e.soldTickets, 0);
+
+          setTotalRevenue(totalRevenue);
+          setTotalTickets(totalTickets);
         } else {
           console.error("Lấy sự kiện thất bại");
         }
@@ -207,9 +114,9 @@ function OrganizerDashboard() {
         console.error("Lỗi khi gọi API lấy sự kiện", error);
       }
     };
+
     fetchEvents();
   }, []);
-
 
   return (
     <DashboardLayout>
@@ -251,13 +158,9 @@ function OrganizerDashboard() {
           </Grid>
         </Grid>
         <Grid container spacing={3}>
-          <Grid item xs={12} md={12}>
-            <SalesTable
-              title="Sự kiện đang và sắp diễn ra"
-              rows={renderEventRows([...ongoingEvents, ...upcomingEvents])}
-            />
+          <Grid item xs={12}>
+            <EventTable events={events} />
           </Grid>
-
         </Grid>
       </ArgonBox>
       <Footer />

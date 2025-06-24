@@ -1,114 +1,47 @@
 import React, { useEffect, useState } from "react";
 import {
+  Grid,
+  Card,
+  Typography,
+  Button,
+  CircularProgress,
+  Box,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
-  Typography,
-  CircularProgress,
 } from "@mui/material";
-import Grid from "@mui/material/Grid";
-import Card from "@mui/material/Card";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import CancelIcon from "@mui/icons-material/Cancel";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+
 import ArgonBox from "components/ArgonBox";
 import ArgonTypography from "components/ArgonTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import Table from "examples/Tables/Table";
+
 import eventApi from "api/eventApi";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import CancelIcon from "@mui/icons-material/Cancel";
 
 function EventManagement() {
-  const [columns, setColumns] = useState([
+  const [columns] = useState([
     { name: "ảnh", align: "center" },
     { name: "tên sự kiện", align: "left" },
     { name: "ngày bắt đầu", align: "center" },
     { name: "giá vé", align: "center" },
-    { name: "số vé đã bán", align: "center" },
-    { name: "doanh thu", align: "center" },
     { name: "trạng thái diễn ra", align: "center" },
     { name: "trạng thái", align: "center" },
     { name: "hành động", align: "center" },
   ]);
-
   const [rows, setRows] = useState([]);
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [openDialog, setOpenDialog] = useState(false);
+  const [loadingTable, setLoadingTable] = useState(true);
+  const [detailMode, setDetailMode] = useState(false);
+  const [selected, setSelected] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
-
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const res = await eventApi.getAllHome();
-        if (res.data.status) {
-          const data = res.data.data;
-
-          const mappedRows = data.map((event) => {
-  const soldTickets = Number(event.soldTickets) ||0;
-  const ticketPrice = Number(event.ticketPrice) ||0;
-  const revenue = soldTickets * ticketPrice;
-
-  return {
-    id: event._id,
-    "ảnh": (
-      <img
-        src={event.avatar}
-        alt={event.name}
-        style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover" }}
-      />
-    ),
-    "tên sự kiện": (
-      <Typography
-        variant="body2"
-        style={{ fontSize: 14, maxWidth: 160, wordBreak: "break-word", whiteSpace: "normal" }}
-      >
-        {event.name}
-      </Typography>
-    ),
-    "ngày bắt đầu": new Date(event.timeStart).toLocaleDateString("vi-VN"),
-    "giá vé": `${ticketPrice.toLocaleString()} ₫`,
-    "số vé đã bán": soldTickets,
-    "doanh thu": `${revenue.toLocaleString()} ₫`,
-    "trạng thái diễn ra": getTimelineStatus(event.timeStart, event.timeEnd),
-    "trạng thái": renderStatus(event.status || "Chưa duyệt"),
-    "hành động": (
-      <Button
-        variant="contained"
-        size="small"
-        sx={{
-          backgroundColor: "#1976d2",
-          color: "#fff",
-          fontSize: "0.75rem",
-          padding: "4px 12px",
-          textTransform: "none",
-          "&:hover": {
-            backgroundColor: "#fff",
-            color: "#1976d2",
-            border: "1px solid #1976d2",
-          },
-        }}
-        startIcon={<InfoOutlinedIcon sx={{ fontSize: "16px" }} />}
-        onClick={() => handleRowClick(event._id)}
-      >
-        Chi tiết
-      </Button>
-    ),
-  };
-});
-
-
-          setRows(mappedRows);
-        }
-      } catch (err) {
-        console.error("Lỗi khi gọi API /events/home:", err);
-      }
-    };
-
-    fetchEvents();
-  }, []);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState(null);
 
   const renderStatus = (status) => {
     const colorMap = {
@@ -116,7 +49,6 @@ function EventManagement() {
       "Từ chối": "#d32f2f",
       "Chưa duyệt": "#ed6c02",
     };
-
     return (
       <Typography
         variant="body2"
@@ -136,54 +68,23 @@ function EventManagement() {
     );
   };
 
-  const getTimelineStatus = (start, end) => {
+  const renderTimeline = (start, end) => {
     const now = Date.now();
     const startTime = new Date(start).getTime();
     const endTime = new Date(end).getTime();
 
-    if (now < startTime)
-      return (
-        <Typography
-          variant="body2"
-          sx={{
-            backgroundColor: "#d32f2f",
-            color: "#fff",
-            fontWeight: "bold",
-            fontSize: "0.75rem",
-            borderRadius: "6px",
-            padding: "4px 12px",
-            display: "inline-block",
-            textAlign: "center",
-          }}
-        >
-          Sắp diễn ra
-        </Typography>
-      );
-
-    if (now > endTime)
-      return (
-        <Typography
-          variant="body2"
-          sx={{
-            backgroundColor: "#757575",
-            color: "#fff",
-            fontWeight: "bold",
-            fontSize: "0.75rem",
-            borderRadius: "6px",
-            padding: "4px 12px",
-            display: "inline-block",
-            textAlign: "center",
-          }}
-        >
-          Đã diễn ra
-        </Typography>
-      );
+    let label = "Đang diễn ra", color = "#2e7d32";
+    if (now < startTime) {
+      label = "Sắp diễn ra"; color = "#d32f2f";
+    } else if (now > endTime) {
+      label = "Đã diễn ra"; color = "#757575";
+    }
 
     return (
       <Typography
         variant="body2"
         sx={{
-          backgroundColor: "#2e7d32",
+          backgroundColor: color,
           color: "#fff",
           fontWeight: "bold",
           fontSize: "0.75rem",
@@ -193,216 +94,313 @@ function EventManagement() {
           textAlign: "center",
         }}
       >
-        Đang diễn ra
+        {label}
       </Typography>
     );
   };
 
-  const handleRowClick = async (id) => {
+  useEffect(() => {
+    const fetchList = async () => {
+      try {
+        const res = await eventApi.getAllHome();
+        if (res.data.status) {
+          const mapped = res.data.data.map((ev) => ({
+            id: ev._id,
+            ảnh: (
+              <img
+                src={ev.avatar}
+                alt={ev.name}
+                style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover" }}
+              />
+            ),
+            "tên sự kiện": (
+              <Typography variant="body2" sx={{ maxWidth: 180, whiteSpace: "normal" }}>
+                {ev.name}
+              </Typography>
+            ),
+            "ngày bắt đầu": new Date(ev.timeStart).toLocaleDateString("vi-VN"),
+            "giá vé": `${(+ev.ticketPrice || 0).toLocaleString()} ₫`,
+            "trạng thái diễn ra": renderTimeline(ev.timeStart, ev.timeEnd),
+            "trạng thái": renderStatus(ev.status ?? "Chưa duyệt"),
+            "hành động": (
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<InfoOutlinedIcon sx={{ fontSize: 16 }} />}
+                onClick={() => openDetail(ev._id)}
+                sx={{
+                  backgroundColor: "#64b5f6",
+                  color: "#fff",
+                  fontSize: "0.75rem",
+                  padding: "4px 12px",
+                  textTransform: "none",
+                  borderRadius: "8px",
+                  "&:hover": {
+                    backgroundColor: "#fff",
+                    color: "#64b5f6",
+                    border: "1px solid #64b5f6",
+                  },
+                }}
+              >
+                Chi tiết
+              </Button>
+            ),
+          }));
+          setRows(mapped);
+        }
+      } catch (e) {
+        console.error("Fetch list error:", e);
+      } finally {
+        setLoadingTable(false);
+      }
+    };
+    fetchList();
+  }, []);
+
+  const openDetail = async (id) => {
     setLoadingDetail(true);
     try {
       const res = await eventApi.getDetail(id);
       if (res.data.status) {
-        setSelectedEvent(res.data.data);
-        setOpenDialog(true);
+        setSelected(res.data.data);
+        setDetailMode(true);
       }
-    } catch (error) {
-      console.error("Lỗi khi gọi API chi tiết:", error);
+    } catch (e) {
+      console.error("Fetch detail error:", e);
     } finally {
       setLoadingDetail(false);
     }
   };
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setSelectedEvent(null);
-  };
-
   const updateEventStatus = (newStatus) => {
-    if (!selectedEvent) return;
-
-    const updatedRows = rows.map((row) =>
-      row.id === selectedEvent._id ? { ...row, "trạng thái": renderStatus(newStatus) } : row
+    if (!selected) return;
+    setRows((prev) =>
+      prev.map((r) => (r.id === selected._id ? { ...r, "trạng thái": renderStatus(newStatus) } : r))
     );
-    setRows(updatedRows);
-    setSelectedEvent({ ...selectedEvent, status: newStatus });
-    setOpenDialog(false);
+    setSelected({ ...selected, status: newStatus });
+    setConfirmDialogOpen(false);
+    setDetailMode(false);
   };
 
   return (
     <DashboardLayout>
       <DashboardNavbar />
-      <ArgonBox p={2}>
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Card>
-              <ArgonBox display="flex" justifyContent="space-between" alignItems="center" p={3}>
-                <ArgonTypography variant="h6">Danh sách sự kiện</ArgonTypography>
-              </ArgonBox>
-              <ArgonBox
-                sx={{
-                  overflowX: "auto",
-                  "& .MuiTableRow-root:hover": { backgroundColor: "#f5f5f5" },
-                  "& .MuiTableCell-root": { padding: "8px 12px", fontSize: 13 },
-                }}
-              >
+      <ArgonBox py={2}>
+        {detailMode ? (
+          <Card sx={{ p: 3 }}>
+            {loadingDetail ? (
+              <Box display="flex" justifyContent="center" py={5}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <>
+                <Button
+                  variant="text"
+                  sx={{
+                    backgroundColor: "#1976d2",
+                    color: "#fff",
+                    fontWeight: "bold",
+                    fontSize: "0.85rem",
+                    borderRadius: "8px",
+                    textTransform: "none",
+                    boxSizing: "border-box",
+                    border: "1px solid #1976d2",
+                    marginBottom: 2,
+                    px: 2,
+                    "&:hover": {
+                      backgroundColor: "#fff",
+                      color: "#1976d2",
+                      border: "1px solid #1976d2",
+                    },
+                    alignSelf: "flex-start",
+                  }}
+                  onClick={() => setDetailMode(false)}
+                >
+                  Quay lại danh sách
+                </Button>
+
+                <Typography variant="h4" fontWeight="bold" gutterBottom>
+                  {selected.name}
+                </Typography>
+
+                <img
+                  src={selected.avatar}
+                  alt={selected.name}
+                  style={{
+                    width: "100%",
+                    height: 350,
+                    objectFit: "cover",
+                    borderRadius: 12,
+                    border: "1px solid #ddd",
+                  }}
+                />
+
+                <Grid container spacing={3} mt={1}>
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="body1">
+                      <strong>Địa điểm:</strong> {selected.location}
+                    </Typography>
+                    <Typography variant="body1">
+                      <strong>Giá vé:</strong> {(selected.ticketPrice || 0).toLocaleString()} VNĐ
+                    </Typography>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="body1">
+                      <strong>Bắt đầu:</strong> {new Date(selected.timeStart).toLocaleString()}
+                    </Typography>
+                    <Typography variant="body1">
+                      <strong>Kết thúc:</strong> {new Date(selected.timeEnd).toLocaleString()}
+                    </Typography>
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Box
+                      mt={2}
+                      sx={{
+                        background: "#f9f9f9",
+                        border: "1px solid #e0e0e0",
+                        borderRadius: 2,
+                        p: 2,
+                        maxHeight: 250,
+                        overflow: "auto",
+                      }}
+                      dangerouslySetInnerHTML={{ __html: selected.description }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} display="flex" gap={2} mt={2}>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      startIcon={<CancelIcon />}
+                      onClick={() => {
+                        setPendingStatus("Từ chối");
+                        setConfirmDialogOpen(true);
+                      }}
+                      sx={{
+                        textTransform: "none",
+                        padding: "6px 20px",
+                        borderRadius: "8px",
+                        fontWeight: 600,
+                        fontSize: "0.9rem",
+                        minWidth: 120,
+                        borderColor: "#f44336",
+                        color: "#f44336",
+                        "&:hover": {
+                          backgroundColor: "#f44336",
+                          color: "#fff",
+                        },
+                      }}
+                    >
+                      Từ chối
+                    </Button>
+
+                    <Button
+                      variant="outlined"
+                      color="success"
+                      startIcon={<CheckCircleIcon />}
+                      onClick={() => {
+                        setPendingStatus("Đã duyệt");
+                        setConfirmDialogOpen(true);
+                      }}
+                      sx={{
+                        textTransform: "none",
+                        padding: "6px 20px",
+                        borderRadius: "8px",
+                        fontWeight: 600,
+                        fontSize: "0.9rem",
+                        minWidth: 120,
+                        backgroundColor: "#fff",
+                        borderColor: "#1b5e20",
+                        color: "#1b5e20",
+                        "&:hover": {
+                          backgroundColor: "#1b5e20",
+                          color: "#fff",
+                        },
+                      }}
+                    >
+                      Duyệt
+                    </Button>
+                  </Grid>
+                </Grid>
+              </>
+            )}
+          </Card>
+        ) : (
+          <Card>
+            <ArgonBox p={3}>
+              <ArgonTypography variant="h5" fontWeight="bold" mb={1}>
+                Danh sách sự kiện
+              </ArgonTypography>
+              {loadingTable ? (
+                <Box display="flex" justifyContent="center" py={5}>
+                  <CircularProgress />
+                </Box>
+              ) : (
                 <Table columns={columns} rows={rows} />
-              </ArgonBox>
-            </Card>
-          </Grid>
-        </Grid>
+              )}
+            </ArgonBox>
+          </Card>
+        )}
       </ArgonBox>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>Chi tiết sự kiện</DialogTitle>
-        <DialogContent dividers>
-  {loadingDetail || !selectedEvent ? (
-    <CircularProgress />
-  ) : (
-    <Grid container spacing={3}>
-      <Grid item xs={12}>
-        <Typography variant="h5" fontWeight="bold" gutterBottom color="primary">
-          {selectedEvent.name}
-        </Typography>
-      </Grid>
-
-      <Grid item xs={12}>
-        <img
-          src={selectedEvent.avatar}
-          alt="Event"
-          style={{
-            width: "100%",
-            height: 280,
-            objectFit: "cover",
-            borderRadius: 12,
-            border: "1px solid #ddd",
-          }}
-        />
-      </Grid>
-
-      <Grid item xs={12}>
-        <Typography variant="subtitle1" fontWeight="medium" gutterBottom color="text.secondary">
-          Mô tả sự kiện
-        </Typography>
-        <div
-          style={{
-            border: "1px solid #e0e0e0",
-            borderRadius: 8,
-            padding: 16,
-            background: "#f9f9f9",
-            fontSize: 14,
-            lineHeight: 1.7,
-            maxHeight: 200,
-            overflowY: "auto",
-            fontFamily: "Roboto, sans-serif",
-          }}
-          dangerouslySetInnerHTML={{ __html: selectedEvent.description }}
-        />
-      </Grid>
-
-      <Grid item xs={12} md={6}>
-        <Typography variant="body1" gutterBottom>
-          <strong>Địa điểm:</strong> {selectedEvent.location}
-        </Typography>
-        <Typography variant="body1" gutterBottom>
-          <strong>Giá vé:</strong> {selectedEvent.ticketPrice?.toLocaleString() || 0} VNĐ
-        </Typography>
-        <Typography variant="body1" gutterBottom>
-          <strong>Số vé đã bán:</strong> {selectedEvent.soldTickets}
-        </Typography>
-      </Grid>
-
-      <Grid item xs={12} md={6}>
-        <Typography variant="body1" gutterBottom>
-          <strong>Bắt đầu:</strong> {new Date(selectedEvent.timeStart).toLocaleString()}
-        </Typography>
-        <Typography variant="body1" gutterBottom>
-          <strong>Kết thúc:</strong> {new Date(selectedEvent.timeEnd).toLocaleString()}
-        </Typography>
-        <Typography variant="body1" gutterBottom>
-          <strong>Trạng thái:</strong>{" "}
-          <span
-            style={{
-              backgroundColor:
-                selectedEvent.status === "Đã duyệt"
-                  ? "#2e7d32"
-                  : selectedEvent.status === "Từ chối"
-                  ? "#d32f2f"
-                  : "#ed6c02",
-              color: "#fff",
-              padding: "2px 8px",
-              borderRadius: 6,
-              fontSize: 12,
-              fontWeight: "bold",
+      <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
+        <DialogTitle>Xác nhận hành động</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Bạn có chắc chắn muốn <strong>{pendingStatus === "Đã duyệt" ? "duyệt" : "từ chối"}</strong> sự kiện này không?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setConfirmDialogOpen(false)}
+            sx={{
+              textTransform: "none",
+              padding: "6px 20px",
+              borderRadius: "8px",
+              fontWeight: 600,
+              fontSize: "0.9rem",
+              minWidth: 120,
+              border: "1px solid",
+              borderColor: "#f44336",
+              color: "#f44336",
+              backgroundColor: "#fff",
+              "&:hover": {
+                backgroundColor: "#f44336",
+                color: "#fff",
+              },
             }}
           >
-            {selectedEvent.status || "Chưa duyệt"}
-          </span>
-        </Typography>
-      </Grid>
-    </Grid>
-  )}
-</DialogContent>
+            Hủy
+          </Button>
 
-<DialogActions
-  sx={{
-    justifyContent: "flex-end",
-    padding: "16px 24px",
-    gap: 2,
-    backgroundColor: "#fff",
-    borderTop: "1px solid #e0e0e0",
-  }}
->
-  <Button
-    variant="outlined"
-    color="error"
-    startIcon={<CancelIcon />}
-    onClick={() => updateEventStatus("Từ chối")}
-    sx={{
-      textTransform: "none",
-      padding: "6px 20px",
-      borderRadius: "8px",
-      fontWeight: 600,
-      fontSize: "0.9rem",
-      minWidth: 120,
-      borderColor: "#f44336",
-      color: "#f44336",
-      "&:hover": {
-        backgroundColor: "#f44336",
-        color: "#fff",
-      },
-    }}
-  >
-    Từ chối
-  </Button>
-
-  <Button
-    variant="outlined"
-    color="success"
-    startIcon={<CheckCircleIcon />}
-    onClick={() => updateEventStatus("Đã duyệt")}
-    sx={{
-      textTransform: "none",
-      padding: "6px 20px",
-      borderRadius: "8px",
-      fontWeight: 600,
-      fontSize: "0.9rem",
-      minWidth: 120,
-      backgroundColor: "#FFFFF",
-      borderColor: "#1b5e20",
-      color: "#1b5e20",
-      "&:hover": {
-        backgroundColor: "#1b5e20",
-        color: "#fff",
-      },
-    }}
-  >
-    Duyệt
-  </Button>
-</DialogActions>
-
-
-
+          <Button
+            onClick={() => {
+              updateEventStatus(pendingStatus);
+              setConfirmDialogOpen(false);
+              setDetailMode(false);
+            }}
+            sx={{
+              textTransform: "none",
+              padding: "6px 20px",
+              borderRadius: "8px",
+              fontWeight: 600,
+              fontSize: "0.9rem",
+              minWidth: 120,
+              backgroundColor: "#1b5e20",
+              color: "#fff",
+              "&:hover": {
+                backgroundColor: "#",
+                color: "#1b5e20",
+                border: "1px solid",
+                borderColor: "#1b5e20",
+              },
+            }}
+          >
+            Xác nhận
+          </Button>
+        </DialogActions>
       </Dialog>
 
       <Footer />

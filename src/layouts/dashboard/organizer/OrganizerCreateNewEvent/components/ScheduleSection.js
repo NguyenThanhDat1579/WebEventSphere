@@ -442,7 +442,7 @@ export default function ScheduleSection() {
       setTimeout(() => {
         navigate("/dashboard-organizer");
       }, 1000);
-      //}
+      // }
     } catch (error) {
       console.error("❌ Lỗi khi tạo sự kiện:", error);
       if (error.response) {

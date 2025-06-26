@@ -14,8 +14,9 @@ import {
   TableRow,
   Chip,
   Tooltip,
+  Stack,
 } from "@mui/material";
-import { format } from "date-fns";
+
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import GradientLineChart from "examples/Charts/LineCharts/GradientLineChart";
 import SelectMenu from "./OrganizerCreateNewEvent/components/SelectMenu";
@@ -24,314 +25,204 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import ArgonBox from "components/ArgonBox";
 import { position } from "stylis";
 import PieChart from "./OrganizerCreateNewEvent/components/PieChart";
+import LineChartDualAxis from "../organizer/components/LineChartDualAxis";
+import DonutChartWithCenter from "../organizer/components/DonutChartWithCenter";
+import { format, eachDayOfInterval, isSameDay, fromUnixTime } from "date-fns";
 
+import eventApi from "api/utils/eventApi";
 const now = Date.now();
-
-const mockApiResponse = {
-  status: 200,
-  totalTickets: 1,
-  totalRevenue: 0,
-  events: [
-    {
-      _id: "6851471ebd1dcfc157d5087c",
-      name: "PolyLib",
-      timeStart: 1750933920000,
-      timeEnd: 1751279520000,
-      avatar:
-        "https://res.cloudinary.com/deoqppiun/image/upload/v1750156286/w2nbapzv3uridzldxrp8.png",
-      showtimes: [
-        {
-          _id: "6851471ebd1dcfc157d5087e",
-          startTime: 1751279580000,
-          endTime: 1751365980000,
-          soldTickets: 0,
-        },
-      ],
-      revenueByShowtime: [
-        {
-          showtimeId: "6851471ebd1dcfc157d5087e",
-          soldTickets: 0,
-          revenue: 0,
-          revenueByZone: [],
-        },
-      ],
-      eventTotalRevenue: 0,
-      soldTickets: 0,
-    },
-    {
-      _id: "6851530b0909bf75f5eee6ce",
-      name: "GAMA Music Racing Festival",
-      timeStart: 1743127200000,
-      timeEnd: 1751086800000,
-      avatar:
-        "https://res.cloudinary.com/deoqppiun/image/upload/v1750159752/wldldmuthcdd0wmnmx0a.png",
-      showtimes: [],
-      revenueByShowtime: [],
-      eventTotalRevenue: 0,
-      soldTickets: 0,
-    },
-    {
-      _id: "685154a60909bf75f5eee6d3",
-      name: "GAMA Music Racing Festival",
-      timeStart: 1743127200000,
-      timeEnd: 1751086800000,
-      avatar:
-        "https://res.cloudinary.com/deoqppiun/image/upload/v1750160244/gpwejstcveo2lt94veou.png",
-      showtimes: [
-        {
-          _id: "685154a60909bf75f5eee6d5",
-          startTime: 1751097600000,
-          endTime: 1751126400000,
-          soldTickets: 0,
-        },
-      ],
-      revenueByShowtime: [
-        {
-          showtimeId: "685154a60909bf75f5eee6d5",
-          soldTickets: 0,
-          revenue: 0,
-          revenueByZone: [],
-        },
-      ],
-      eventTotalRevenue: 0,
-      soldTickets: 0,
-    },
-    {
-      _id: "68515c930909bf75f5eee73e",
-      name: "Love Letter With Faye Peraya 1st Fan Meeting In Ho Chi Minh",
-      timeStart: 1745895600000,
-      timeEnd: 1751083200000,
-      avatar:
-        "https://res.cloudinary.com/deoqppiun/image/upload/v1750161759/isw0ptnqj9c1j9claybi.png",
-      showtimes: [
-        {
-          _id: "68515c930909bf75f5eee740",
-          startTime: 1751108400000,
-          endTime: 1751115600000,
-          soldTickets: 1,
-        },
-      ],
-      revenueByShowtime: [
-        {
-          showtimeId: "68515c930909bf75f5eee740",
-          soldTickets: 1,
-          revenue: 0,
-          revenueByZone: [
-            {
-              zoneId: "68515c930909bf75f5eee746",
-              zoneName: null,
-              revenue: 0,
-            },
-          ],
-        },
-      ],
-      eventTotalRevenue: 0,
-      soldTickets: 1,
-    },
-    {
-      _id: "6852335b914cf6f9b26038d6",
-      name: "[DẾ GARDEN] Workshop Fairy Dome - Vòm Tiên",
-      timeStart: 1743127200000,
-      timeEnd: 1751086800000,
-      avatar:
-        "https://res.cloudinary.com/deoqppiun/image/upload/v1750216830/xtg3rrjqfcsz9fagoppy.png",
-      showtimes: [],
-      revenueByShowtime: [],
-      eventTotalRevenue: 0,
-      soldTickets: 0,
-    },
-    {
-      _id: "68524391914cf6f9b26039ad",
-      name: "[TP.HCM] Những Thành Phố Mơ Màng Summer 2025",
-      timeStart: 1743138000000,
-      timeEnd: 1751086800000,
-      avatar:
-        "https://res.cloudinary.com/deoqppiun/image/upload/v1750221226/r5fnvnwtlk5sacecol2j.png",
-      showtimes: [
-        {
-          _id: "68524391914cf6f9b26039af",
-          startTime: 1751101200000,
-          endTime: 1751124600000,
-          soldTickets: 0,
-        },
-      ],
-      revenueByShowtime: [
-        {
-          showtimeId: "68524391914cf6f9b26039af",
-          soldTickets: 0,
-          revenue: 0,
-          revenueByZone: [],
-        },
-      ],
-      eventTotalRevenue: 0,
-      soldTickets: 0,
-    },
-    {
-      _id: "6852b9d4021ea017074ab11e",
-      name: "SÂN KHẤU THIÊN ĐĂNG : CHUYẾN ĐÒ ĐỊNH MỆNH",
-      timeStart: 1748829600000,
-      timeEnd: 1750395600000,
-      avatar:
-        "https://res.cloudinary.com/deoqppiun/image/upload/v1750251364/zadaszi0h74kpzciqzul.png",
-      showtimes: [
-        {
-          _id: "6852b9d4021ea017074ab120",
-          startTime: 1750422600000,
-          endTime: 1750433400000,
-          soldTickets: 0,
-        },
-      ],
-      revenueByShowtime: [
-        {
-          showtimeId: "6852b9d4021ea017074ab120",
-          soldTickets: 0,
-          revenue: 0,
-          revenueByZone: [],
-        },
-      ],
-      eventTotalRevenue: 0,
-      soldTickets: 0,
-    },
-    {
-      _id: "6852c70e17f8400d2e8003e2",
-      name: "2025 HYERI FANMEETING TOUR <Welcome to HYERI's STUDIO> IN HO CHI MINH CITY",
-      timeStart: 1749358800000,
-      timeEnd: 1752296400000,
-      avatar:
-        "https://res.cloudinary.com/deoqppiun/image/upload/v1750255071/ac8tjyskgojo58tokvzo.png",
-      showtimes: [
-        {
-          _id: "6852c70e17f8400d2e8003e4",
-          startTime: 1752310800000,
-          endTime: 1752321600000,
-          soldTickets: 0,
-        },
-      ],
-      revenueByShowtime: [
-        {
-          showtimeId: "6852c70e17f8400d2e8003e4",
-          soldTickets: 0,
-          revenue: 0,
-          revenueByZone: [],
-        },
-      ],
-      eventTotalRevenue: 0,
-      soldTickets: 0,
-    },
-    {
-      _id: "6852c97f17f8400d2e80041f",
-      name: "HoYo FEST 2025",
-      timeStart: 1751379060000,
-      timeEnd: 1753844400000,
-      avatar:
-        "https://res.cloudinary.com/deoqppiun/image/upload/v1750255688/kbptzzaezwcciyca55nn.jpg",
-      showtimes: [
-        {
-          _id: "6852c97f17f8400d2e800421",
-          startTime: 1753844400000,
-          endTime: 1753884780000,
-          soldTickets: 0,
-        },
-      ],
-      revenueByShowtime: [
-        {
-          showtimeId: "6852c97f17f8400d2e800421",
-          soldTickets: 0,
-          revenue: 0,
-          revenueByZone: [],
-        },
-      ],
-      eventTotalRevenue: 0,
-      soldTickets: 0,
-    },
-    {
-      _id: "6856c8d5e5345d64d14999db",
-      name: "1",
-      timeStart: null,
-      timeEnd: null,
-      avatar: null,
-      showtimes: [],
-      revenueByShowtime: [],
-      eventTotalRevenue: 0,
-      soldTickets: 0,
-    },
-  ],
-};
 
 function OrganizerRevenue() {
   const [selectedEventId, setSelectedEventId] = useState("");
-  const [events, setEvents] = useState(mockApiResponse.events);
-  const [selectedEvent, setSelectedEvent] = useState(null); // 🆕 thêm
-  const [revenueStats, setRevenueStats] = useState({ totalRevenue: 0, totalTicketsSold: 0 });
+  const [selectedEvent, setSelectedEvent] = useState([]);
+  const [events, setEvents] = useState([]);
   const [gradientChart, setGradientChart] = useState({ labels: [], datasets: [] });
-  const [pieChartData, setPieChartData] = useState({ labels: [], datasets: [] });
-  const [ticketTableData, setTicketTableData] = useState([]); // 🆕 cho bảng chi tiết vé
 
-  useEffect(() => {
-    if (!selectedEventId) return;
+  function getEventRevenue(event) {
+    return event?.eventTotalRevenue || 0;
+  }
+  function getSoldTickets(event) {
+    return event?.soldTickets || 0;
+  }
+  function getTotalTicketsOfEvent(event) {
+    return event?.totalTicketsEvent || 0;
+  }
 
-    const selectedEvent = mockApiResponse.events.find((e) => e._id === selectedEventId);
-    if (!selectedEvent) return;
+  function getEventDateLabels(event) {
+    const startDate = new Date(event.timeStart);
+    const endDate = new Date(event.timeEnd);
 
-    // 👉 Tổng vé đã bán & doanh thu
-    const totalTicketsSold = selectedEvent.soldTickets;
-    const totalRevenue = selectedEvent.eventTotalRevenue;
+    if (!startDate || !endDate || isNaN(startDate) || isNaN(endDate) || startDate > endDate) {
+      console.error("❌ Invalid interval:", { startDate, endDate });
+      return [];
+    }
 
-    setRevenueStats({ totalRevenue, totalTicketsSold });
+    const days = eachDayOfInterval({ start: startDate, end: endDate });
+    return days.map((day) => format(day, "dd/MM"));
+  }
 
-    // 👉 Biểu đồ line: mỗi suất diễn là một điểm
-    const showtimeLabels = selectedEvent.revenueByShowtime.map((s) => {
-      const time = selectedEvent.showtimes.find((t) => t._id === s.showtimeId)?.startTime;
-      return time ? format(new Date(time), "dd/MM") : "Không rõ";
+  function buildLineChartDataFromEvent(event) {
+    const dateLabels = getEventDateLabels(event); // Gọi hàm đã tách riêng
+
+    const showtimes = event.showtimes || [];
+    const revenueByShowtime = event.revenueByShowtime || [];
+
+    const revenueData = [];
+    const ticketData = [];
+
+    // Tạo danh sách đối tượng ngày tương ứng
+    const days = dateLabels.map((label) => {
+      const [day, month] = label.split("/").map(Number);
+      const year = new Date(event.timeStart).getFullYear();
+      return new Date(year, month - 1, day);
     });
 
-    const revenueData = selectedEvent.revenueByShowtime.map((s) => s.revenue);
-    const ticketData = selectedEvent.revenueByShowtime.map((s) => s.soldTickets);
+    for (const day of days) {
+      // Lấy các suất chiếu trong ngày đó
+      const showtimeIdsInDay = showtimes
+        .filter((st) => isSameDay(new Date(st.startTime), day))
+        .map((st) => st._id);
 
-    setGradientChart({
-      labels: showtimeLabels,
+      const revenueForDay = revenueByShowtime
+        .filter((r) => showtimeIdsInDay.includes(r.showtimeId))
+        .reduce((sum, r) => sum + (r.revenue || 0), 0);
+
+      const ticketsForDay = revenueByShowtime
+        .filter((r) => showtimeIdsInDay.includes(r.showtimeId))
+        .reduce((sum, r) => sum + (r.soldTickets || 0), 0);
+
+      revenueData.push(revenueForDay);
+      ticketData.push(ticketsForDay);
+    }
+
+    return {
+      labels: dateLabels,
       datasets: [
         { label: "Doanh thu (₫)", data: revenueData, color: "info" },
         { label: "Số vé đã bán", data: ticketData, color: "success" },
       ],
-    });
+    };
+  }
 
-    // 👉 Biểu đồ tròn (theo loại vé/zone)
-    const revenueByZone = {};
-    selectedEvent.revenueByShowtime.forEach((s) => {
-      s.revenueByZone.forEach((z) => {
-        const name = z.zoneName || "Không rõ";
-        revenueByZone[name] = (revenueByZone[name] || 0) + z.revenue;
-      });
-    });
+  function getShowtimeDetailsByEvent(event) {
+    if (!event || !event.showtimes) return [];
 
-    const pieLabels = Object.keys(revenueByZone);
-    const pieData = pieLabels.map((k) => revenueByZone[k]);
+    return event.showtimes.map((showtime) => {
+      const revenueInfo = event.revenueByShowtime?.find((r) => r.showtimeId === showtime._id);
 
-    setPieChartData({
-      labels: pieLabels,
-      datasets: [
-        {
-          data: pieData,
-          backgroundColors: ["#66BB6A", "#42A5F5", "#FFA726", "#AB47BC", "#EF5350", "#29B6F6"],
-        },
-      ],
-    });
+      const startDate = new Date(showtime.startTime);
+      const endDate = new Date(showtime.endTime);
 
-    // 👉 Bảng chi tiết suất diễn
-    const tableData = selectedEvent.revenueByShowtime.map((r) => {
-      const showtime = selectedEvent.showtimes.find((s) => s._id === r.showtimeId);
+      const now = Date.now();
+      let status = "Chưa diễn ra";
+      if (now >= showtime.endTime) status = "Kết thúc";
+      else if (now >= showtime.startTime) status = "Đang diễn ra";
+
       return {
-        name: `Suất ${showtime?._id.slice(-4)}`,
-        datetime: showtime?.startTime || 0,
-        sold: r.soldTickets,
-        revenue: r.revenue,
-        status: showtime?.startTime < Date.now() ? "Kết thúc" : "Sắp diễn ra",
+        name: `Suất ${format(startDate, "dd/MM")}`,
+        datetime: startDate,
+        sold: revenueInfo?.soldTickets ?? 0,
+        revenue: revenueInfo?.revenue ?? 0,
+        status,
       };
     });
+  }
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await eventApi.getEventOfOrganization();
+        if (response.data.status === 200) {
+          const originalEvents = response.data.events;
 
-    setTicketTableData(tableData);
-  }, [selectedEventId, events]);
+          // 🎯 Giả định bạn có thông tin cập nhật số vé mới theo showtimeId
+          const updates = [
+            {
+              showtimeId: "685bcd1872ded230197a0615",
+              soldTickets: 150,
+              revenueByZone: [
+                { zoneId: "zone1", zoneName: "VIP", soldTickets: 60, price: 400000 },
+                { zoneId: "zone2", zoneName: "Thường", soldTickets: 90, price: 200000 },
+              ],
+            },
+          ];
+
+          // 🛠 Áp dụng cập nhật
+          const updatedEvents = updateEventTicketsAndRevenue(originalEvents, updates);
+
+          setEvents(updatedEvents);
+        } else {
+          console.error("Lấy sự kiện thất bại");
+        }
+      } catch (error) {
+        console.error("Lỗi khi gọi API lấy sự kiện", error);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
+  const updateEventTicketsAndRevenue = (events, updates) => {
+    return events.map((event) => {
+      let updatedEvent = { ...event };
+      let eventRevenue = 0;
+      let eventSoldTickets = 0;
+
+      updatedEvent.revenueByShowtime = event.revenueByShowtime.map((showtimeRev) => {
+        const update = updates.find((u) => u.showtimeId === showtimeRev.showtimeId);
+        if (!update) return showtimeRev;
+
+        let totalRevenue = 0;
+        const updatedZones = update.revenueByZone.map((zoneUpdate) => {
+          const revenue = zoneUpdate.soldTickets * zoneUpdate.price;
+          totalRevenue += revenue;
+
+          return {
+            zoneId: zoneUpdate.zoneId,
+            zoneName: zoneUpdate.zoneName,
+            revenue,
+          };
+        });
+
+        updatedEvent.showtimes = updatedEvent.showtimes.map((st) =>
+          st._id === showtimeRev.showtimeId ? { ...st, soldTickets: update.soldTickets } : st
+        );
+
+        eventSoldTickets += update.soldTickets;
+        eventRevenue += totalRevenue;
+
+        return {
+          ...showtimeRev,
+          soldTickets: update.soldTickets,
+          revenue: totalRevenue,
+          revenueByZone: updatedZones,
+        };
+      });
+
+      updatedEvent.eventTotalRevenue = eventRevenue;
+      updatedEvent.soldTickets = eventSoldTickets;
+
+      return updatedEvent;
+    });
+  };
+
+  useEffect(() => {
+    if (!selectedEventId) return;
+
+    setSelectedEvent(events.find((e) => e._id === selectedEventId));
+    if (!selectedEvent) return;
+  }, [selectedEventId]);
+
+  useEffect(() => {
+    if (selectedEvent) {
+      const chartData = buildLineChartDataFromEvent(selectedEvent);
+      setGradientChart(chartData);
+    }
+  }, [selectedEvent]);
+
+  const revenue = getEventRevenue(selectedEvent);
+  const sold = getSoldTickets(selectedEvent);
+  const total = getTotalTicketsOfEvent(selectedEvent);
+  const ticketTableData = getShowtimeDetailsByEvent(selectedEvent);
 
   const eventOptions = events.map((e) => ({
     label: e.name,
@@ -342,110 +233,180 @@ function OrganizerRevenue() {
     <DashboardLayout>
       <DashboardNavbar />
       <ArgonBox py={3} sx={{ position: "relative" }}>
-        <Box sx={{ backgroundColor: "#fff", p: 3, borderRadius: 5 }}>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
-            Chọn sự kiện để xem thống kê
+        <Box sx={{ backgroundColor: "#fff", p: 5, borderRadius: 5 }}>
+          <Typography fontSize={20} fontWeight="bold" gutterBottom>
+            Chọn sự kiện để xem doanh thu
           </Typography>
           <SelectMenu
-            label="🗂️ Chọn sự kiện"
+            label=" Chọn sự kiện"
             value={selectedEventId}
             onChange={(val) => setSelectedEventId(val)}
             options={eventOptions}
           />
         </Box>
-        <Grid container spacing={3} mb={3} mt={2}>
-          <Grid item xs={12} md={4} lg={3}>
-            <DetailedStatisticsCard
-              title="🎟️ Vé đã bán"
-              count={revenueStats.totalTicketsSold}
-              icon={{ color: "success", component: <i className="ni ni-tag" /> }}
-            />
+        <Grid container spacing={3} mt={0.5}>
+          {/* <Grid item xs={12}>
+            <Typography fontSize={20} sx={{ fontWeight: "bold", ml: 3 }} gutterBottom>
+              Doanh thu
+            </Typography>
+          </Grid> */}
+          <Grid item xs={12}>
+            <Typography fontSize={16} sx={{ fontWeight: "600", ml: 3 }} gutterBottom>
+              Tổng quan
+            </Typography>
           </Grid>
-          <Grid item xs={12} md={4} lg={3}>
-            <DetailedStatisticsCard
-              title="👥 Người tham dự"
-              count={revenueStats.totalAttendees}
-              icon={{ color: "warning", component: <i className="ni ni-single-02" /> }}
-            />
+        </Grid>
+        <Grid container spacing={3} mb={3}>
+          <Grid item xs={12} md={6} lg={6}>
+            <Box
+              sx={{
+                backgroundColor: "#fff",
+                p: 3,
+                borderRadius: 5,
+                height: 170,
+                display: "flex", // 👈 cần để kích hoạt flexbox
+                flexDirection: "column", // 👈 xếp chữ theo chiều dọc
+                justifyContent: "center", // 👈 căn giữa theo chiều dọc
+              }}
+            >
+              <Typography fontSize={20}>Tổng doanh thu</Typography>
+              <Typography sx={{ fontSize: 24, fontWeight: "bold" }}>
+                {revenue.toLocaleString() + " ₫"}
+              </Typography>
+            </Box>
           </Grid>
-          <Grid item xs={12} md={4} lg={3}>
-            <DetailedStatisticsCard
-              title="💰 Tổng doanh thu"
-              count={revenueStats.totalRevenue.toLocaleString() + " ₫"}
-              icon={{ color: "info", component: <i className="ni ni-money-coins" /> }}
-            />
+          <Grid item xs={12} md={6} lg={6}>
+            <Box sx={{ backgroundColor: "#fff", p: 3, borderRadius: 5 }}>
+              <Stack direction="row" spacing={4} alignItems="center" justifyContent="space-between">
+                {/* Bên trái: 3 dòng text */}
+                <Box>
+                  <Typography fontSize={20} gutterBottom>
+                    Số vé đã bán
+                  </Typography>
+                  <Typography fontWeight="bold" fontSize={22} gutterBottom>
+                    {sold} vé
+                  </Typography>
+                  <Typography fontSize={20} gutterBottom>
+                    Tổng: {total} vé
+                  </Typography>
+                </Box>
+
+                {/* Bên phải: Donut chart */}
+                <Box sx={{ width: 120, height: 120 }}>
+                  <DonutChartWithCenter sold={sold} locked={0} available={total - sold} />
+                </Box>
+              </Stack>
+            </Box>
           </Grid>
 
-          <Grid container spacing={3} mb={3} ml={0.5} mt={2}>
+          <Grid container spacing={3} mb={3} ml={0.5}>
             <Grid item xs={12}>
-              <GradientLineChart
-                key={selectedEventId}
-                title="📈 Doanh thu & Vé bán theo suất diễn"
-                chart={gradientChart}
-              />
+              <Box mt={4} sx={{ backgroundColor: "#fff", p: 3, borderRadius: 5 }}>
+                <LineChartDualAxis
+                  key={selectedEventId}
+                  labels={gradientChart.labels}
+                  revenueData={gradientChart.datasets?.[0]?.data || []}
+                  ticketData={gradientChart.datasets?.[1]?.data || []}
+                />
+              </Box>
             </Grid>
           </Grid>
-          <Grid container spacing={3} mb={3} ml={0.5} mt={2}>
-            <Box mt={4} sx={{ border: "1px solid #ccc", borderRadius: 2, p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                📊 PHÂN TÍCH LOẠI VÉ
-              </Typography>
 
-              <PieChart chart={pieChartData} />
-            </Box>
-          </Grid>
-          <Grid container spacing={3} mb={3} ml={0.5} mt={2}>
-            <Box mt={4}>
-              <Typography variant="h6" gutterBottom>
-                🗂️ CHI TIẾT DOANH THU THEO SUẤT
-              </Typography>
+          <Grid container spacing={3} mb={3} ml={0.5}>
+            <Grid item xs={12}>
+              <Box>
+                <Typography fontSize={18} sx={{ fontWeight: "600", ml: 3 }} gutterBottom>
+                  Chi tiết
+                </Typography>
 
-              <TableContainer component={Paper}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>🎭 Tên suất diễn</TableCell>
-                      <TableCell>🕒 Ngày giờ</TableCell>
-                      <TableCell>🎟️ Vé bán</TableCell>
-                      <TableCell>💰 Doanh thu</TableCell>
-                      <TableCell>📌 Trạng thái</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {ticketTableData.map((s, idx) => (
-                      <TableRow
-                        key={idx}
-                        sx={{ backgroundColor: idx % 2 === 0 ? "#f9f9f9" : "white" }}
-                      >
-                        <TableCell>{s.name}</TableCell>
-                        <TableCell>{format(new Date(s.datetime), "dd/MM/yyyy HH:mm")}</TableCell>
-                        <TableCell>{s.sold}</TableCell>
-                        <TableCell>
-                          {s.revenue >= 1_000_000
-                            ? `${(s.revenue / 1_000_000).toFixed(1)} triệu ₫`
-                            : `${s.revenue.toLocaleString()} ₫`}
+                <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
+                  <Table size="medium" sx={{ minWidth: 1000, tableLayout: "fixed" }}>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell
+                          sx={{
+                            fontWeight: "bold",
+                            width: 240,
+                            paddingRight: 15,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          Tên suất diễn
                         </TableCell>
-                        <TableCell>
-                          <Tooltip title={`Trạng thái: ${s.status}`}>
-                            <Chip
-                              label={s.status}
-                              size="small"
-                              color={
-                                s.status === "Kết thúc"
-                                  ? "default"
-                                  : s.status === "Đang diễn ra"
-                                  ? "success"
-                                  : "warning"
-                              }
-                            />
-                          </Tooltip>
+                        <TableCell
+                          sx={{
+                            fontWeight: "bold",
+                            width: 240,
+                            paddingRight: 10,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          Ngày diễn ra
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            fontWeight: "bold",
+                            width: 240,
+                            paddingRight: 20,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          Số vé đã bán
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            fontWeight: "bold",
+                            width: 240,
+                            paddingRight: 17,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          Doanh thu
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            fontWeight: "bold",
+                            width: 240,
+                            paddingRight: 10,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          Trạng thái
                         </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Box>
+                    </TableHead>
+                    <TableBody>
+                      {ticketTableData.map((s, idx) => (
+                        <TableRow
+                          key={idx}
+                          sx={{ backgroundColor: idx % 2 === 0 ? "#f9f9f9" : "white" }}
+                        >
+                          <TableCell>{s.name}</TableCell>
+                          <TableCell>{format(s.datetime, "dd/MM/yyyy HH:mm")}</TableCell>
+                          <TableCell>{s.sold}</TableCell>
+                          <TableCell>{`${s.revenue.toLocaleString()} ₫`}</TableCell>
+                          <TableCell>
+                            <Tooltip title={`Trạng thái: ${s.status}`}>
+                              <Chip
+                                label={s.status}
+                                size="small"
+                                color={
+                                  s.status === "Kết thúc"
+                                    ? "default"
+                                    : s.status === "Đang diễn ra"
+                                    ? "success"
+                                    : "warning"
+                                }
+                              />
+                            </Tooltip>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+            </Grid>
           </Grid>
         </Grid>
       </ArgonBox>

@@ -1,244 +1,312 @@
+// AdminDashboard.js  (chỉ hiển thị phần thay đổi chính)
 import { useEffect, useState } from "react";
-
-// @mui material components
+import {
+  Grid, Card, CardContent, Typography, Box, Chip,
+} from "@mui/material";
 import Icon from "@mui/material/Icon";
-import { Grid, Card, CardContent, Typography, Box, Chip } from "@mui/material";
-// Argon components
-import ArgonBox from "components/ArgonBox";
-import ArgonTypography from "components/ArgonTypography";
-
-// Argon example components
-import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
-import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import Footer from "../../../examples/Footer";
-import DetailedStaticsCard from "../../../examples/Cards/StatisticsCards/DetailedStatisticsCard";
-import SalesTable from "examples/Tables/SalesTable";
-import CategoriesList from "examples/Lists/CategoriesList";
-import GradientLineChart from "examples/Charts/LineCharts/GradientLineChart";
-
-// Argon styles
-import typography from "assets/theme/base/typography";
-
-// Data
-import gradientLineChartData from "layouts/dashboard/data/gradientLineChartData";
-import salesTableData from "layouts/dashboard/data/salesTableData";
-import categoriesListData from "layouts/dashboard/data/categoriesListData";
-
-// Custom
-import Slider from "layouts/dashboard/components/Slider";
-import revenueApi from "api/revenue";
-import eventApi from "api/eventApi";
 import PropTypes from "prop-types";
 
-
+import ArgonBox from "components/ArgonBox";
+import ArgonTypography from "components/ArgonTypography";
+import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
+import DashboardNavbar from "examples/Navbars/DashboardNavbar";
+import Footer from "examples/Footer";
+import DetailedStatisticsCard from "examples/Cards/StatisticsCards/DetailedStatisticsCard";
+import GradientLineChart from "examples/Charts/LineCharts/GradientLineChart";
+import gradientLineChartData from "layouts/dashboard/data/gradientLineChartData";
+import revenueApi from "api/revenue";
+import eventApi from "api/eventApi";
+import Chart from "chart.js/auto";
 function AdminDashboard() {
-  const { size } = typography;
-  const [totalRevenue, setTotalRevenue] = useState(0);
-  const [totalTickets, setTotalTickets] = useState(0);
-  const [totalEvents, setTotalEvents] = useState(0);
-  const [endedEvents, setEndedEvents] = useState(0);
-  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  /* ─────────────────────── STATE ─────────────────────── */
+  const [kpi, setKpi] = useState({
+    revenue: 0, tickets: 0, events: 0, ended: 0,
+    prevRevenue: 0, prevTickets: 0, // tháng trước (giả lập)
+  });
+  const [upcomingEvents, setUpcoming] = useState([]);
 
+  /* ─────────────────── FETCH KPI & EVENTS ────────────── */
   useEffect(() => {
-    const fetchRevenue = async () => {
+    const fetchDashboard = async () => {
       try {
+        /* 1️⃣  Doanh thu & vé */
         const res = await revenueApi.getRevenue();
-        const rawData = res.data.data;
+        const raw = res.data.data;
 
-        const safeData = rawData.map((item) => {
-          let soldTickets = parseInt(item.soldTickets);
-          if (!Number.isFinite(soldTickets)) {
-            soldTickets = Math.floor(Math.random() * 51) + 100;
-          }
+        // Sanitize + bổ sung số ngẫu nhiên
+        const data = raw.map(item => {
+          const sold = Number.isFinite(item.soldTickets)
+            ? item.soldTickets
+            : Math.floor(Math.random() * 51) + 100;         // 100–150 vé
 
-          const ticketPrice = 100000;
+          const price = 100_000;                           // giá giả định
           const revenue = Number.isFinite(item.revenue)
             ? item.revenue
-            : soldTickets * ticketPrice;
+            : sold * price;
 
-          return {
-            ...item,
-            soldTickets,
-            revenue,
-          };
+          return { ...item, soldTickets: sold, revenue };
         });
 
-        console.log("🧪 SafeData:", safeData);
+        const revenue = data.reduce((s, i) => s + i.revenue, 0);
+        const tickets = data.reduce((s, i) => s + i.soldTickets, 0);
+        const events = data.length;
+        const ended = data.filter(i => i.status === "End").length;
 
-        const totalRevenue = safeData.reduce((acc, item) => acc + item.revenue, 0);
-        const totalTickets = safeData.reduce((acc, item) => acc + item.soldTickets, 0);
-        const totalEvents = safeData.length;
-        const endedEvents = safeData.filter((item) => item.status === "End").length;
+        /*  🔀  Giả lập tháng trước (60 – 110 % so với hiện tại)  */
+        const prevRevenue = Math.round(revenue * (Math.random() * .5 + .6));
+        const prevTickets = Math.round(tickets * (Math.random() * .5 + .6));
 
-        setTotalRevenue(totalRevenue);
-        setTotalTickets(totalTickets);
-        setTotalEvents(totalEvents);
-        setEndedEvents(endedEvents);
-      } catch (err) {
-        console.error("Lỗi khi lấy dữ liệu dashboard:", err);
+        setKpi({ revenue, tickets, events, ended, prevRevenue, prevTickets });
+      } catch (e) {
+        console.error("Fetch KPI error:", e);
       }
-    };
 
-    const fetchUpcomingEvents = async () => {
       try {
-        const res = await eventApi.getAllHome();
-        if (res.data.status) {
-          const now = new Date().getTime();
-          const filtered = res.data.data.filter(event => new Date(event.timeEnd).getTime() > now);
-          setUpcomingEvents(filtered);
+        /* 2️⃣  Sự kiện sắp diễn ra */
+        const evRes = await eventApi.getAllHome();
+        if (evRes.data.status) {
+          const now = Date.now();
+          const list = evRes.data.data.filter(ev => new Date(ev.timeEnd).getTime() > now);
+          setUpcoming(list);
         }
-      } catch (err) {
-        console.error("Lỗi khi lấy danh sách sự kiện sắp diễn ra:", err);
+      } catch (e) {
+        console.error("Fetch events error:", e);
       }
     };
-
-    fetchRevenue();
-    fetchUpcomingEvents();
+    fetchDashboard();
   }, []);
-
-  const EventCard = ({ event }) => {
-    const status = (() => {
-      const now = Date.now();
-      const start = new Date(event.timeStart).getTime();
-      const end = new Date(event.timeEnd).getTime();
-
-      if (now < start) return "Sắp diễn ra";
-      if (now > end) return "Đã kết thúc";
-      return "Đang diễn ra";
-    })();
-
-    const statusColor = {
-      "Sắp diễn ra": "warning",
-      "Đang diễn ra": "success",
-      "Đã kết thúc": "default",
-    };
-
-    {
-      upcomingEvents.map((event) => (
-        <EventCard key={event._id} event={event} />
-      ))
+  const getTrendIcon = (value) => ({
+    icon: value >= 0 ? "arrow_upward" : "arrow_downward",
+    color: value >= 0 ? "success" : "error",
+  });
+  const getBgColor = (color) => {
+    switch (color) {
+      case "success": return "rgba(76, 175, 80, 0.1)";
+      case "error": return "rgba(244, 67, 54, 0.1)";
+      default: return "rgba(0, 0, 0, 0.05)";
     }
-
-    EventCard.propTypes = {
-      event: PropTypes.shape({
-        _id: PropTypes.string.isRequired,
-        name: PropTypes.string.isRequired,
-        location: PropTypes.string.isRequired,
-        timeStart: PropTypes.string.isRequired,
-        timeEnd: PropTypes.string.isRequired,
-        avatar: PropTypes.string.isRequired,
-      }).isRequired,
-    };
-
-
-    return (
-      <Grid item xs={12} sm={6} md={4}>
-        <Card sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-          <img
-            src={event.avatar}
-            alt={event.name}
-            style={{ width: "100%", height: 160, objectFit: "cover", borderTopLeftRadius: 4, borderTopRightRadius: 4 }}
-          />
-          <CardContent>
-            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-              {event.name}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {event.location}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {new Date(event.timeStart).toLocaleString()} - {new Date(event.timeEnd).toLocaleString()}
-            </Typography>
-            <Box mt={1}>
-              <Chip label={status} color={statusColor[status]} size="small" />
-            </Box>
-          </CardContent>
-        </Card>
-      </Grid>
-    );
   };
-// hehehe
+
+  /* ─────────────  Helper tính % tăng / giảm  ──────────── */
+  const pct = (cur, prev) => {
+    if (!prev) return { value: 0, color: "text" };
+    const diff = ((cur - prev) / prev) * 100;
+    return {
+      value: diff.toFixed(1),
+      color: diff >= 0 ? "success" : "error",
+      arrow: diff >= 0 ? "arrow_upward" : "arrow_downward",
+    };
+  };
+  const revPct = pct(kpi.revenue, kpi.prevRevenue);
+  const ticPct = pct(kpi.tickets, kpi.prevTickets);
+  /* ────────────────   RENDER   ──────────────── */
   return (
     <DashboardLayout>
       <DashboardNavbar />
+
+      {/* ============== TOP KPI ============== */}
       <ArgonBox py={3}>
         <Grid container spacing={3} mb={3}>
           <Grid item xs={12} md={6} lg={3}>
-            <DetailedStaticsCard
+            <DetailedStatisticsCard
               title="Tổng doanh thu"
-              count={`$${totalRevenue.toLocaleString()}`}
+              count={`${kpi.revenue.toLocaleString()} ₫`}
               icon={{ color: "info", component: <i className="ni ni-money-coins" /> }}
-              percentage={{}}
+              percentage={{
+                color: revPct.color,
+                count: `${Math.abs(revPct.value)}%`,
+                text: "so với tháng trước",
+                icon: getTrendIcon(revPct.value).icon,
+              }}
             />
+
           </Grid>
+
           <Grid item xs={12} md={6} lg={3}>
-            <DetailedStaticsCard
+            <DetailedStatisticsCard
               title="Tổng vé đã bán"
-              count={totalTickets}
+              count={kpi.tickets}
               icon={{ color: "success", component: <i className="ni ni-tag" /> }}
+              percentage={{
+                color: ticPct.color,
+                count: `${Math.abs(ticPct.value)}%`,
+                text: "so với tháng trước",
+              }}
+            />
+          </Grid>
+
+          <Grid item xs={12} md={6} lg={3}>
+            <DetailedStatisticsCard
+              title="Số sự kiện"
+              count={kpi.events}
+              icon={{ color: "warning", component: <i className="ni ni-calendar-grid-58" /> }}
               percentage={{}}
             />
           </Grid>
+
           <Grid item xs={12} md={6} lg={3}>
-            <DetailedStaticsCard
-              title="Số sự kiện"
-              count={totalEvents}
-              icon={{ color: "warning", component: <i className="ni ni-calendar-grid-58" /> }}
-              percentage={{}} />
-          </Grid>
-          <Grid item xs={12} md={6} lg={3}>
-            <DetailedStaticsCard
+            <DetailedStatisticsCard
               title="Sự kiện đã kết thúc"
-              count={endedEvents}
+              count={kpi.ended}
               icon={{ color: "error", component: <i className="ni ni-fat-remove" /> }}
-              percentage={{}} />
+              percentage={{}}
+            />
           </Grid>
         </Grid>
 
+        {/* ============== CHART ============== */}
         <Grid container spacing={3} mb={3}>
-          <Grid item xs={12} lg={12}>
+          <Grid item xs={12}>
             <GradientLineChart
-              title="Tổng quan bán vé"
-              description={
+              title="Tổng quan doanh thu"
+              description={(
                 <ArgonBox display="flex" alignItems="center">
-                  <ArgonBox fontSize={size.lg} color="success" mb={0.3} mr={0.5} lineHeight={0}>
-                    <Icon sx={{ fontWeight: "bold" }}>arrow_upward</Icon>
-                  </ArgonBox>
-                  <ArgonTypography variant="button" color="text" fontWeight="medium">
-                    4% tăng{" "}
-                    <ArgonTypography variant="button" color="text" fontWeight="regular">
-                      so với 2024
-                    </ArgonTypography>
+                  <Icon sx={{ color: revPct.color === "success" ? "success.main" : "error.main", fontWeight: "bold", mr: 0.5 }}>
+                    {revPct.arrow}
+                  </Icon>
+                  <ArgonTypography variant="button" fontWeight="medium">
+                    {Math.abs(revPct.value)}%
+                    <ArgonTypography variant="button" fontWeight="regular">&nbsp;so với tháng trước</ArgonTypography>
                   </ArgonTypography>
                 </ArgonBox>
-              }
-              chart={gradientLineChartData}
+              )}
+              chart={{
+                labels: ["1/6", "2/6", "3/6", "4/6", "5/6", "6/6", "7/6"],
+                datasets: [
+                  {
+                    label: "Doanh thu theo ngày",
+                    color: "info",
+                    data: [1500000, 2200000, 1800000, 2500000, 1700000, 3000000, 2100000],
+                     datalabels: { display: false },
+                  },
+                ],
+                options: {
+                  layout: {
+                    padding: { top: 24, bottom: 24, left: 16, right: 16 },
+                  },
+                  plugins: {
+                    tooltip: {
+                      enabled: true,
+                      callbacks: {
+                        label: (ctx) =>
+                          `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString("vi-VN")} ₫`,
+                      },
+                    },
+                    legend: {
+                      labels: {
+                        color: "#555",
+                        font: { size: 13 },
+                      },
+                    },
+                
+                  },
+                  scales: {
+                    x: {
+                      title: {
+                        display: true,
+                        text: "Ngày trong tháng",
+                        color: "#888",
+                        font: { size: 13, weight: "500" },
+                      },
+                      ticks: { color: "#666" },
+                      grid: { color: "rgba(0,0,0,0.05)" },
+                    },
+                    y: {
+                      title: {
+                        display: true,
+                        text: "Doanh thu (₫)",
+                        color: "#888",
+                        font: { size: 13, weight: "500" },
+                      },
+                      ticks: {
+                        callback: (val) => `${(val / 1_000_000).toFixed(1)}tr`,
+                        color: "#666",
+                        padding: 10,
+                      },
+                      grid: { color: "rgba(0,0,0,0.05)" },
+                    },
+                  },
+                }
+
+
+              }}
+
+
             />
+
           </Grid>
         </Grid>
 
+        {/* ============== UPCOMING EVENTS ============== */}
         <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Card sx={{ backgroundColor: getBgColor(revPct.color) }}>
+              <ArgonTypography variant="h5" fontWeight="bold" mb={2}>
+                Sự kiện đang hoặc sắp diễn ra
+              </ArgonTypography>
 
-
-          <Grid item xs={12} md={12}>
-            <Card sx={{ padding: 3, boxShadow: 3 }}>
-              <ArgonBox mt={4}>
-                <ArgonTypography variant="h5" fontWeight="bold" mb={2}>
-                  Sự kiện đang hoặc sắp diễn ra
-                </ArgonTypography>
-                <Grid container spacing={2}>
-                  {upcomingEvents.map((event) => (
-                    <EventCard key={event._id} event={event} />
-                  ))}
-                </Grid>
-              </ArgonBox>
+              <Grid container spacing={2}>
+                {upcomingEvents.map(ev => (
+                  <EventCard key={ev._id} event={ev} />
+                ))}
+              </Grid>
             </Card>
           </Grid>
         </Grid>
       </ArgonBox>
+
       <Footer />
     </DashboardLayout>
   );
 }
+
+/* ------------ Mini card cho 1 sự kiện ------------- */
+const EventCard = ({ event }) => {
+  const now = Date.now();
+  const start = new Date(event.timeStart).getTime();
+  const end = new Date(event.timeEnd).getTime();
+
+  let label = "Đang diễn ra", color = "success";
+  if (now < start) { label = "Sắp diễn ra"; color = "warning"; }
+  else if (now > end) { label = "Đã kết thúc"; color = "default"; }
+
+  return (
+    <Grid item xs={12} sm={6} md={4}>
+      <Card sx={{ height: "100%" }}>
+        <img
+          src={event.avatar}
+          alt={event.name}
+          style={{ width: "100%", height: 160, objectFit: "cover" }}
+        />
+        <CardContent>
+          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+            {event.name}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {event.location}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {new Date(event.timeStart).toLocaleString()} –{" "}
+            {new Date(event.timeEnd).toLocaleString()}
+          </Typography>
+          <Box mt={1}>
+            <Chip label={label} color={color} size="small" />
+          </Box>
+        </CardContent>
+      </Card>
+    </Grid>
+  );
+};
+
+EventCard.propTypes = {
+  event: PropTypes.shape({
+    _id: PropTypes.string,
+    name: PropTypes.string,
+    location: PropTypes.string,
+    timeStart: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    timeEnd: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    avatar: PropTypes.string,
+  }).isRequired,
+};
 
 export default AdminDashboard;

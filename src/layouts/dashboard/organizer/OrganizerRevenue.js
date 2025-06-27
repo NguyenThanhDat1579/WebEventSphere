@@ -37,7 +37,6 @@ function OrganizerRevenue() {
   const [selectedEvent, setSelectedEvent] = useState([]);
   const [events, setEvents] = useState([]);
   const [gradientChart, setGradientChart] = useState({ labels: [], datasets: [] });
-
   function getEventRevenue(event) {
     return event?.eventTotalRevenue || 0;
   }
@@ -133,23 +132,9 @@ function OrganizerRevenue() {
         const response = await eventApi.getEventOfOrganization();
         if (response.data.status === 200) {
           const originalEvents = response.data.events;
-
           // 🎯 Giả định bạn có thông tin cập nhật số vé mới theo showtimeId
-          const updates = [
-            {
-              showtimeId: "685bcd1872ded230197a0615",
-              soldTickets: 150,
-              revenueByZone: [
-                { zoneId: "zone1", zoneName: "VIP", soldTickets: 60, price: 400000 },
-                { zoneId: "zone2", zoneName: "Thường", soldTickets: 90, price: 200000 },
-              ],
-            },
-          ];
 
-          // 🛠 Áp dụng cập nhật
-          const updatedEvents = updateEventTicketsAndRevenue(originalEvents, updates);
-
-          setEvents(updatedEvents);
+          setEvents(originalEvents);
         } else {
           console.error("Lấy sự kiện thất bại");
         }
@@ -160,50 +145,6 @@ function OrganizerRevenue() {
 
     fetchEvents();
   }, []);
-
-  const updateEventTicketsAndRevenue = (events, updates) => {
-    return events.map((event) => {
-      let updatedEvent = { ...event };
-      let eventRevenue = 0;
-      let eventSoldTickets = 0;
-
-      updatedEvent.revenueByShowtime = event.revenueByShowtime.map((showtimeRev) => {
-        const update = updates.find((u) => u.showtimeId === showtimeRev.showtimeId);
-        if (!update) return showtimeRev;
-
-        let totalRevenue = 0;
-        const updatedZones = update.revenueByZone.map((zoneUpdate) => {
-          const revenue = zoneUpdate.soldTickets * zoneUpdate.price;
-          totalRevenue += revenue;
-
-          return {
-            zoneId: zoneUpdate.zoneId,
-            zoneName: zoneUpdate.zoneName,
-            revenue,
-          };
-        });
-
-        updatedEvent.showtimes = updatedEvent.showtimes.map((st) =>
-          st._id === showtimeRev.showtimeId ? { ...st, soldTickets: update.soldTickets } : st
-        );
-
-        eventSoldTickets += update.soldTickets;
-        eventRevenue += totalRevenue;
-
-        return {
-          ...showtimeRev,
-          soldTickets: update.soldTickets,
-          revenue: totalRevenue,
-          revenueByZone: updatedZones,
-        };
-      });
-
-      updatedEvent.eventTotalRevenue = eventRevenue;
-      updatedEvent.soldTickets = eventSoldTickets;
-
-      return updatedEvent;
-    });
-  };
 
   useEffect(() => {
     if (!selectedEventId) return;
@@ -218,11 +159,14 @@ function OrganizerRevenue() {
       setGradientChart(chartData);
     }
   }, [selectedEvent]);
+  console.log("êvem1", JSON.stringify(selectedEvent, null, 2));
 
   const revenue = getEventRevenue(selectedEvent);
   const sold = getSoldTickets(selectedEvent);
   const total = getTotalTicketsOfEvent(selectedEvent);
   const ticketTableData = getShowtimeDetailsByEvent(selectedEvent);
+  const ticketPrice = revenue / sold || 0; // Tránh chia cho 0
+  const maxRevenue = total * ticketPrice;
 
   const eventOptions = events.map((e) => ({
     label: e.name,
@@ -263,16 +207,33 @@ function OrganizerRevenue() {
                 backgroundColor: "#fff",
                 p: 3,
                 borderRadius: 5,
-                height: 170,
-                display: "flex", // 👈 cần để kích hoạt flexbox
-                flexDirection: "column", // 👈 xếp chữ theo chiều dọc
-                justifyContent: "center", // 👈 căn giữa theo chiều dọc
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
               }}
             >
-              <Typography fontSize={20}>Tổng doanh thu</Typography>
-              <Typography sx={{ fontSize: 24, fontWeight: "bold" }}>
-                {revenue.toLocaleString() + " ₫"}
-              </Typography>
+              {/* Bên trái: Thông tin tổng doanh thu */}
+              <Box>
+                <Typography fontSize={20} gutterBottom>
+                  Doanh thu
+                </Typography>
+                <Typography fontWeight="bold" fontSize={22} gutterBottom>
+                  {revenue.toLocaleString()} ₫
+                </Typography>
+                <Typography fontSize={18} gutterBottom>
+                  Tổng: {maxRevenue.toLocaleString()} ₫
+                </Typography>
+              </Box>
+
+              {/* Bên phải: DonutChart biểu diễn % đạt được */}
+              <Box sx={{ width: 120, height: 120 }}>
+                <DonutChartWithCenter
+                  sold={revenue}
+                  locked={0}
+                  available={maxRevenue}
+                  isCurrency={true} // ✅ nếu bạn muốn format đơn vị ₫
+                />
+              </Box>
             </Box>
           </Grid>
           <Grid item xs={12} md={6} lg={6}>
@@ -286,7 +247,7 @@ function OrganizerRevenue() {
                   <Typography fontWeight="bold" fontSize={22} gutterBottom>
                     {sold} vé
                   </Typography>
-                  <Typography fontSize={20} gutterBottom>
+                  <Typography fontSize={18} gutterBottom>
                     Tổng: {total} vé
                   </Typography>
                 </Box>

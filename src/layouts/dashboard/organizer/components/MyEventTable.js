@@ -89,7 +89,7 @@ function MyEventTable({ events, onViewDetail }) {
                     src={event.avatar}
                     alt={event.title}
                     variant="rounded"
-                    sx={{ width: 80, height: 80, borderRadius: 2 }}
+                    sx={{ width: 110, height: 110, borderRadius: 2 }}
                   />
                   <Box>
                     <ArgonTypography

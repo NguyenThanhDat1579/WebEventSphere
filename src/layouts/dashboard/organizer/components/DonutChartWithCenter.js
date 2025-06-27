@@ -6,7 +6,7 @@ import PropTypes from "prop-types";
 
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
-const DonutChartWithCenter = ({ sold, locked, available }) => {
+const DonutChartWithCenter = ({ sold, locked, available, isCurrency = false }) => {
   const data = {
     labels: ["Đã bán", "Bị khoá", "Còn lại"],
     datasets: [
@@ -32,7 +32,10 @@ const DonutChartWithCenter = ({ sold, locked, available }) => {
             const label = ctx.label || "";
             const value = ctx.parsed;
             const percent = ((value / total) * 100).toFixed(1);
-            return `${label}: ${value} vé (${percent}%)`;
+
+            const formattedValue = isCurrency ? `${value.toLocaleString()} ₫` : `${value} vé`;
+
+            return `${label}: ${formattedValue} (${percent}%)`;
           },
         },
       },
@@ -63,6 +66,7 @@ DonutChartWithCenter.propTypes = {
   sold: PropTypes.number.isRequired,
   locked: PropTypes.number.isRequired,
   available: PropTypes.number.isRequired,
+  isCurrency: PropTypes.bool,
 };
 
 export default DonutChartWithCenter;

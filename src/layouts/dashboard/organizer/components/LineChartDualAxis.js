@@ -20,12 +20,9 @@ const LineChartDualAxis = ({ labels, revenueData, ticketData }) => {
   const chartRef = useRef(null);
   const [hiddenDatasets, setHiddenDatasets] = useState({});
 
-  // Tìm index đầu tiên có doanh thu
   const firstRevenueIndex = revenueData.findIndex((value) => value > 0);
-
-  // Giới hạn hiển thị 10 ngày (nếu còn dữ liệu)
-  const minIndex = firstRevenueIndex === -1 ? 0 : firstRevenueIndex;
-  const maxIndex = Math.min(minIndex + 9, labels.length - 1);
+  const minIndex = Math.max(0, firstRevenueIndex - 1); // 👉 lấy trước 1 nếu có
+  const maxIndex = Math.min(minIndex + 9, labels.length - 1); // giữ 10 điểm
 
   const data = {
     labels,
@@ -77,11 +74,15 @@ const LineChartDualAxis = ({ labels, revenueData, ticketData }) => {
         zoom: {
           wheel: {
             enabled: true,
+            speed: 0.01,
           },
           pinch: {
             enabled: true,
           },
           mode: "x",
+          limits: {
+            x: { min: 0, max: labels.length - 1 }, // Giới hạn trục X trong phạm vi dữ liệu
+          },
         },
       },
     },

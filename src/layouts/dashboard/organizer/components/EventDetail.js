@@ -36,6 +36,19 @@ const EventDetail = ({ eventId, onClose }) => {
     return Math.floor(new Date(datetime).getTime() / 1000);
   };
 
+  const formatVietnameseDateTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleString("vi-VN", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
+
   useEffect(() => {
     const fetchEvent = async () => {
       try {
@@ -48,13 +61,17 @@ const EventDetail = ({ eventId, onClose }) => {
           location: data.location || "",
           timeStart: formatDateInput(data.timeStart),
           timeEnd: formatDateInput(data.timeEnd),
-          ticketPrice: data.ticketPrice || 0,
-          ticketQuantity: data.ticketQuantity || 0,
           avatar: data.avatar || "",
           banner: data.banner || "",
           images: data.images || [],
           tags: data.tags || [],
-          soldTickets: data.soldTickets || 0,
+          typeBase: data.typeBase || "zone",
+          soldTickets: data.showtimes?.[0]?.soldTickets || 0,
+          ticketPrice: data.ticketPrice || 0, // cho 'zone'
+          ticketQuantity: data.ticketQuantity || 0, // cho 'zone'
+          zoneTickets: data.zoneTickets || [], // dùng nếu cần
+          zones: data.zones || [], // ✅ THÊM DÒNG NÀY
+          showtimes: data.showtimes || [],
         };
 
         setFormData(formattedData); // dữ liệu gốc
@@ -165,14 +182,14 @@ const EventDetail = ({ eventId, onClose }) => {
   return (
     <Box p={2}>
       <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h5" gutterBottom>
+        <Typography variant="h4" gutterBottom>
           Chi tiết sự kiện: {initialFormData.name}
         </Typography>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={3} mb={2}>
           <Grid item xs={6}>
             <Box display="flex" alignItems="center" justifyContent="space-between">
-              <Typography variant="h6">Ảnh đại diện Sự kiện</Typography>
+              <Typography variant="h5">Ảnh đại diện Sự kiện:</Typography>
               {isEditing && (
                 <>
                   <Button
@@ -212,7 +229,7 @@ const EventDetail = ({ eventId, onClose }) => {
 
           <Grid item xs={6}>
             <Box display="flex" alignItems="center" justifyContent="space-between">
-              <Typography variant="h6">Banner Sự kiện</Typography>
+              <Typography variant="h5">Banner Sự kiện:</Typography>
               {isEditing && (
                 <>
                   <Button
@@ -253,7 +270,7 @@ const EventDetail = ({ eventId, onClose }) => {
 
         {initialFormData.images?.length > 0 && (
           <Box mt={3}>
-            <Typography variant="subtitle1" gutterBottom>
+            <Typography variant="h5" gutterBottom>
               Hình ảnh liên quan:
             </Typography>
             <Box display="flex" flexWrap="wrap" gap={2}>
@@ -334,11 +351,13 @@ const EventDetail = ({ eventId, onClose }) => {
         )}
 
         {/* Other form fields like name, location, etc. here */}
-        <Grid container spacing={3}>
+        <Grid container spacing={3} mt={2}>
           <Grid item xs={12}>
+            <Typography variant="h5" gutterBottom>
+              Tên sự kiện:
+            </Typography>
             <CustomTextField
               fullWidth
-              label="Tên sự kiện"
               name="name"
               value={initialFormData.name}
               onChange={handleChange}
@@ -346,9 +365,11 @@ const EventDetail = ({ eventId, onClose }) => {
             />
           </Grid>
           <Grid item xs={12}>
+            <Typography variant="h5" gutterBottom>
+              Địa điểm:
+            </Typography>
             <CustomTextField
               fullWidth
-              label="Địa điểm"
               name="location"
               value={initialFormData.location}
               onChange={handleChange}
@@ -356,20 +377,24 @@ const EventDetail = ({ eventId, onClose }) => {
             />
           </Grid>
           <Grid item xs={12}>
-            <Typography variant="subtitle1" gutterBottom>
+            <Typography variant="h5" gutterBottom>
               Mô tả
             </Typography>
             <TinyMCEEditor
               value={initialFormData.description}
               onChange={(value) => setInitialFormData((prev) => ({ ...prev, description: value }))}
               disabled={!isEditing}
+              ready={true}
             />
           </Grid>
+
           <Grid item xs={6}>
+            <Typography variant="h5" gutterBottom>
+              Thời gian bắt đầu bán vé:
+            </Typography>
             <CustomTextField
               fullWidth
               type="datetime-local"
-              label="Thời gian bắt đầu"
               name="timeStart"
               value={initialFormData.timeStart}
               onChange={handleChange}
@@ -377,10 +402,12 @@ const EventDetail = ({ eventId, onClose }) => {
             />
           </Grid>
           <Grid item xs={6}>
+            <Typography variant="h5" gutterBottom>
+              Thời gian kết thúc bán vé:
+            </Typography>
             <CustomTextField
               fullWidth
               type="datetime-local"
-              label="Thời gian kết thúc"
               name="timeEnd"
               value={initialFormData.timeEnd}
               onChange={handleChange}
@@ -388,36 +415,7 @@ const EventDetail = ({ eventId, onClose }) => {
             />
           </Grid>
 
-          <Grid item xs={6}>
-            <CustomTextField
-              fullWidth
-              label="Giá vé (VND)"
-              name="ticketPrice"
-              type="number"
-              value={initialFormData.ticketPrice}
-              onChange={handleChange}
-              disabled={!isEditing}
-            />
-          </Grid>
-
-          <Grid item xs={6}>
-            <CustomTextField
-              fullWidth
-              label="Số lượng vé"
-              name="ticketQuantity"
-              type="number"
-              value={initialFormData.ticketQuantity}
-              onChange={handleChange}
-              disabled={!isEditing}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <Typography variant="subtitle1">
-              Đã bán: {initialFormData.soldTickets || 0} vé
-            </Typography>
-          </Grid>
-
-          <Grid item xs={12}>
+          {/* <Grid item xs={12}>
             <Typography variant="subtitle1">Tags:</Typography>
             {isEditing ? (
               <>
@@ -447,7 +445,187 @@ const EventDetail = ({ eventId, onClose }) => {
                 ))}
               </Box>
             )}
-          </Grid>
+          </Grid> */}
+        </Grid>
+        <Grid item xs={12} mt={2}>
+          {initialFormData.typeBase === "zone" && (
+            <>
+              <Typography variant="h5" gutterBottom>
+                Danh sách khu vực:
+              </Typography>
+
+              {initialFormData.zoneTickets?.length > 0 ? (
+                <Grid container spacing={2}>
+                  {initialFormData.zoneTickets.map((zone) => (
+                    <Grid item xs={12} md={6} key={zone._id}>
+                      <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                        <Typography variant="h6" fontWeight="bold">
+                          {zone.name}
+                        </Typography>
+                        <Typography fontSize={15}>
+                          Giá vé: {zone.price.toLocaleString()} ₫
+                        </Typography>
+                        <Typography fontSize={15}>Tổng số vé: {zone.totalTicketCount}</Typography>
+                        <Typography fontSize={15}>Số vé còn lại: {zone.availableCount}</Typography>
+                      </Paper>
+                    </Grid>
+                  ))}
+                </Grid>
+              ) : (
+                <Typography>Không có thông tin zone.</Typography>
+              )}
+            </>
+          )}
+        </Grid>
+        <Grid item xs={12} mt={2}>
+          {initialFormData.typeBase === "seat" && (
+            <Grid item xs={12}>
+              <Typography variant="h5" gutterBottom>
+                Danh sách khu vực chỗ ngồi:
+              </Typography>
+
+              {(initialFormData.zones || [])
+                .filter((zone) => zone.layout?.seats?.length > 0)
+                .map((zone) => {
+                  const { rows, cols, seats } = zone.layout;
+                  const seatMap = Array.from({ length: rows }, () => Array(cols).fill(null));
+
+                  // Gán ghế vào đúng vị trí row/col
+                  seats.forEach((seat) => {
+                    const rowIndex = seat.row - 1;
+                    const colIndex = seat.col - 1;
+                    if (rowIndex < rows && colIndex < cols) {
+                      seatMap[rowIndex][colIndex] = seat;
+                    }
+                  });
+
+                  return (
+                    <Box
+                      key={zone._id}
+                      component={Paper}
+                      variant="outlined"
+                      sx={{ p: 2, mb: 3, borderRadius: 2 }}
+                    >
+                      <Typography variant="h5" sx={{ mb: 1 }}>
+                        Khu vực ghế:
+                      </Typography>
+                      <Box sx={{ display: "flex", gap: 3, alignItems: "center", mb: 2 }}>
+                        <Typography variant="h6">
+                          Tổng ghế: {seats.length} | Còn lại: {zone.availableCount}
+                        </Typography>
+
+                        <Box sx={{ display: "flex", gap: 2 }}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <Box
+                              sx={{
+                                width: 14,
+                                height: 14,
+                                borderRadius: "50%",
+                                backgroundColor: "#ffcdd2",
+                                border: "1px solid #ccc",
+                              }}
+                            />
+                            <Typography fontSize={14}>Đã mua</Typography>
+                          </Box>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <Box
+                              sx={{
+                                width: 14,
+                                height: 14,
+                                borderRadius: "50%",
+                                backgroundColor: "#c8e6c9",
+                                border: "1px solid #ccc",
+                              }}
+                            />
+                            <Typography fontSize={14}>
+                              Còn trống ({Math.min(...seats.map((s) => s.price)).toLocaleString()}
+                              ₫)
+                              {/* {Math.min(...seats.map((s) => s.price)).toLocaleString()} –{" "}
+                              {Math.max(...seats.map((s) => s.price)).toLocaleString()} ₫) */}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Box>
+
+                      {/* Vẽ ma trận ghế */}
+                      <Box
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns: `repeat(${cols}, auto)`,
+                          gap: 1,
+                        }}
+                      >
+                        {seatMap.flatMap((row, rowIndex) =>
+                          row.map((seat, colIndex) => (
+                            <Box
+                              key={`seat-${rowIndex}-${colIndex}`}
+                              sx={{
+                                px: 1.2,
+                                py: 0.5,
+                                minWidth: 40,
+                                textAlign: "center",
+                                fontSize: 13,
+                                borderRadius: 1,
+                                backgroundColor:
+                                  seat?.status === "booked"
+                                    ? "#ffcdd2"
+                                    : seat?.status === "available"
+                                    ? "#c8e6c9"
+                                    : "#eeeeee",
+                                border: "1px solid #ccc",
+                              }}
+                            >
+                              {seat?.label || ""}
+                            </Box>
+                          ))
+                        )}
+                      </Box>
+                    </Box>
+                  );
+                })}
+            </Grid>
+          )}
+        </Grid>
+        <Grid item xs={12} mt={2}>
+          {initialFormData.showtimes?.length > 0 ? (
+            <>
+              <Typography variant="h5" gutterBottom>
+                Danh sách suất diễn:
+              </Typography>
+
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                {initialFormData.showtimes.map((showtime, index) => {
+                  const startTime = formatVietnameseDateTime(showtime.startTime);
+                  const endTime = formatVietnameseDateTime(showtime.endTime);
+
+                  return (
+                    <Box
+                      key={showtime._id}
+                      sx={{
+                        fontWeight: "bold",
+                        backgroundColor: "#f0f4ff",
+                        p: 1.5,
+                        borderRadius: 2,
+                        borderLeft: "5px solid #1976d2",
+                        mb: 1.5,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        fontSize: 15,
+                      }}
+                    >
+                      Suất #{index + 1} –{" "}
+                      <span style={{ fontWeight: "normal" }}>
+                        {startTime} → {endTime}
+                      </span>
+                    </Box>
+                  );
+                })}
+              </Paper>
+            </>
+          ) : (
+            <Typography>Không có thông tin suất diễn.</Typography>
+          )}
         </Grid>
 
         <Box mt={4} display="flex" justifyContent="space-between">

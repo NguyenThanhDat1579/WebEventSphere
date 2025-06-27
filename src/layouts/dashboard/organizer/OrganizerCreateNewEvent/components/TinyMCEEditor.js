@@ -122,7 +122,7 @@ const TinyMCEEditor = ({ value = "", onChange, ready }) => {
     };
   }, [ready]); // ✅ theo dõi ready để init đúng lúc
 
-  return <textarea ref={editorRef} />;
+  return <textarea ref={editorRef} style={{ width: "100%" }} />;
 };
 
 TinyMCEEditor.propTypes = {

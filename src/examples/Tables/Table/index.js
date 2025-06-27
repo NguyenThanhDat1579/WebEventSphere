@@ -65,7 +65,7 @@ function Table({ columns, rows }) {
         pl={align === "left" ? pl : 3}
         pr={align === "right" ? pr : 3}
         textAlign={align}
-        fontSize="0.9rem"
+        fontSize="0.8rem"
         fontWeight={fontWeightBold}
         color="secondary"
         opacity={0.7}

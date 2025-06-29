@@ -15,6 +15,7 @@ import {
   MenuList,
   Chip,
   CircularProgress,
+  Autocomplete,
 } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
@@ -26,6 +27,9 @@ import { useDispatch, useSelector } from "react-redux";
 import CustomTextField from "../CustomTextField";
 import categoryApi from "api/utils/categoryApi";
 import PropTypes from "prop-types";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
+import AxiosIntent from "../../../../../../api/axiosInstance";
 
 import {
   setEventName as setEventNameAction,
@@ -74,9 +78,21 @@ export default function TabInfoEvent({ onNext }) {
     category: "",
   });
 
-  const [eventLogo, setEventLogo] = useState(null);
+  const [alertStatus, setAlertStatus] = useState(null); // "success", "error", null
+  const [alertMessage, setAlertMessage] = useState("");
+
+  const [eventLogo, setEventLogo] = useState(null); // ảnh logo đã lưu
+  const [tempLogoFile, setTempLogoFile] = useState(null); // file tạm
+  const [previewLogo, setPreviewLogo] = useState(null); // URL preview
+
   const [eventBanner, setEventBanner] = useState(null);
-  const [images, setImages] = useState([]);
+  const [tempBannerFile, setTempBannerFile] = useState(null); // File tạm
+  const [previewBanner, setPreviewBanner] = useState(null); // Preview ảnh mới
+
+  const [images, setImages] = useState([]); // ảnh đã lưu
+  const [tempGalleryFiles, setTempGalleryFiles] = useState([]); // ảnh tạm
+  const [previewGallery, setPreviewGallery] = useState([]); // ảnh tạm preview
+
   const [uploadingImages, setUploadingImages] = useState(false);
   const [loadingBanner, setLoadingBanner] = useState(false);
   const [loadingLogo, setLoadingLogo] = useState(false);
@@ -96,8 +112,62 @@ export default function TabInfoEvent({ onNext }) {
   const [category, setCategory] = useState("");
 
   const [tagInput, setTagInput] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
   const [tags, setTags] = useState([]);
   const [tagError, setTagError] = useState("");
+  const [loadingSuggest, setLoadingSuggest] = useState(false);
+  const MAX_TAGS = 7;
+
+  const fetchSuggestions = async (searchText) => {
+    if (!searchText) return;
+
+    setLoadingSuggest(true);
+    try {
+      const response = await AxiosIntent.get("/tags/suggest", {
+        params: { search: searchText },
+      });
+      setSuggestions(response.data || []);
+    } catch (error) {
+      console.error("Lỗi khi gợi ý tag:", error);
+    } finally {
+      setLoadingSuggest(false);
+    }
+  };
+
+  const handleCreateTag = async (tagName) => {
+    const trimmedTag = tagName.trim();
+
+    // ✅ Nếu tag đã tồn tại thì hiện lỗi và không gọi API
+    if (tags.includes(trimmedTag)) {
+      setTagError("Tag đã tồn tại");
+      return;
+    }
+
+    try {
+      await AxiosIntent.post("/tags/create", { name: trimmedTag });
+      setTags((prev) => [...prev, trimmedTag]);
+      setTagInput("");
+    } catch (error) {
+      const message = error?.response?.data?.message || "Không thể tạo tag mới";
+      setTagError(message);
+    }
+  };
+
+  const handleAddTag = async () => {
+    const trimmedTag = tagInput.trim();
+    if (!trimmedTag) return;
+
+    if (tags.includes(trimmedTag)) {
+      setTagError("Tag đã tồn tại");
+      return;
+    }
+    if (tags.length >= MAX_TAGS) {
+      setTagError(`Chỉ được nhập tối đa ${MAX_TAGS} tag`);
+      return;
+    }
+
+    await handleCreateTag(trimmedTag);
+  };
 
   const [description, setDescription] = useState("");
   const [readyToInitTiny, setReadyToInitTiny] = useState(false);
@@ -201,112 +271,63 @@ export default function TabInfoEvent({ onNext }) {
     fetchCategories();
   }, []);
 
-  // 4. Xử lý ảnh
-  const handleImageUpload = async (e, type) => {
-    const files = Array.from(e.target.files);
-    if (!files.length) return;
+  const handleSelectImage = (e, type) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    if (type === "gallery") {
-      setUploadingImages(true); // Bắt đầu loading
-      try {
-        const uploadPromises = files.map(async (file) => {
-          const formData = new FormData();
-          formData.append("file", file);
-          formData.append("upload_preset", "event_upload");
-          formData.append("cloud_name", "deoqppiun");
+    console.log(`📸 Ảnh ${type} được chọn:`, file.name);
+    const previewUrl = URL.createObjectURL(file);
 
-          const response = await fetch("https://api.cloudinary.com/v1_1/deoqppiun/image/upload", {
-            method: "POST",
-            body: formData,
-          });
-
-          const data = await response.json();
-          return data.secure_url;
-        });
-
-        const imageUrls = await Promise.all(uploadPromises);
-        setImages((prev) => [...prev, ...imageUrls]);
-      } catch (err) {
-        console.error("Lỗi upload ảnh lên Cloudinary:", err);
-      } finally {
-        setUploadingImages(false); // Kết thúc loading
-      }
-      return;
+    if (type === "logo") {
+      setTempLogoFile(file);
+      setPreviewLogo(previewUrl);
+    } else if (type === "banner") {
+      setTempBannerFile(file);
+      setPreviewBanner(previewUrl);
     }
 
-    // ✅ Nếu không phải type "gallery", xử lý một ảnh đơn
-    const file = files[0];
+    e.target.value = null; // cho phép chọn lại cùng file
+  };
+
+  const uploadImageToCloudinary = async (file) => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", "event_upload");
     formData.append("cloud_name", "deoqppiun");
 
-    try {
-      const response = await fetch("https://api.cloudinary.com/v1_1/deoqppiun/image/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await response.json();
-      const imageUrl = data.secure_url;
-
-      switch (type) {
-        case "logo":
-          setLoadingLogo(true);
-          setEventLogo(null); // Tùy chọn: xóa ảnh cũ trong lúc loading
-          try {
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("upload_preset", "event_upload");
-            formData.append("cloud_name", "deoqppiun");
-
-            const response = await fetch("https://api.cloudinary.com/v1_1/deoqppiun/image/upload", {
-              method: "POST",
-              body: formData,
-            });
-
-            const data = await response.json();
-            setEventLogo(data.secure_url);
-          } catch (err) {
-            console.error("Lỗi upload ảnh logo:", err);
-          } finally {
-            setLoadingLogo(false);
-          }
-          break;
-
-        case "banner":
-          setLoadingBanner(true);
-          setEventBanner(null); // Xóa ảnh cũ tạm thời nếu muốn
-          try {
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("upload_preset", "event_upload");
-            formData.append("cloud_name", "deoqppiun");
-
-            const response = await fetch("https://api.cloudinary.com/v1_1/deoqppiun/image/upload", {
-              method: "POST",
-              body: formData,
-            });
-
-            const data = await response.json();
-            setEventBanner(data.secure_url);
-          } catch (err) {
-            console.error("Lỗi upload ảnh banner:", err);
-          } finally {
-            setLoadingBanner(false);
-          }
-          break;
-
-        default:
-          console.warn("Loại ảnh không xác định:", type);
-      }
-    } catch (err) {
-      console.error("Lỗi upload ảnh lên Cloudinary:", err);
-    }
+    const res = await fetch("https://api.cloudinary.com/v1_1/deoqppiun/image/upload", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json();
+    return data.secure_url;
   };
 
-  const handleRemoveImage = (indexToRemove) => {
-    setImages((prev) => prev.filter((_, index) => index !== indexToRemove));
+  const handleSelectGallery = (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    // Log
+    files.forEach((file) => {
+      console.log("🖼️ Ảnh tạm gallery được chọn:", file.name);
+    });
+
+    // Thêm vào mảng tạm
+    setTempGalleryFiles((prev) => [...prev, ...files]);
+
+    // Thêm vào preview
+    const newPreviews = files.map((file) => URL.createObjectURL(file));
+    setPreviewGallery((prev) => [...prev, ...newPreviews]);
+
+    e.target.value = null; // reset input
+  };
+
+  const handleRemoveSavedImage = (indexToRemove) => {
+    setImages((prevImages) => prevImages.filter((_, index) => index !== indexToRemove));
+  };
+  const handleRemoveTempImage = (indexToRemove) => {
+    setPreviewGallery((prev) => prev.filter((_, index) => index !== indexToRemove));
+    setTempGalleryFiles((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
   // 5. Xử lý toạ độ
@@ -330,38 +351,6 @@ export default function TabInfoEvent({ onNext }) {
     }
   };
 
-  // 6. Xử lý tag
-  const handleAddTag = () => {
-    const trimmed = tagInput.trim();
-
-    if (!trimmed) {
-      setTagError("Vui lòng nhập tag");
-      return;
-    }
-
-    if (tags.length >= 5) {
-      setTagError("Chỉ được nhập tối đa 5 tag");
-      return;
-    }
-
-    const normalized = trimmed.toLowerCase();
-
-    if (tags.some((tag) => tag.toLowerCase() === normalized)) {
-      setTagError("Tag đã tồn tại");
-      return;
-    }
-
-    setTags([...tags, trimmed]);
-    setTagInput("");
-    setTagError("");
-  };
-
-  const handleRemoveTag = (index) => {
-    const newTags = [...tags];
-    newTags.splice(index, 1);
-    setTags(newTags);
-  };
-
   // 7. Xử lý form
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -382,24 +371,16 @@ export default function TabInfoEvent({ onNext }) {
     const newErrors = {};
     let hasError = false;
 
-    // if (!eventBanner) {
-    //   newErrors.eventBanner = "Vui lòng tải lên ảnh nền sự kiện";
-    //   hasError = true;
-    // }
     if (!formData.eventName.trim()) {
       newErrors.eventName = "Vui lòng nhập tên sự kiện";
       hasError = true;
     }
 
-    // if (!formData.addressName.trim()) {
-    //   newErrors.addressName = "Vui lòng nhập tên địa điểm";
-    //   hasError = true;
-    // }
-
     if (!selectedProvince) {
       newErrors.selectedProvince = "Vui lòng chọn tỉnh/thành";
       hasError = true;
     }
+
     if (!formData.address.trim()) {
       newErrors.address = "Vui lòng nhập số nhà, đường";
       hasError = true;
@@ -414,7 +395,58 @@ export default function TabInfoEvent({ onNext }) {
 
     setErrors(newErrors);
     if (hasError) return false;
+    setAlertStatus("loading");
+    setAlertMessage("Đang lưu dữ liệu...");
 
+    // Bắt đầu xử lý upload ảnh trước khi lưu dữ liệu
+    try {
+      let hasChange = false;
+
+      if (tempLogoFile) {
+        const url = await uploadImageToCloudinary(tempLogoFile);
+        console.log("✅ Link logo từ Cloudinary:", url);
+        setEventLogo(url);
+        dispatch(setEventLogoAction(url));
+        hasChange = true;
+      }
+
+      if (tempBannerFile) {
+        const url = await uploadImageToCloudinary(tempBannerFile);
+        console.log("✅ Link banner từ Cloudinary:", url);
+        setEventBanner(url);
+        dispatch(setEventBannerAction(url));
+        hasChange = true;
+      }
+
+      if (tempGalleryFiles.length > 0) {
+        const uploadPromises = tempGalleryFiles.map((file) => uploadImageToCloudinary(file));
+        const uploadedUrls = await Promise.all(uploadPromises);
+        console.log("✅ Link ảnh gallery upload thành công:", uploadedUrls);
+
+        const updatedList = [...images, ...uploadedUrls];
+        setImages(updatedList);
+        dispatch(setEventImages(updatedList));
+
+        setTempGalleryFiles([]);
+        setPreviewGallery([]);
+
+        hasChange = true;
+      }
+
+      if (hasChange) {
+        setAlertStatus("loading");
+        setAlertMessage("Đang lưu dữ liệu...");
+      }
+    } catch (err) {
+      return false;
+    } finally {
+      setTempLogoFile(null);
+      setPreviewLogo(null);
+      setTempBannerFile(null);
+      setPreviewBanner(null);
+    }
+
+    // Tiếp tục xử lý lưu thông tin
     const provinceName = provinces.find((p) => p.value === selectedProvince)?.label || "";
     const districtName = districts.find((d) => d.value === selectedDistrict)?.label || "";
     const wardName = wards.find((w) => w.value === selectedWard)?.label || "";
@@ -431,9 +463,6 @@ export default function TabInfoEvent({ onNext }) {
         setLatitude(coords.latitude);
         setLongitude(coords.longitude);
 
-        dispatch(setEventLogoAction(eventLogo));
-        dispatch(setEventBannerAction(eventBanner));
-        dispatch(setEventImages(images));
         dispatch(setEventNameAction(formData.eventName));
         dispatch(setFullAddressAction(fullAddress));
         dispatch(setCategoryAction("")); // TODO: set đúng category
@@ -442,6 +471,8 @@ export default function TabInfoEvent({ onNext }) {
         dispatch(setLongitudeAction(coords.longitude));
         dispatch(setDescriptionAction(description));
         dispatch(setUserId(userId));
+        setAlertStatus("success");
+        setAlertMessage("Đã lưu dữ liệu!");
       } else {
         console.warn("Không có toạ độ hợp lệ để lưu.");
       }
@@ -495,15 +526,10 @@ export default function TabInfoEvent({ onNext }) {
                 overflow: "hidden",
               }}
             >
-              {loadingLogo ? (
-                <Box textAlign="center">
-                  <CircularProgress size={32} sx={{ color: "#1976D2", mb: 1 }} />
-                  <Typography sx={{ color: "#1976D2" }}>Đang tải logo...</Typography>
-                </Box>
-              ) : eventLogo ? (
+              {previewLogo || eventLogo ? (
                 <Box sx={{ width: "90%", textAlign: "center" }}>
                   <img
-                    src={eventLogo}
+                    src={previewLogo || eventLogo}
                     alt="Logo sự kiện"
                     style={{
                       width: "100%",
@@ -526,7 +552,7 @@ export default function TabInfoEvent({ onNext }) {
                 hidden
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleImageUpload(e, "logo")}
+                onChange={(e) => handleSelectImage(e, "logo")}
               />
             </Button>
           </Grid>
@@ -545,10 +571,18 @@ export default function TabInfoEvent({ onNext }) {
                 textTransform: "none",
               }}
             >
-              {loadingBanner ? (
-                <Box textAlign="center">
-                  <CircularProgress size={32} sx={{ color: "#1976D2", mb: 1 }} />
-                  <Typography sx={{ color: "#1976D2" }}>Đang tải ảnh nền...</Typography>
+              {previewBanner ? (
+                <Box sx={{ width: "90%", textAlign: "center" }}>
+                  <img
+                    src={previewBanner}
+                    alt="Preview banner"
+                    style={{
+                      width: "100%",
+                      maxHeight: 360,
+                      objectFit: "contain",
+                      borderRadius: 8,
+                    }}
+                  />
                 </Box>
               ) : eventBanner ? (
                 <Box sx={{ width: "90%", textAlign: "center" }}>
@@ -576,9 +610,10 @@ export default function TabInfoEvent({ onNext }) {
                 hidden
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleImageUpload(e, "banner")}
+                onChange={(e) => handleSelectImage(e, "banner")}
               />
             </Button>
+
             {errors.eventBanner && (
               <Typography variant="body2" color="red" sx={{ mt: 0.5, ml: 1 }}>
                 {errors.eventBanner}
@@ -590,9 +625,9 @@ export default function TabInfoEvent({ onNext }) {
           </Typography>
 
           <Grid container spacing={2} sx={{ flexWrap: "nowrap", overflowX: "auto", mt: 2, p: 3 }}>
-            {/* Danh sách ảnh nằm bên trái */}
+            {/* Ảnh đã lưu (link cloudinary) */}
             {images.map((url, index) => (
-              <Grid item key={index} sx={{ position: "relative" }}>
+              <Grid item key={`saved-${index}`} sx={{ position: "relative" }}>
                 <img
                   src={url}
                   alt={`image-${index}`}
@@ -605,7 +640,7 @@ export default function TabInfoEvent({ onNext }) {
                 />
                 <IconButton
                   size="small"
-                  onClick={() => handleRemoveImage(index)}
+                  onClick={() => handleRemoveSavedImage(index)}
                   sx={{
                     position: "absolute",
                     top: 3,
@@ -624,7 +659,42 @@ export default function TabInfoEvent({ onNext }) {
               </Grid>
             ))}
 
-            {/* Nút thêm ảnh nằm bên phải */}
+            {/* Ảnh tạm chưa upload */}
+            {previewGallery.map((url, index) => (
+              <Grid item key={`preview-${index}`} sx={{ position: "relative" }}>
+                <img
+                  src={url}
+                  alt={`preview-${index}`}
+                  style={{
+                    width: 192,
+                    height: 108,
+                    borderRadius: 8,
+                    objectFit: "cover",
+                    opacity: 0.8,
+                  }}
+                />
+                <IconButton
+                  size="small"
+                  onClick={() => handleRemoveTempImage(index)}
+                  sx={{
+                    position: "absolute",
+                    top: 3,
+                    right: -10,
+                    bgcolor: "white",
+                    borderRadius: "50%",
+                    width: 24,
+                    height: 24,
+                    boxShadow: 1,
+                    p: 0.5,
+                    "&:hover": { bgcolor: "error.main", color: "white" },
+                  }}
+                >
+                  <CloseIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Grid>
+            ))}
+
+            {/* Nút thêm ảnh mới */}
             <Grid item>
               <Box
                 component="label"
@@ -645,32 +715,20 @@ export default function TabInfoEvent({ onNext }) {
                   },
                 }}
               >
-                {uploadingImages ? (
-                  <>
-                    <CircularProgress size={32} />
-                    <Typography variant="body2" mt={1}>
-                      Đang tải...
-                    </Typography>
-                  </>
-                ) : (
-                  <>
-                    <AddIcon fontSize="large" />
-                    <Typography variant="body2" fontWeight="medium">
-                      Thêm ảnh
-                    </Typography>
-                  </>
-                )}
+                <AddIcon fontSize="large" />
+                <Typography variant="body2" fontWeight="medium">
+                  Thêm ảnh
+                </Typography>
                 <input
                   hidden
                   type="file"
                   accept="image/*"
                   multiple
-                  onChange={(e) => handleImageUpload(e, "gallery")}
+                  onChange={handleSelectGallery}
                 />
               </Box>
             </Grid>
           </Grid>
-
           <Grid item xs={12}>
             <CustomTextField
               name="eventName"
@@ -791,33 +849,52 @@ export default function TabInfoEvent({ onNext }) {
             <Typography variant="h6" gutterBottom>
               <span style={{ color: "red" }}>*</span> Tag
             </Typography>
-
             <Box sx={{ display: "flex", gap: 1, flexDirection: "column" }}>
               <Box sx={{ display: "flex", gap: 1 }}>
-                <CustomTextField
-                  value={tagInput}
-                  onChange={(e) => {
-                    setTagInput(e.target.value);
+                <Autocomplete
+                  freeSolo
+                  options={suggestions}
+                  inputValue={tagInput}
+                  onInputChange={(e, value) => {
+                    setTagInput(value);
+                    fetchSuggestions(value);
                     if (tagError) setTagError("");
                   }}
-                  placeholder="Nhập tag"
-                  maxWidth={200}
-                  inputSx={{
-                    borderColor: tagError ? "red" : undefined,
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddTag();
+                  onChange={(e, value) => {
+                    if (value) {
+                      if (tags.includes(value)) {
+                        setTagError("Tag đã tồn tại");
+                      } else if (tags.length >= MAX_TAGS) {
+                        setTagError(`Chỉ được nhập tối đa ${MAX_TAGS} tag`);
+                      } else {
+                        handleCreateTag(value);
+                      }
                     }
                   }}
+                  loading={loadingSuggest}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Nhập tag"
+                      error={!!tagError}
+                      helperText={tagError}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddTag();
+                        }
+                      }}
+                    />
+                  )}
+                  sx={{ flex: 1 }}
                 />
 
                 <Button
                   variant="contained"
                   onClick={handleAddTag}
-                  disabled={!tagInput.trim()} // ✅ Disable nếu tagInput rỗng hoặc toàn khoảng trắng
+                  disabled={!tagInput.trim() || tags.length >= MAX_TAGS}
                   sx={{
+                    height: 40,
                     backgroundColor: "#1976D2",
                     color: "#fff",
                     border: "1px solid #1976D2",
@@ -830,13 +907,6 @@ export default function TabInfoEvent({ onNext }) {
                   Thêm tag
                 </Button>
               </Box>
-
-              {/* ✅ Thêm dòng này để hiển thị lỗi */}
-              {tagError && (
-                <Typography variant="caption" color="red" sx={{ ml: "4px", mt: "-6px" }}>
-                  {tagError}
-                </Typography>
-              )}
             </Box>
 
             {/* ✅ Danh sách tag */}
@@ -845,7 +915,7 @@ export default function TabInfoEvent({ onNext }) {
                 <Chip
                   key={index}
                   label={tag}
-                  onDelete={() => handleRemoveTag(index)}
+                  onDelete={() => setTags((prev) => prev.filter((_, i) => i !== index))}
                   deleteIcon={<CloseIcon />}
                   color="primary"
                   variant="outlined"
@@ -853,7 +923,7 @@ export default function TabInfoEvent({ onNext }) {
               ))}
             </Box>
             <Typography variant="caption" color="text.secondary">
-              {tags.length} / 5
+              {tags.length} / {MAX_TAGS}
             </Typography>
           </Grid>
         </Grid>
@@ -910,6 +980,21 @@ export default function TabInfoEvent({ onNext }) {
           Tiếp tục
         </Button>
       </Box>
+      <Snackbar
+        open={Boolean(alertStatus)}
+        autoHideDuration={3000}
+        onClose={() => setAlertStatus(null)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          severity={
+            alertStatus === "loading" ? "info" : alertStatus === "success" ? "success" : "error"
+          }
+          sx={{ width: "100%", display: "flex", alignItems: "center" }}
+        >
+          {alertMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

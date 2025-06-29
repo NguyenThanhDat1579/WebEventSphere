@@ -73,7 +73,9 @@ export default function ScheduleSection() {
   const dispatch = useDispatch();
   const eventInfo = useSelector((state) => state.eventInfo);
   const [startDateTime, setStartDateTime] = useState(dayjs());
-  const [alertStatus, setAlertStatus] = useState(null);
+  const [alertStatus, setAlertStatus] = useState(null); // "loading" | "success" | "error"
+  const [alertMessage, setAlertMessage] = useState("");
+
   useEffect(() => {
     console.log("eventInfo đã cập nhật2:", eventInfo);
     console.log("TimeStart: ", startTime);
@@ -338,7 +340,8 @@ export default function ScheduleSection() {
   const handleSaveZoneOrSeat = async () => {
     const hasError = validateForm();
     if (hasError) return false;
-
+    setAlertStatus("success");
+    setAlertMessage("Đã lưu dữ liệu");
     const startUnix = toUnixTimestamp(startTime);
     const endUnix = toUnixTimestamp(endTime);
 
@@ -428,6 +431,7 @@ export default function ScheduleSection() {
   const submitEvent = async () => {
     try {
       setAlertStatus("loading");
+      setAlertMessage("Đang tạo sự kiện...");
 
       console.log("📦 Payload gửi đi:", JSON.stringify(eventInfo, null, 2));
       // const response = await eventApi.addEvent(eventInfo);
@@ -437,19 +441,21 @@ export default function ScheduleSection() {
       dispatch(resetEventInfo());
       dispatch(resetAddress());
 
-      setAlertStatus("success"); // 👈 Thành công
+      setAlertStatus("success");
+      setAlertMessage("Tạo sự kiện thành công!");
 
       setTimeout(() => {
         navigate("/dashboard-organizer");
       }, 1000);
-      //}
+      // }
     } catch (error) {
-      console.error("❌ Lỗi khi tạo sự kiện:", error);
+      console.error("Lỗi khi tạo sự kiện:", error);
       if (error.response) {
-        console.error("💥 Phản hồi từ server:", error.response.data);
+        console.error("Phản hồi từ server:", error.response.data);
       }
 
-      setAlertStatus("error"); // 👈 Thất bại
+      setAlertStatus("error");
+      setAlertMessage("Tạo sự kiện thất bại. Vui lòng thử lại.");
     }
   };
 
@@ -1172,52 +1178,18 @@ export default function ScheduleSection() {
           Xoá
         </Button>
         <Snackbar
-          open={alertStatus === "loading"}
-          anchorOrigin={{ vertical: "top", horizontal: "center" }}
-        >
-          <Alert
-            severity="info"
-            sx={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            Đang tạo sự kiện...
-          </Alert>
-        </Snackbar>
-
-        <Snackbar
-          open={alertStatus === "success"}
-          anchorOrigin={{ vertical: "top", horizontal: "center" }}
-          autoHideDuration={2000}
-        >
-          <Alert
-            severity="success"
-            sx={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            Tạo sự kiện thành công!
-          </Alert>
-        </Snackbar>
-
-        <Snackbar
-          open={alertStatus === "error"}
-          anchorOrigin={{ vertical: "top", horizontal: "center" }}
+          open={Boolean(alertStatus)}
           autoHideDuration={3000}
+          onClose={() => setAlertStatus(null)}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
         >
           <Alert
-            severity="error"
-            sx={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-            }}
+            severity={
+              alertStatus === "loading" ? "info" : alertStatus === "success" ? "success" : "error"
+            }
+            sx={{ width: "100%", display: "flex", alignItems: "center" }}
           >
-            Tạo sự kiện thất bại!
+            {alertMessage}
           </Alert>
         </Snackbar>
       </Box>

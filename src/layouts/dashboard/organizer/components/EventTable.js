@@ -101,7 +101,7 @@ function EventTable({ events }) {
                 }}
               >
                 <TableCell>
-                  <Avatar src={event.avatar} variant="rounded" sx={{ width: 80, height: 80 }} />
+                  <Avatar src={event.avatar} variant="rounded" sx={{ width: 100, height: 100 }} />
                 </TableCell>
                 <TableCell>
                   <Typography

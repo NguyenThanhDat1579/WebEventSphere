@@ -1,18 +1,39 @@
+import ArgonTypography from "components/ArgonTypography";
+
 const userTableData = (userList) => {
   const columns = [
-    { name: "user", align: "left" },
-    { name: "email", align: "left" },
-    { name: "phone", align: "center" },
-    { name: "address", align: "center" },
-    { name: "role", align: "center" },
+    { name: "Tên", align: "left" },
+    { name: "Email", align: "left" },
+    { name: "Số điện thoại", align: "center" },
+    { name: "Địa chỉ", align: "center" },
+    { name: "Vai trò", align: "center" },
   ];
 
+  const commonStyle = {
+    variant: "body2",
+    fontWeight: "400",
+    color: "text",
+    sx: { fontSize: "13px" },
+  };
+
   const rows = userList.map((user) => ({
-    user: user.username,
-    email: user.email,
-    phone: user.phoneNumber || "—",
-    address: user.address || "—",
-    role: user.role === 3 ? "Người dùng" : "Nhà tổ chức",
+    Tên: <ArgonTypography {...commonStyle}>{user.username || "—"}</ArgonTypography>,
+    Email: <ArgonTypography {...commonStyle}>{user.email || "—"}</ArgonTypography>,
+    "Số điện thoại": (
+      <ArgonTypography {...commonStyle} textAlign="center">
+        {user.phoneNumber || "—"}
+      </ArgonTypography>
+    ),
+    "Địa chỉ": (
+      <ArgonTypography {...commonStyle} textAlign="center">
+        {user.address || "—"}
+      </ArgonTypography>
+    ),
+    "Vai trò": (
+      <ArgonTypography {...commonStyle} textAlign="center">
+        {user.role === 3 ? "Người dùng" : "Nhà tổ chức"}
+      </ArgonTypography>
+    ),
   }));
 
   return { columns, rows };

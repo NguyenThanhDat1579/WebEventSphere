@@ -1,18 +1,20 @@
+// src/layouts/tables/data/organizerTableData.js
+
 const organizerTableData = (organizers) => {
   const columns = [
-    { name: "name", align: "left" },
-    { name: "email", align: "left" },
-    { name: "phone", align: "center" },
-    { name: "address", align: "center" },
-    { name: "followers", align: "center" },
+    { name: "Tên nhà tổ chức", align: "left" },
+    { name: "Email", align: "left" },
+    { name: "Số điện thoại", align: "center" },
+    { name: "Địa chỉ", align: "center" },
+    { name: "Người theo dõi", align: "center" },
   ];
 
   const rows = organizers.map((user) => ({
-    name: user.username,
-    email: user.email,
-    phone: user.phoneNumber || "—",
-    address: user.address || "—",
-    followers: user.follower || 0,
+    "Tên nhà tổ chức": user.username || "—",
+    "Email": user.email || "—",
+    "Số điện thoại": user.phoneNumber || "—",
+    "Địa chỉ": user.address || "—",
+    "Người theo dõi": user.follower ?? 0,
   }));
 
   return { columns, rows };

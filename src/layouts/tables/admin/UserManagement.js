@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from "react";
-
-// MUI & Argon
-import Card from "@mui/material/Card";
+import {
+  Card,
+  Divider,
+  CircularProgress,
+  Box,
+  useTheme
+} from "@mui/material";
 import ArgonBox from "components/ArgonBox";
 import ArgonTypography from "components/ArgonTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import Table from "examples/Tables/Table";
-import Divider from "@mui/material/Divider";
-import { Box, CircularProgress } from "@mui/material";
-
-// API & Helper
 import userApi from "api/userApi";
 import userTableData from "layouts/tables/data/userTableData";
 
@@ -19,6 +19,7 @@ function UserManagement() {
   const [columns, setColumns] = useState([]);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const theme = useTheme();
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -44,38 +45,60 @@ function UserManagement() {
     <DashboardLayout>
       <DashboardNavbar />
       <ArgonBox py={3}>
-        <ArgonBox mb={3}>
-          <Card sx={{ boxShadow: 3, borderRadius: 2 }}>
-            <ArgonBox px={3} py={2} display="flex" justifyContent="space-between" alignItems="center">
-              <ArgonTypography variant="h5" fontWeight="bold">
-                Danh sách người dùng
-              </ArgonTypography>
+        <Card sx={{ boxShadow: 3, borderRadius: 3, overflow: "hidden" }}>
+          {/* Header */}
+          <ArgonBox px={3} py={2} bgcolor={theme.palette.grey[100]}>
+            <ArgonTypography variant="h5" fontWeight="bold">
+              Danh sách người dùng
+            </ArgonTypography>
+          </ArgonBox>
+
+          <Divider />
+
+          {/* Body */}
+          {loading ? (
+            <ArgonBox display="flex" justifyContent="center" py={10}>
+              <CircularProgress />
             </ArgonBox>
-            <Divider />
-            <ArgonBox p={3}>
-              {loading ? (
-                <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px" >
-                  <CircularProgress />
-                </Box>
-              ) : (
-                <ArgonBox
-                  sx={{
-                    overflowX: "auto",
-                    "& .MuiTableHead-root .MuiTableCell-head": {
-                      fontSize: "20px !important",
-                      fontWeight: "bold",
-                      color: "#344767",
-                    },
-                    "& .MuiTableRow-root:hover": { backgroundColor: "#f5f5f5" },
-                    "& .MuiTableCell-root": { padding: "8px 12px", fontSize: 12 },
-                  }}
-                >
-                  <Table columns={columns} rows={rows} />
-                </ArgonBox>
-              )}
+          ) : (
+            <ArgonBox sx={{ overflowX: "auto" }}>
+              <Table
+                columns={columns}
+                rows={rows}
+                sxTable={{
+                  tableLayout: "fixed",
+                  "& th, & td": {
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    padding: "8px 12px",
+                    fontSize: "13px"
+                  },
+                  "& th:nth-of-type(1), & td:nth-of-type(1)": { width: 140 },
+                  "& th:nth-of-type(2), & td:nth-of-type(2)": { width: 200 },
+                  "& th:nth-of-type(3), & td:nth-of-type(3)": {
+                    width: 120,
+                    textAlign: "center"
+                  },
+                  "& th:nth-of-type(4), & td:nth-of-type(4)": {
+                    width: 200,
+                    textAlign: "center"
+                  },
+                  "& th:nth-of-type(5), & td:nth-of-type(5)": {
+                    width: 100,
+                    textAlign: "center"
+                  },
+                  "& tbody tr:nth-of-type(odd)": {
+                    backgroundColor: theme.palette.grey[50]
+                  },
+                  "& tbody tr:hover": {
+                    backgroundColor: theme.palette.action.hover
+                  }
+                }}
+              />
             </ArgonBox>
-          </Card>
-        </ArgonBox>
+          )}
+        </Card>
       </ArgonBox>
       <Footer />
     </DashboardLayout>

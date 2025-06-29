@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import {
   Card,
   CircularProgress,
-  Divider
+  Divider,
+  Box,
+  useTheme
 } from "@mui/material";
 import ArgonBox from "components/ArgonBox";
 import ArgonTypography from "components/ArgonTypography";
@@ -17,9 +19,10 @@ function OrganizerManagement() {
   const [columns, setColumns] = useState([]);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const theme = useTheme();
 
   useEffect(() => {
-    const fetchOrganizers = async () => {
+    (async () => {
       try {
         const res = await userApi.getAll();
         if (res.data.status) {
@@ -33,48 +36,65 @@ function OrganizerManagement() {
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchOrganizers();
+    })();
   }, []);
 
   return (
     <DashboardLayout>
       <DashboardNavbar />
       <ArgonBox py={3}>
-        <ArgonBox mb={3}>
-          <Card sx={{ boxShadow: 3, borderRadius: 2 }}>
-            <ArgonBox display="flex" justifyContent="space-between" alignItems="center" p={3}>
-              <ArgonTypography variant="h5" fontWeight="bold">
-                Danh sách nhà tổ chức
-              </ArgonTypography>
-            </ArgonBox>
+        <Card sx={{ boxShadow: 3, borderRadius: 3, overflow: "hidden" }}>
+          <ArgonBox px={3} py={2} bgcolor={theme.palette.grey[100]}>
+            <ArgonTypography variant="h5" fontWeight="bold">
+              Danh sách nhà tổ chức
+            </ArgonTypography>
+          </ArgonBox>
 
-            <Divider sx={{ borderColor: "#ddd" }} />
+          <Divider />
 
-            <ArgonBox px={3} py={2}>
-              {loading ? (
-                <ArgonBox display="flex" justifyContent="center" alignItems="center" py={5}>
-                  <CircularProgress />
-                </ArgonBox>
-              ) : (
-                <ArgonBox
-                  sx={{
-                    "& .MuiTableRow-root:hover": {
-                      backgroundColor: "#f5f5f5",
-                    },
-                    "& .MuiTableCell-root": {
-                      padding: "8px 12px",
-                      fontSize: 13,
-                    },
-                  }}
-                >
-                  <Table columns={columns} rows={rows} />
-                </ArgonBox>
-              )}
+          {loading ? (
+            <ArgonBox display="flex" justifyContent="center" py={10}>
+              <CircularProgress />
             </ArgonBox>
-          </Card>
-        </ArgonBox>
+          ) : (
+            <ArgonBox sx={{ overflowX: "auto" }}>
+              <Table
+                columns={columns}
+                rows={rows}
+                sxTable={{
+                  tableLayout: "fixed",
+                  "& th, & td": {
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    padding: "8px 12px",
+                    fontSize: "13px",
+                  },
+                  "& th:nth-of-type(1), & td:nth-of-type(1)": { width: 140 },
+                  "& th:nth-of-type(2), & td:nth-of-type(2)": { width: 200 },
+                  "& th:nth-of-type(3), & td:nth-of-type(3)": {
+                    width: 120,
+                    textAlign: "center",
+                  },
+                  "& th:nth-of-type(4), & td:nth-of-type(4)": {
+                    width: 200,
+                    textAlign: "center",
+                  },
+                  "& th:nth-of-type(5), & td:nth-of-type(5)": {
+                    width: 120,
+                    textAlign: "center",
+                  },
+                  "& tbody tr:nth-of-type(odd)": {
+                    backgroundColor: theme.palette.grey[50],
+                  },
+                  "& tbody tr:hover": {
+                    backgroundColor: theme.palette.action.hover,
+                  },
+                }}
+              />
+            </ArgonBox>
+          )}
+        </Card>
       </ArgonBox>
       <Footer />
     </DashboardLayout>

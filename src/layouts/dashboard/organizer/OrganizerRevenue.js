@@ -28,12 +28,13 @@ import PieChart from "./OrganizerCreateNewEvent/components/PieChart";
 import LineChartDualAxis from "../organizer/components/LineChartDualAxis";
 import DonutChartWithCenter from "../organizer/components/DonutChartWithCenter";
 import { format, eachDayOfInterval, isSameDay, fromUnixTime } from "date-fns";
-
+import { useParams } from "react-router-dom";
 import eventApi from "api/utils/eventApi";
 const now = Date.now();
 
 function OrganizerRevenue() {
-  const [selectedEventId, setSelectedEventId] = useState("");
+  const { eventId, eventTitle } = useParams();
+  const [selectedEventId, setSelectedEventId] = useState(eventId || "");
   const [selectedEvent, setSelectedEvent] = useState([]);
   const [events, setEvents] = useState([]);
   const [gradientChart, setGradientChart] = useState({ labels: [], datasets: [] });
@@ -119,7 +120,8 @@ function OrganizerRevenue() {
 
       return {
         name: `Suất ${format(startDate, "dd/MM")}`,
-        datetime: startDate,
+        startTime: showtime.startTime,
+        endTime: showtime.endTime,
         sold: revenueInfo?.soldTickets ?? 0,
         revenue: revenueInfo?.revenue ?? 0,
         status,
@@ -147,11 +149,15 @@ function OrganizerRevenue() {
   }, []);
 
   useEffect(() => {
-    if (!selectedEventId) return;
+    const idToUse = selectedEventId || eventId; // Ưu tiên selectedEventId nếu có, nếu không dùng eventId từ URL
 
-    setSelectedEvent(events.find((e) => e._id === selectedEventId));
-    if (!selectedEvent) return;
-  }, [selectedEventId]);
+    if (!idToUse || events.length === 0) return;
+
+    const foundEvent = events.find((e) => e._id === idToUse);
+    if (foundEvent) {
+      setSelectedEvent(foundEvent);
+    }
+  }, [selectedEventId, eventId, events]);
 
   useEffect(() => {
     if (selectedEvent) {
@@ -159,7 +165,7 @@ function OrganizerRevenue() {
       setGradientChart(chartData);
     }
   }, [selectedEvent]);
-  console.log("êvem1", JSON.stringify(selectedEvent, null, 2));
+  console.log("event", JSON.stringify(selectedEvent, null, 2));
 
   const revenue = getEventRevenue(selectedEvent);
   const sold = getSoldTickets(selectedEvent);
@@ -178,7 +184,7 @@ function OrganizerRevenue() {
       <DashboardNavbar />
       <ArgonBox py={3} sx={{ position: "relative" }}>
         <Box sx={{ backgroundColor: "#fff", p: 5, borderRadius: 5 }}>
-          <Typography fontSize={20} fontWeight="bold" gutterBottom>
+          <Typography fontSize={22} fontWeight={700} gutterBottom>
             Chọn sự kiện để xem doanh thu
           </Typography>
           <SelectMenu
@@ -195,7 +201,7 @@ function OrganizerRevenue() {
             </Typography>
           </Grid> */}
           <Grid item xs={12}>
-            <Typography fontSize={16} sx={{ fontWeight: "600", ml: 3 }} gutterBottom>
+            <Typography fontSize={20} fontWeight={600} sx={{ ml: 3 }} gutterBottom>
               Tổng quan
             </Typography>
           </Grid>
@@ -214,13 +220,13 @@ function OrganizerRevenue() {
             >
               {/* Bên trái: Thông tin tổng doanh thu */}
               <Box>
-                <Typography fontSize={20} gutterBottom>
+                <Typography fontSize={20} fontWeight={600} gutterBottom>
                   Doanh thu
                 </Typography>
-                <Typography fontWeight="bold" fontSize={22} gutterBottom>
+                <Typography fontSize={24} fontWeight={700} gutterBottom>
                   {revenue.toLocaleString()} ₫
                 </Typography>
-                <Typography fontSize={18} gutterBottom>
+                <Typography fontSize={18} fontWeight={500} gutterBottom>
                   Tổng: {maxRevenue.toLocaleString()} ₫
                 </Typography>
               </Box>
@@ -241,13 +247,13 @@ function OrganizerRevenue() {
               <Stack direction="row" spacing={4} alignItems="center" justifyContent="space-between">
                 {/* Bên trái: 3 dòng text */}
                 <Box>
-                  <Typography fontSize={20} gutterBottom>
+                  <Typography fontSize={20} fontWeight={600} gutterBottom>
                     Số vé đã bán
                   </Typography>
-                  <Typography fontWeight="bold" fontSize={22} gutterBottom>
+                  <Typography fontSize={24} fontWeight={700} gutterBottom>
                     {sold} vé
                   </Typography>
-                  <Typography fontSize={18} gutterBottom>
+                  <Typography fontSize={18} fontWeight={500} gutterBottom>
                     Tổng: {total} vé
                   </Typography>
                 </Box>
@@ -276,7 +282,7 @@ function OrganizerRevenue() {
           <Grid container spacing={3} mb={3} ml={0.5}>
             <Grid item xs={12}>
               <Box>
-                <Typography fontSize={18} sx={{ fontWeight: "600", ml: 3 }} gutterBottom>
+                <Typography fontSize={20} fontWeight={600} sx={{ ml: 3 }} gutterBottom>
                   Chi tiết
                 </Typography>
 
@@ -286,7 +292,8 @@ function OrganizerRevenue() {
                       <TableRow>
                         <TableCell
                           sx={{
-                            fontWeight: "bold",
+                            fontWeight: "700",
+                            fontSize: 16,
                             width: 240,
                             paddingRight: 15,
                             whiteSpace: "nowrap",
@@ -297,8 +304,8 @@ function OrganizerRevenue() {
                         <TableCell
                           sx={{
                             fontWeight: "bold",
-                            width: 240,
-                            paddingRight: 10,
+                            width: "25%",
+                            paddingRight: 22,
                             whiteSpace: "nowrap",
                           }}
                         >
@@ -307,8 +314,8 @@ function OrganizerRevenue() {
                         <TableCell
                           sx={{
                             fontWeight: "bold",
-                            width: 240,
-                            paddingRight: 20,
+                            width: "20%",
+                            paddingRight: 9,
                             whiteSpace: "nowrap",
                           }}
                         >
@@ -317,7 +324,7 @@ function OrganizerRevenue() {
                         <TableCell
                           sx={{
                             fontWeight: "bold",
-                            width: 240,
+                            width: "20%",
                             paddingRight: 17,
                             whiteSpace: "nowrap",
                           }}
@@ -327,7 +334,7 @@ function OrganizerRevenue() {
                         <TableCell
                           sx={{
                             fontWeight: "bold",
-                            width: 240,
+                            width: "20%",
                             paddingRight: 10,
                             whiteSpace: "nowrap",
                           }}
@@ -342,11 +349,29 @@ function OrganizerRevenue() {
                           key={idx}
                           sx={{ backgroundColor: idx % 2 === 0 ? "#f9f9f9" : "white" }}
                         >
-                          <TableCell>{s.name}</TableCell>
-                          <TableCell>{format(s.datetime, "dd/MM/yyyy HH:mm")}</TableCell>
-                          <TableCell>{s.sold}</TableCell>
-                          <TableCell>{`${s.revenue.toLocaleString()} ₫`}</TableCell>
-                          <TableCell>
+                          <TableCell
+                            sx={{
+                              width: "20%",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {s.name}
+                          </TableCell>
+                          <TableCell sx={{ width: "25%", whiteSpace: "nowrap" }}>
+                            {format(new Date(s.startTime), "dd/MM/yyyy HH:mm")} -{" "}
+                            {format(new Date(s.endTime), "HH:mm")}
+                          </TableCell>
+                          <TableCell
+                            sx={{ width: "15%", whiteSpace: "nowrap", textAlign: "center" }}
+                          >
+                            {s.sold}
+                          </TableCell>
+                          <TableCell
+                            sx={{ width: "20%", whiteSpace: "nowrap" }}
+                          >{`${s.revenue.toLocaleString()} ₫`}</TableCell>
+                          <TableCell sx={{ width: "20%", whiteSpace: "nowrap" }}>
                             <Tooltip title={`Trạng thái: ${s.status}`}>
                               <Chip
                                 label={s.status}

@@ -30,6 +30,8 @@ import PropTypes from "prop-types";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import AxiosIntent from "../../../../../../api/axiosInstance";
+import provinceData from "../../../../../../data/province.json";
+import wardData from "../../../../../../data/ward.json";
 
 import {
   setEventName as setEventNameAction,
@@ -52,7 +54,6 @@ import {
 
 import {
   setProvince as setProvinceAction,
-  setDistrict as setDistrictAction,
   setWard as setWardAction,
   setAddress as setAddressAction,
 } from "../../../../../../redux/store/slices/eventAddressSlice";
@@ -62,7 +63,7 @@ export default function TabInfoEvent({ onNext }) {
   const dispatch = useDispatch();
   const userId = useSelector((state) => state.auth.id);
   const eventInfo = useSelector((state) => state.eventInfo);
-  const { province, district, ward, address } = useSelector((state) => state.eventAddress);
+  const { province, ward, address } = useSelector((state) => state.eventAddress);
   // 2. State
   const [formData, setFormData] = useState({
     eventName: "",
@@ -93,30 +94,48 @@ export default function TabInfoEvent({ onNext }) {
   const [tempGalleryFiles, setTempGalleryFiles] = useState([]); // ảnh tạm
   const [previewGallery, setPreviewGallery] = useState([]); // ảnh tạm preview
 
-  const [uploadingImages, setUploadingImages] = useState(false);
-  const [loadingBanner, setLoadingBanner] = useState(false);
-  const [loadingLogo, setLoadingLogo] = useState(false);
-
   const [selectedProvince, setSelectedProvince] = useState(province || "");
-  const [selectedDistrict, setSelectedDistrict] = useState(district || "");
   const [selectedWard, setSelectedWard] = useState(ward || "");
 
-  const [provinces, setProvinces] = useState([]);
-  const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
+
+  const provinceOptions = Object.values(provinceData).map((p) => ({
+    label: p.name_with_type, // ví dụ: "Thành phố Hà Nội"
+    value: p.code, // ví dụ: "11"
+  }));
+
+  useEffect(() => {
+    if (!selectedProvince) {
+      setWards([]);
+      return;
+    }
+
+    const filtered = Object.values(wardData).filter(
+      (ward) => ward.parent_code === selectedProvince
+    );
+
+    const wardOptions = filtered.map((w) => ({
+      label: w.name_with_type,
+      value: w.code,
+    }));
+
+    setWards(wardOptions);
+
+    // ✅ Chỉ reset nếu ward không còn hợp lệ (ví dụ người đã đổi tỉnh)
+    const wardStillValid = wardOptions.some((w) => w.value === selectedWard);
+    if (!wardStillValid) {
+      setSelectedWard("");
+    }
+  }, [selectedProvince, selectedWard]);
 
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
-
-  const [categories, setCategories] = useState("");
-  const [category, setCategory] = useState("");
 
   const [tagInput, setTagInput] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [tags, setTags] = useState([]);
   const [tagError, setTagError] = useState("");
   const [loadingSuggest, setLoadingSuggest] = useState(false);
-  const MAX_TAGS = 7;
 
   const fetchSuggestions = async (searchText) => {
     if (!searchText) return;
@@ -153,22 +172,6 @@ export default function TabInfoEvent({ onNext }) {
     }
   };
 
-  const handleAddTag = async () => {
-    const trimmedTag = tagInput.trim();
-    if (!trimmedTag) return;
-
-    if (tags.includes(trimmedTag)) {
-      setTagError("Tag đã tồn tại");
-      return;
-    }
-    if (tags.length >= MAX_TAGS) {
-      setTagError(`Chỉ được nhập tối đa ${MAX_TAGS} tag`);
-      return;
-    }
-
-    await handleCreateTag(trimmedTag);
-  };
-
   const [description, setDescription] = useState("");
   const [readyToInitTiny, setReadyToInitTiny] = useState(false);
   // 3. useEffect – Theo dõi và load dữ liệu
@@ -187,7 +190,7 @@ export default function TabInfoEvent({ onNext }) {
     if (eventInfo?.name) {
       setFormData((prev) => ({
         ...prev,
-        eventName: address || "",
+        eventName: eventInfo.name || "",
       }));
     }
     if (eventInfo?.tags) {
@@ -211,65 +214,6 @@ export default function TabInfoEvent({ onNext }) {
 
     setReadyToInitTiny(true); // ✅ đảm bảo Tiny chỉ init khi đã có mô tả
   }, [eventInfo?.description]);
-
-  useEffect(() => {
-    fetch("https://provinces.open-api.vn/api/?depth=1")
-      .then((res) => res.json())
-      .then((data) => {
-        const options = data.map((item) => ({
-          label: item.name,
-          value: item.code,
-        }));
-        setProvinces(options);
-      });
-  }, []);
-
-  useEffect(() => {
-    if (!selectedProvince) return;
-    fetch(`https://provinces.open-api.vn/api/p/${selectedProvince}?depth=2`)
-      .then((res) => res.json())
-      .then((data) => {
-        const options = data.districts.map((item) => ({
-          label: item.name,
-          value: item.code,
-        }));
-        setDistricts(options);
-      });
-  }, [selectedProvince]);
-
-  useEffect(() => {
-    if (!selectedDistrict) return;
-    fetch(`https://provinces.open-api.vn/api/d/${selectedDistrict}?depth=2`)
-      .then((res) => res.json())
-      .then((data) => {
-        const options = data.wards.map((item) => ({
-          label: item.name,
-          value: item.code,
-        }));
-        setWards(options);
-      });
-  }, [selectedDistrict]);
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await categoryApi.getAllCategories();
-        if (response.data.status) {
-          const formatted = response.data.data.map((item) => ({
-            label: item.name,
-            value: item._id,
-          }));
-          setCategories(formatted);
-        } else {
-          console.error("Lấy danh mục thất bại");
-        }
-      } catch (err) {
-        console.error("Lỗi khi gọi API lấy danh mục", err);
-      }
-    };
-
-    fetchCategories();
-  }, []);
 
   const handleSelectImage = (e, type) => {
     const file = e.target.files?.[0];
@@ -386,12 +330,12 @@ export default function TabInfoEvent({ onNext }) {
       hasError = true;
     }
 
-    if (tags.length === 0) {
-      setTagError("Vui lòng nhập ít nhất 1 tag");
-      hasError = true;
-    } else {
-      setTagError("");
-    }
+    // if (tags.length === 0) {
+    //   setTagError("Vui lòng nhập ít nhất 1 tag");
+    //   hasError = true;
+    // } else {
+    //   setTagError("");
+    // }
 
     setErrors(newErrors);
     if (hasError) return false;
@@ -447,13 +391,11 @@ export default function TabInfoEvent({ onNext }) {
     }
 
     // Tiếp tục xử lý lưu thông tin
-    const provinceName = provinces.find((p) => p.value === selectedProvince)?.label || "";
-    const districtName = districts.find((d) => d.value === selectedDistrict)?.label || "";
-    const wardName = wards.find((w) => w.value === selectedWard)?.label || "";
-    const fullAddress = `${formData.address}, ${wardName}, ${districtName}, ${provinceName}`;
+    const provinceName = provinceData[selectedProvince]?.name_with_type || "";
+    const wardName = wardData[selectedWard]?.name_with_type || "";
+    const fullAddress = `${formData.address}, ${wardName}, ${provinceName}`;
 
     dispatch(setProvinceAction(selectedProvince));
-    dispatch(setDistrictAction(selectedDistrict));
     dispatch(setWardAction(selectedWard));
     dispatch(setAddressAction(formData.address));
 
@@ -783,34 +725,13 @@ export default function TabInfoEvent({ onNext }) {
               value={selectedProvince}
               onChange={(val) => {
                 setSelectedProvince(val);
-                setSelectedDistrict("");
-                setSelectedWard("");
+                setSelectedWard(""); // reset xã
               }}
-              options={provinces}
-            />
-
-            {errors.province && (
-              <Typography sx={{ color: "red", fontSize: 13, mt: 0.5 }}>
-                {errors.province}
-              </Typography>
-            )}
-          </Grid>
-          {/* Quận / Huyện */}
-          <Grid item xs={12} sm={6}>
-            <Typography variant="h6" gutterBottom>
-              Quận/Huyện
-            </Typography>
-
-            <SelectMenu
-              label="Chọn quận / huyện"
-              value={selectedDistrict}
-              onChange={(val) => {
-                setSelectedDistrict(val);
-                setSelectedWard("");
-              }}
-              options={selectedProvince ? districts : []}
+              options={provinceOptions}
+              searchable
             />
           </Grid>
+
           {/* Phường / Xã */}
           <Grid item xs={12} sm={6}>
             <Typography variant="h6" gutterBottom>
@@ -820,7 +741,8 @@ export default function TabInfoEvent({ onNext }) {
               label="Chọn phường / xã"
               value={selectedWard}
               onChange={(val) => setSelectedWard(val)}
-              options={selectedDistrict ? wards : []}
+              options={wards}
+              searchable
             />
           </Grid>
 
@@ -843,73 +765,57 @@ export default function TabInfoEvent({ onNext }) {
         </Grid>
       </Paper>
 
-      <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
+      {/* <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
         <Grid container spacing={3}>
-          <Grid item xs={12} sm={12}>
+          <Grid item xs={12}>
             <Typography variant="h6" gutterBottom>
               <span style={{ color: "red" }}>*</span> Tag
             </Typography>
-            <Box sx={{ display: "flex", gap: 1, flexDirection: "column" }}>
-              <Box sx={{ display: "flex", gap: 1 }}>
-                <Autocomplete
-                  freeSolo
-                  options={suggestions}
-                  inputValue={tagInput}
-                  onInputChange={(e, value) => {
-                    setTagInput(value);
-                    fetchSuggestions(value);
-                    if (tagError) setTagError("");
-                  }}
-                  onChange={(e, value) => {
-                    if (value) {
-                      if (tags.includes(value)) {
-                        setTagError("Tag đã tồn tại");
-                      } else if (tags.length >= MAX_TAGS) {
-                        setTagError(`Chỉ được nhập tối đa ${MAX_TAGS} tag`);
-                      } else {
-                        handleCreateTag(value);
-                      }
-                    }
-                  }}
-                  loading={loadingSuggest}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      placeholder="Nhập tag"
-                      error={!!tagError}
-                      helperText={tagError}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          handleAddTag();
-                        }
-                      }}
-                    />
-                  )}
-                  sx={{ flex: 1 }}
-                />
 
-                <Button
-                  variant="contained"
-                  onClick={handleAddTag}
-                  disabled={!tagInput.trim() || tags.length >= MAX_TAGS}
-                  sx={{
-                    height: 40,
-                    backgroundColor: "#1976D2",
-                    color: "#fff",
-                    border: "1px solid #1976D2",
-                    "&:hover": {
-                      backgroundColor: "#fff",
-                      color: "#1976D2",
-                    },
-                  }}
-                >
-                  Thêm tag
-                </Button>
-              </Box>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Autocomplete
+                freeSolo
+                options={suggestions}
+                inputValue={tagInput}
+                onInputChange={(e, value) => {
+                  setTagInput(value);
+                  fetchSuggestions(value);
+                  if (tagError) setTagError("");
+                }}
+                onChange={(e, value) => {
+                  if (value) {
+                    if (tags.includes(value)) {
+                      setTagError("Tag đã tồn tại");
+                    } else {
+                      handleCreateTag(value); // Giữ lại để thêm khi chọn từ dropdown hoặc gõ xong enter
+                    }
+                  }
+                }}
+                loading={loadingSuggest}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder="Nhập tag"
+                    error={!!tagError}
+                    helperText={tagError}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (tagInput.trim()) {
+                          if (tags.includes(tagInput.trim())) {
+                            setTagError("Tag đã tồn tại");
+                          } else {
+                            handleCreateTag(tagInput.trim());
+                          }
+                        }
+                      }
+                    }}
+                  />
+                )}
+                sx={{ flex: 1 }}
+              />
             </Box>
 
-            {/* ✅ Danh sách tag */}
             <Box sx={{ mt: 2, display: "flex", flexWrap: "wrap", gap: 1 }}>
               {tags.map((tag, index) => (
                 <Chip
@@ -922,12 +828,9 @@ export default function TabInfoEvent({ onNext }) {
                 />
               ))}
             </Box>
-            <Typography variant="caption" color="text.secondary">
-              {tags.length} / {MAX_TAGS}
-            </Typography>
           </Grid>
         </Grid>
-      </Paper>
+      </Paper> */}
 
       <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom>

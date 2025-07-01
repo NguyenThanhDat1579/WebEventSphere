@@ -10,18 +10,27 @@ const SelectMenu = ({
   options = [],
   error = false,
   helperText = "",
+  searchable = false, // ✅ thêm prop để bật tìm kiếm
 }) => {
   const [open, setOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState(""); // ✅ state tìm kiếm
   const anchorRef = useRef(null);
 
   const handleToggle = () => {
     setOpen((prev) => !prev);
+    if (open) setSearchTerm(""); // ✅ reset ô tìm kiếm khi đóng
   };
 
   const handleSelect = (val) => {
     onChange(val);
     setOpen(false);
+    setSearchTerm("");
   };
+
+  // ✅ Lọc danh sách theo từ khóa tìm kiếm (nếu có)
+  const filteredOptions = options.filter((o) =>
+    o.label?.toLowerCase().trim().includes(searchTerm.toLowerCase().trim())
+  );
 
   return (
     <>
@@ -29,7 +38,7 @@ const SelectMenu = ({
         ref={anchorRef}
         onClick={handleToggle}
         sx={{
-          border: error ? "1px solid red" : "1px solid #ccc", // ✅ viền đỏ nếu lỗi
+          border: error ? "1px solid red" : "1px solid #ccc",
           borderRadius: 1.8,
           p: 0.6,
           pl: 1.4,
@@ -75,6 +84,24 @@ const SelectMenu = ({
             width: anchorRef.current?.offsetWidth || "auto",
           }}
         >
+          {searchable && (
+            <Box sx={{ px: 1, py: 0.5 }}>
+              <input
+                type="text"
+                placeholder="Tìm kiếm..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "6px 10px",
+                  borderRadius: "4px",
+                  border: "1px solid #ccc",
+                  fontSize: "0.875rem",
+                }}
+              />
+            </Box>
+          )}
+
           <MenuList
             dense
             disablePadding
@@ -83,10 +110,10 @@ const SelectMenu = ({
               overflowY: "auto",
             }}
           >
-            {options.length === 0 ? (
-              <MenuItem disabled>Không có dữ liệu</MenuItem>
+            {filteredOptions.length === 0 ? (
+              <MenuItem disabled>Không có kết quả</MenuItem>
             ) : (
-              options.map((item) => (
+              filteredOptions.map((item) => (
                 <MenuItem key={item.value} onClick={() => handleSelect(item.value)}>
                   {item.label}
                 </MenuItem>
@@ -111,5 +138,7 @@ SelectMenu.propTypes = {
   ).isRequired,
   error: PropTypes.bool,
   helperText: PropTypes.string,
+  searchable: PropTypes.bool, // ✅ prop mới
 };
+
 export default SelectMenu;

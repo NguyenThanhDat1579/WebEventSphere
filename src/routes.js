@@ -120,7 +120,7 @@ const routes = [
     type: "route",
     name: "Doanh thu",
     key: "organizer-revenue",
-    route: "/revenue-organizer",
+    route: "/revenue-organizer/:eventId/:eventTitle",
     icon: <ArgonBox component="i" color="primary" fontSize="14px" className="ni ni-tv-2" />,
     component: <OrganizerRevenue />,
     allowedRoles: [2],

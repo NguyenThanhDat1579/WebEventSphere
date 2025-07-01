@@ -26,17 +26,28 @@ const transformEvents = (events) =>
     const totalTickets = event.ticketQuantity || 0;
 
     return {
-      id: event._id, // sửa lại lấy đúng _id
+      id: event._id, // giữ nguyên
       title: event.name,
       avatar: event.avatar,
-      timeStart,
-      timeEnd,
-      location: "Đang cập nhật", // location giả định
-      soldTickets,
-      totalTickets,
-      ticketPrice,
-      revenue: ticketPrice * soldTickets,
-      status: timeEnd < new Date() ? "Ended" : "Published",
+      timeStart: event.timeStart,
+      timeEnd: event.timeEnd,
+      location: "Đang cập nhật", // giả định
+      showtimes: event.showtimes ?? [], // ✅ thêm showtimes đầy đủ
+
+      // Tổng số vé và vé đã bán toàn sự kiện
+      soldTickets: event.soldTickets ?? 0,
+      totalTickets: event.totalTicketsEvent ?? 0,
+
+      // Doanh thu tổng từ backend (từ revenueByShowtime hoặc eventTotalRevenue)
+      revenue: event.eventTotalRevenue ?? 0,
+
+      // Bạn có thể tính giá vé trung bình nếu muốn:
+      ticketPrice:
+        event.soldTickets && event.eventTotalRevenue
+          ? event.eventTotalRevenue / event.soldTickets
+          : 0,
+
+      status: event.timeEnd < Date.now() ? "Ended" : "Published",
     };
   });
 
@@ -75,42 +86,23 @@ function OrganizerMyEvent() {
   const filteredEvents = transformedEvents.filter((event) => {
     const nameMatch = event.title.toLowerCase().includes(search.toLowerCase());
 
-    const now = new Date();
+    const now = Date.now(); // dùng timestamp cho khớp với event.timeStart
     let statusMatch = true;
+
     if (statusFilter === "ongoing") {
-      // ongoing là hiện tại nằm trong khoảng timeStart đến timeEnd
+      // sự kiện đang diễn ra (bán vé hoặc đang hoạt động)
       statusMatch = event.timeStart <= now && now <= event.timeEnd;
     } else if (statusFilter === "upcoming") {
-      // sắp diễn ra: bắt đầu sau hiện tại
+      // sắp tới (chưa bắt đầu)
       statusMatch = event.timeStart > now;
     } else if (statusFilter === "ended") {
-      // đã kết thúc: thời gian kết thúc trước hiện tại
-      statusMatch = event.timeEnd < now;
-    }
-    if (statusFilter === "ongoing") {
-      // ongoing là hiện tại nằm trong khoảng timeStart đến timeEnd
-      statusMatch = event.timeStart <= now && now <= event.timeEnd;
-    } else if (statusFilter === "upcoming") {
-      // sắp diễn ra: bắt đầu sau hiện tại
-      statusMatch = event.timeStart > now;
-    } else if (statusFilter === "ended") {
-      // đã kết thúc: thời gian kết thúc trước hiện tại
-      statusMatch = event.timeEnd < now;
-    }
-    if (statusFilter === "ongoing") {
-      // ongoing là hiện tại nằm trong khoảng timeStart đến timeEnd
-      statusMatch = event.timeStart <= now && now <= event.timeEnd;
-    } else if (statusFilter === "upcoming") {
-      // sắp diễn ra: bắt đầu sau hiện tại
-      statusMatch = event.timeStart > now;
-    } else if (statusFilter === "ended") {
-      // đã kết thúc: thời gian kết thúc trước hiện tại
+      // đã kết thúc (hết thời gian tổ chức)
       statusMatch = event.timeEnd < now;
     }
 
     let dateMatch = true;
-    if (dateRange.from && event.timeStart < dateRange.from) dateMatch = false;
-    if (dateRange.to && event.timeStart > dateRange.to) dateMatch = false;
+    if (dateRange.from && event.timeStart < dateRange.from.getTime()) dateMatch = false;
+    if (dateRange.to && event.timeStart > dateRange.to.getTime()) dateMatch = false;
 
     return nameMatch && statusMatch && dateMatch;
   });

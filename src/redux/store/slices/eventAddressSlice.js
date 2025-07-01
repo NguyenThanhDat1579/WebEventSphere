@@ -3,7 +3,6 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   province: "",
-  district: "",
   ward: "",
   address: "", // Số nhà, đường
 };
@@ -15,9 +14,6 @@ const eventAddressSlice = createSlice({
     setProvince: (state, action) => {
       state.province = action.payload;
     },
-    setDistrict: (state, action) => {
-      state.district = action.payload;
-    },
     setWard: (state, action) => {
       state.ward = action.payload;
     },
@@ -28,7 +24,6 @@ const eventAddressSlice = createSlice({
   },
 });
 
-export const { setProvince, setDistrict, setWard, setAddress, resetAddress } =
-  eventAddressSlice.actions;
+export const { setProvince, setWard, setAddress, resetAddress } = eventAddressSlice.actions;
 
 export default eventAddressSlice.reducer;

@@ -435,7 +435,7 @@ export default function ScheduleSection() {
 
       console.log("📦 Payload gửi đi:", JSON.stringify(eventInfo, null, 2));
       // const response = await eventApi.addEvent(eventInfo);
-      // console.log("✅ API Response:", response.data);
+      console.log("✅ API Response:", response.data);
 
       // if (response.data?.status === true) {
       dispatch(resetEventInfo());

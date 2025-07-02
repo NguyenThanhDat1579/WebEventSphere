@@ -13,34 +13,71 @@ import {
   Chip,
   Typography,
 } from "@mui/material";
+import { format } from "date-fns";
 
 function EventTable({ events }) {
-  const formatDateTime = (timestamp) => {
-    const date = new Date(timestamp > 1e12 ? timestamp : timestamp * 1000);
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    const weekdayNames = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
-    const weekday = weekdayNames[date.getDay()];
-    return `${hours}:${minutes}, ${weekday} ${day}/${month}/${year}`;
-  };
-
   const getStatusChip = (event) => {
     const now = new Date();
-    const start = new Date(event.timeStart > 1e12 ? event.timeStart : event.timeStart * 1000);
-    const end = new Date(event.timeEnd > 1e12 ? event.timeEnd : event.timeEnd * 1000);
+
+    if (!event.showtimes || event.showtimes.length === 0) {
+      return (
+        <Chip
+          label="Chưa có lịch"
+          color="default"
+          size="medium"
+          sx={{ color: "#fff", fontSize: 13, fontWeight: 500 }}
+        />
+      );
+    }
+
+    // Tìm thời gian bắt đầu sớm nhất và kết thúc muộn nhất
+    const start = new Date(Math.min(...event.showtimes.map((s) => s.startTime)));
+    const end = new Date(Math.max(...event.showtimes.map((s) => s.endTime)));
+
     const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
     const timeUntilStart = start.getTime() - now.getTime();
 
-    if (now >= start && now <= end)
-      return <Chip label="Đang diễn ra" color="success" size="small" sx={{ color: "#fff" }} />;
-    if (timeUntilStart > 0 && timeUntilStart <= oneWeekMs)
-      return <Chip label="Sắp diễn ra" color="error" size="small" sx={{ color: "#fff" }} />;
-    if (timeUntilStart > oneWeekMs)
-      return <Chip label="Chưa diễn ra" color="warning" size="small" sx={{ color: "#fff" }} />;
-    return <Chip label="Đã kết thúc" color="default" size="small" sx={{ color: "#fff" }} />;
+    if (now >= start && now <= end) {
+      return (
+        <Chip
+          label="Đang diễn ra"
+          color="success"
+          size="small"
+          sx={{ color: "#fff", fontSize: 13, fontWeight: 500 }}
+        />
+      );
+    }
+
+    if (timeUntilStart > 0 && timeUntilStart <= oneWeekMs) {
+      return (
+        <Chip
+          label="Sắp diễn ra"
+          color="error"
+          size="small"
+          sx={{ color: "#fff", fontSize: 13, fontWeight: 500 }}
+        />
+      );
+    }
+
+    if (timeUntilStart > oneWeekMs) {
+      return (
+        <Chip
+          label="Chưa diễn ra"
+          color="warning"
+          size="small"
+          sx={{ color: "#fff", fontSize: 13, fontWeight: 500 }}
+        />
+      );
+    }
+
+    return (
+      <Chip
+        label="Đã kết thúc"
+        color="default"
+        size="small"
+        sx={{ color: "#fff", fontSize: 13, fontWeight: 500 }}
+      />
+    );
   };
 
   return (
@@ -48,35 +85,66 @@ function EventTable({ events }) {
       <Table size="medium" sx={{ minWidth: 1000, tableLayout: "fixed" }}>
         <TableHead>
           <TableRow>
-            <TableCell sx={{ fontWeight: "bold", width: 60, paddingRight: 12 }}>Ảnh</TableCell>
+            <TableCell sx={{ fontWeight: "700", fontSize: 14, width: 60, paddingRight: 20 }}>
+              {""}
+            </TableCell>
             <TableCell
-              sx={{ fontWeight: "bold", width: 240, paddingRight: 10, whiteSpace: "nowrap" }}
+              sx={{
+                width: 240,
+                paddingRight: 15,
+                whiteSpace: "nowrap",
+                fontWeight: "700",
+                fontSize: 14,
+              }}
             >
               Tên sự kiện
             </TableCell>
             <TableCell
-              sx={{ fontWeight: "bold", width: 300, paddingRight: 7, whiteSpace: "nowrap" }}
+              sx={{
+                width: 300,
+                paddingRight: 14,
+                whiteSpace: "nowrap",
+                fontWeight: "700",
+                fontSize: 14,
+              }}
             >
               Ngày diễn ra
             </TableCell>
             <TableCell
-              sx={{ fontWeight: "bold", width: 130, paddingRight: 7, whiteSpace: "nowrap" }}
+              sx={{
+                width: 130,
+                paddingRight: 9,
+                whiteSpace: "nowrap",
+                fontWeight: "700",
+                fontSize: 14,
+              }}
             >
               Trạng thái
             </TableCell>
             <TableCell
-              sx={{ fontWeight: "bold", width: 100, paddingRight: 10, whiteSpace: "nowrap" }}
+              sx={{
+                fontWeight: "bold",
+                width: 100,
+                paddingRight: 10,
+                whiteSpace: "nowrap",
+                fontWeight: "700",
+                fontSize: 14,
+              }}
               align="center"
             >
-              Số vé đã bán
+              Số vé đã bán/Tổng vé
             </TableCell>
+
             <TableCell
-              sx={{ fontWeight: "bold", width: 100, paddingRight: 15, whiteSpace: "nowrap" }}
-              align="center"
+              sx={{
+                fontWeight: "bold",
+                width: 160,
+                whiteSpace: "nowrap",
+                fontWeight: "700",
+                fontSize: 14,
+              }}
+              align="right"
             >
-              Tổng vé
-            </TableCell>
-            <TableCell sx={{ fontWeight: "bold", width: 160, whiteSpace: "nowrap" }} align="right">
               Doanh thu
             </TableCell>
           </TableRow>
@@ -84,8 +152,20 @@ function EventTable({ events }) {
 
         <TableBody>
           {events.map((event, index) => {
-            const startTime = formatDateTime(event.timeStart);
-            const endTime = formatDateTime(event.timeEnd);
+            // Hàm định dạng
+            const showtimes = event.showtimes || [];
+
+            let dateDisplay = "Chưa có lịch";
+
+            if (showtimes.length > 0) {
+              const minStart = Math.min(...showtimes.map((s) => s.startTime));
+              const maxEnd = Math.max(...showtimes.map((s) => s.endTime));
+
+              const startDate = format(new Date(minStart), "dd/MM/yyyy");
+              const endDate = format(new Date(maxEnd), "dd/MM/yyyy");
+
+              dateDisplay = startDate === endDate ? startDate : `${startDate} - ${endDate}`;
+            }
 
             const soldTickets = event.soldTickets || 0;
             const totalTickets = event.ticketQuantity || 0;
@@ -101,13 +181,17 @@ function EventTable({ events }) {
                 }}
               >
                 <TableCell>
-                  <Avatar src={event.avatar} variant="rounded" sx={{ width: 100, height: 100 }} />
+                  <Avatar
+                    src={event.avatar}
+                    variant="rounded"
+                    sx={{ width: 110, height: 110, borderRadius: 2 }}
+                  />
                 </TableCell>
                 <TableCell>
                   <Typography
-                    variant="body2"
                     sx={{
-                      fontWeight: "bold",
+                      fontSize: 14,
+                      fontWeight: "600",
                       maxWidth: 180,
                       wordBreak: "break-word",
                       display: "-webkit-box",
@@ -120,23 +204,19 @@ function EventTable({ events }) {
                   </Typography>
                 </TableCell>
                 <TableCell>
-                  <Typography variant="body2" sx={{ fontWeight: "600" }}>
-                    {startTime}
+                  <Typography variant="body2" sx={{ fontWeight: "400", fontSize: "14" }}>
+                    {dateDisplay}
                   </Typography>
                 </TableCell>
                 <TableCell>{getStatusChip(event)}</TableCell>
                 <TableCell>
-                  <Typography variant="body2" sx={{ fontWeight: "600" }}>
-                    {soldTickets}
+                  <Typography variant="body2" sx={{ fontWeight: "500", fontSize: "14" }}>
+                    {soldTickets}/{totalTickets}
                   </Typography>
                 </TableCell>
+
                 <TableCell>
-                  <Typography variant="body2" sx={{ fontWeight: "600" }}>
-                    {totalTickets}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2" sx={{ fontWeight: "600" }}>
+                  <Typography variant="body2" sx={{ fontWeight: "600", fontSize: "14" }}>
                     {revenue > 0 ? revenue.toLocaleString("vi-VN") + " ₫" : "Miễn phí"}
                   </Typography>
                 </TableCell>

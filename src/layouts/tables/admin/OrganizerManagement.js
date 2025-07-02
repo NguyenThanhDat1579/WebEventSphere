@@ -39,66 +39,102 @@ function OrganizerManagement() {
     })();
   }, []);
 
-  return (
-    <DashboardLayout>
-      <DashboardNavbar />
-      <ArgonBox py={3}>
-        <Card sx={{ boxShadow: 3, borderRadius: 3, overflow: "hidden" }}>
-          <ArgonBox px={3} py={2} bgcolor={theme.palette.grey[100]}>
-            <ArgonTypography variant="h5" fontWeight="bold">
-              Danh sách nhà tổ chức
-            </ArgonTypography>
+return (
+  <DashboardLayout>
+    <DashboardNavbar />
+    <ArgonBox py={3}>
+      <Card
+        sx={{
+          boxShadow: 4,
+          borderRadius: 3,
+          overflow: "hidden",
+        }}
+      >
+        {/* Header */}
+        <ArgonBox
+          px={3}
+          py={2}
+          sx={{
+            backgroundColor: theme.palette.primary.light,
+            color: theme.palette.primary.contrastText,
+            borderTopLeftRadius: 12,
+            borderTopRightRadius: 12,
+          }}
+        >
+          <ArgonTypography variant="h5" fontWeight="bold">
+            Danh sách nhà tổ chức
+          </ArgonTypography>
+        </ArgonBox>
+
+        <Divider />
+
+        {loading ? (
+          <ArgonBox display="flex" justifyContent="center" py={10}>
+            <CircularProgress />
           </ArgonBox>
+        ) : (
+          <Box
+            sx={{
+              width: "100%",
+              overflowX: "auto",
+              minWidth: 800,
 
-          <Divider />
+              "& table thead": {
+                position: "sticky",
+                top: 0,
+                zIndex: 1,
+                backgroundColor: theme.palette.grey[100],
+              },
 
-          {loading ? (
-            <ArgonBox display="flex" justifyContent="center" py={10}>
-              <CircularProgress />
-            </ArgonBox>
-          ) : (
-            <ArgonBox sx={{ overflowX: "auto" }}>
-              <Table
-                columns={columns}
-                rows={rows}
-                sxTable={{
-                  tableLayout: "fixed",
-                  "& th, & td": {
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    padding: "8px 12px",
-                    fontSize: "13px",
-                  },
-                  "& th:nth-of-type(1), & td:nth-of-type(1)": { width: 140 },
-                  "& th:nth-of-type(2), & td:nth-of-type(2)": { width: 200 },
-                  "& th:nth-of-type(3), & td:nth-of-type(3)": {
-                    width: 120,
-                    textAlign: "center",
-                  },
-                  "& th:nth-of-type(4), & td:nth-of-type(4)": {
-                    width: 200,
-                    textAlign: "center",
-                  },
-                  "& th:nth-of-type(5), & td:nth-of-type(5)": {
-                    width: 120,
-                    textAlign: "center",
-                  },
-                  "& tbody tr:nth-of-type(odd)": {
-                    backgroundColor: theme.palette.grey[50],
-                  },
-                  "& tbody tr:hover": {
-                    backgroundColor: theme.palette.action.hover,
-                  },
-                }}
-              />
-            </ArgonBox>
-          )}
-        </Card>
-      </ArgonBox>
-      <Footer />
-    </DashboardLayout>
-  );
+              "& table thead th": {
+                fontWeight: 600,
+                fontSize: 13,
+                color: theme.palette.grey[800],
+                padding: "12px 16px",
+                borderBottom: "1px solid #e0e0e0",
+                whiteSpace: "nowrap",
+              },
+
+              "& table tbody td": {
+                padding: "12px 16px",
+                fontSize: 13.5,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                borderBottom: "1px solid #e0e0e0",
+                color: theme.palette.text.primary,
+              },
+
+              "& table td:nth-of-type(3),\
+                 table th:nth-of-type(3),\
+                 table td:nth-of-type(4),\
+                 table th:nth-of-type(4),\
+                 table td:nth-of-type(5),\
+                 table th:nth-of-type(5)": {
+                textAlign: "center",
+              },
+
+              "& table tbody tr:nth-of-type(even)": {
+                backgroundColor: "#f9f9f9",
+              },
+
+              "& table tbody tr:hover": {
+                backgroundColor: theme.palette.action.hover,
+                cursor: "pointer",
+                transition: "all .2s",
+                boxShadow: "0 2px 8px rgba(0,0,0,.04)",
+              },
+            }}
+          >
+            <Table columns={columns} rows={rows} />
+          </Box>
+        )}
+      </Card>
+    </ArgonBox>
+    <Footer />
+  </DashboardLayout>
+);
+
 }
 
 export default OrganizerManagement;

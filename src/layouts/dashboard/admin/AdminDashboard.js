@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  Grid, Card, CardContent, Typography, Box, Chip,
+  Grid, Card, CardContent, Typography, Box, Chip, MenuItem, Select, FormControl, InputLabel,
 } from "@mui/material";
 import PropTypes from "prop-types";
 
@@ -9,7 +9,6 @@ import ArgonTypography from "components/ArgonTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
-import DetailedStatisticsCard from "examples/Cards/StatisticsCards/DetailedStatisticsCard";
 import VerticalBarChart from "examples/Charts/BarCharts/VerticalBarChart";
 
 import revenueApi from "api/revenue";
@@ -24,8 +23,8 @@ function AdminDashboard() {
     prevRevenue: 0,
     prevTickets: 0,
   });
-
   const [upcomingEvents, setUpcoming] = useState([]);
+  const [filter, setFilter] = useState("month");
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -86,128 +85,176 @@ function AdminDashboard() {
 
   const revPct = pct(kpi.revenue, kpi.prevRevenue);
 
-  const getBgColor = (color) => {
-    switch (color) {
-      case "success": return "rgba(76, 175, 80, 0.1)";
-      case "error": return "rgba(244, 67, 54, 0.1)";
-      default: return "rgba(0, 0, 0, 0.05)";
-    }
-  };
+  const now = new Date();
+  const curMonth = now.toLocaleString("vi-VN", { month: "long" });       // VD: "tháng 7"
+  const prevMonth = new Date(now.setMonth(now.getMonth() - 1)).toLocaleString("vi-VN", { month: "long" });
 
   const barChartCompare = {
-    labels: ["Tháng trước", "Tháng này"],
-    datasets: [
-      {
-        label: "Doanh thu",
-        color: "info",
-        data: [kpi.prevRevenue, kpi.revenue],
-        maxBarThickness: 40,
-      },
-    ],
-    options: {
-      plugins: {
-        tooltip: {
-          callbacks: {
-            label: ctx =>
-              `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString("vi-VN")} ₫`,
-          },
+  labels: [prevMonth, curMonth],
+  datasets: [
+    {
+      label: "Doanh thu",
+      color: "info",
+      data: [kpi.prevRevenue, kpi.revenue],
+      maxBarThickness: 80,
+      barPercentage: 0.7,
+      categoryPercentage: 0.6,
+      borderRadius: 6,
+    },
+  ],
+  options: {
+    scales: {
+      y: {
+        ticks: {
+          callback: value => value.toLocaleString("vi-VN"),
         },
+        beginAtZero: true,
+        suggestedMax: Math.max(kpi.revenue, kpi.prevRevenue) * 1.2,
+        grace: "5%",
       },
     },
-  };
+    plugins: {
+      tooltip: {
+        callbacks: {
+          label: ctx =>
+            `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString("vi-VN")} ₫`,
+        },
+      },
+      legend: { display: false },
+    },
+  },
+};
+
+
 
   return (
-    <DashboardLayout>
-      <DashboardNavbar />
-      <ArgonBox py={3}>
-        {/* KPI */}
-        <Grid container spacing={3} justifyContent="center" mb={3}>
-        <Grid container spacing={3} mb={3}>
-  <Grid item xs={12} sm={6} md={3}>
-    <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
-      <ArgonTypography variant="button" fontWeight="medium" color="text" mb={1}>
-        Tổng doanh thu
-      </ArgonTypography>
-      <ArgonTypography variant="h5" fontWeight="bold" color="dark">
-        {kpi.revenue.toLocaleString()} ₫
-      </ArgonTypography>
-    
-    </Card>
-  </Grid>
+  <DashboardLayout>
+    <DashboardNavbar />
 
-  <Grid item xs={12} sm={6} md={3}>
-    <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
-      <ArgonTypography variant="button" fontWeight="medium" color="text" mb={1}>
-        Tổng vé đã bán
-      </ArgonTypography>
-      <ArgonTypography variant="h5" fontWeight="bold" color="dark">
-        {kpi.tickets}
-      </ArgonTypography>
-      
-    </Card>
-  </Grid>
-
-  <Grid item xs={12} sm={6} md={3}>
-    <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
-      <ArgonTypography variant="button" fontWeight="medium" color="text" mb={1}>
-        Số sự kiện
-      </ArgonTypography>
-      <ArgonTypography variant="h5" fontWeight="bold" color="dark">
-        {kpi.events}
-      </ArgonTypography>
-    </Card>
-  </Grid>
-
-  <Grid item xs={12} sm={6} md={3}>
-    <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
-      <ArgonTypography variant="button" fontWeight="medium" color="text" mb={1}>
-        Sự kiện đã kết thúc
-      </ArgonTypography>
-      <ArgonTypography variant="h5" fontWeight="bold" color="dark">
-        {kpi.ended}
-      </ArgonTypography>
-    </Card>
-  </Grid>
-</Grid>
+    <ArgonBox py={3}>
+      {/* ==== KPI SECTION ================================================= */}
+      <Grid container spacing={3} mb={3}>
+        {/** 4 thẻ KPI nằm ngang, tự co giãn trên các kích cỡ màn hình */}
+        <Grid item xs={12} sm={6} md={3}>
+         <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3, backgroundColor: "#1976d2", color: "#fff" }}>
+  <ArgonTypography variant="button" fontWeight="medium" color="white" mb={1}>
+    TỔNG DOANH THU THÁNG NÀY
+  </ArgonTypography>
+  <ArgonTypography variant="h5" fontWeight="bold">
+    {kpi.revenue.toLocaleString("vi-VN")} ₫
+  </ArgonTypography>
+  <ArgonTypography variant="caption" fontWeight="regular">
+    {curMonth.charAt(0).toUpperCase() + curMonth.slice(1)} đạt {kpi.revenue.toLocaleString("vi-VN")} ₫<br />
+    ({revPct.value}% so với {prevMonth} – {revPct.value >= 0 ? "Tăng" : "Giảm"})
+  </ArgonTypography>
+</Card>
 
         </Grid>
 
-        {/* Biểu đồ */}
-        <Grid container spacing={3} mb={3}>
-          <Grid item xs={12}>
-            <VerticalBarChart
-              title="So sánh doanh thu 2 tháng"
-              description={
-                <ArgonTypography variant="body2" color="text">
-                  Tháng này đạt&nbsp;
-                  <strong>{kpi.revenue.toLocaleString()} ₫</strong>
-                  &nbsp;({revPct.value}% so với tháng trước)
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3, height: "100%" }}>
+            <ArgonTypography variant="button" color="text" fontWeight="medium">
+              Tổng vé đã bán
+            </ArgonTypography>
+            <ArgonTypography variant="h5" fontWeight="bold">
+              {kpi.tickets}
+            </ArgonTypography>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3, height: "100%" }}>
+            <ArgonTypography variant="button" color="text" fontWeight="medium">
+              Số sự kiện
+            </ArgonTypography>
+            <ArgonTypography variant="h5" fontWeight="bold">
+              {kpi.events}
+            </ArgonTypography>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3, height: "100%" }}>
+            <ArgonTypography variant="button" color="text" fontWeight="medium">
+              Sự kiện đã kết thúc
+            </ArgonTypography>
+            <ArgonTypography variant="h5" fontWeight="bold">
+              {kpi.ended}
+            </ArgonTypography>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* ==== CHART + DROPDOWN =========================================== */}
+      <Grid container spacing={3} mb={3}>
+        <Grid item xs={12}>
+          <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
+            {/* tiêu đề + bộ lọc */}
+            <Grid
+              container
+              justifyContent="space-between"
+              alignItems="center"
+              mb={2}
+            >
+              <Grid item>
+                <ArgonTypography variant="h6" fontWeight="bold">
+                  So sánh doanh thu 2 tháng
                 </ArgonTypography>
-              }
+                <ArgonTypography variant="caption" color="text">
+                  Tháng này đạt&nbsp;
+                  <strong>{kpi.revenue.toLocaleString("vi-VN")} ₫</strong>&nbsp;
+                  ({revPct.value}% so với tháng trước&nbsp;
+                  {revPct.value >= 0 ? "– Tăng" : "– Giảm"})
+                </ArgonTypography>
+              </Grid>
+
+              {/* Dropdown (tùy chọn) */}
+              <Grid item>
+                <FormControl size="small">
+                  <Select
+                    value={filter}                 /* state filter */
+                    onChange={e => setFilter(e.target.value)}
+                    sx={{ minWidth: 140 }}
+                  >
+                    <MenuItem value="month">Theo tháng</MenuItem>
+                    <MenuItem value="year">Theo năm</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+
+            {/* biểu đồ cột */}
+            <VerticalBarChart
+              title=""                 /* đã có title phía trên */
+              description=""
               chart={barChartCompare}
             />
-          </Grid>
+          </Card>
         </Grid>
+      </Grid>
 
-        {/* Sự kiện */}
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Card sx={{ backgroundColor: getBgColor("default"), p: 3 }}>
-              <ArgonTypography variant="h5" fontWeight="bold" mb={2}>
-                Sự kiện đang hoặc sắp diễn ra
-              </ArgonTypography>
-              <Grid container spacing={2}>
-                {upcomingEvents.map(ev => (
-                  <EventCard key={ev._id} event={ev} />
-                ))}
-              </Grid>
-            </Card>
-          </Grid>
+      {/* ==== UPCOMING EVENTS =========================================== */}
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
+            <ArgonTypography variant="h5" fontWeight="bold" mb={2}>
+              Sự kiện đang hoặc sắp diễn ra
+            </ArgonTypography>
+
+            <Grid container spacing={2}>
+              {upcomingEvents.map(ev => (
+                <EventCard key={ev._id} event={ev} />
+              ))}
+            </Grid>
+          </Card>
         </Grid>
-      </ArgonBox>
-      <Footer />
-    </DashboardLayout>
-  );
+      </Grid>
+    </ArgonBox>
+
+    <Footer />
+  </DashboardLayout>
+);
+
 }
 
 const EventCard = ({ event }) => {

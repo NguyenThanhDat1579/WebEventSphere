@@ -1,20 +1,34 @@
-// src/layouts/tables/data/organizerTableData.js
+import ArgonTypography from "components/ArgonTypography";
 
-const organizerTableData = (organizers) => {
-  const columns = [
-    { name: "Tên nhà tổ chức", align: "left" },
-    { name: "Email", align: "left" },
-    { name: "Số điện thoại", align: "center" },
-    { name: "Địa chỉ", align: "center" },
-    { name: "Người theo dõi", align: "center" },
-  ];
+/* ---- Cấu hình cột ---- */
+export const columns = [
+  { title: "Tên tổ chức",   field: "name",      align: "left"   },
+  { title: "Email",         field: "email",     align: "left"   },
+  { title: "Số ĐT",         field: "phone",     align: "center" },
+  { title: "Địa chỉ",       field: "address",   align: "center" },
+  { title: "Follower",      field: "follower",  align: "center" },
+];
 
-  const rows = organizers.map((user) => ({
-    "Tên nhà tổ chức": user.username || "—",
-    "Email": user.email || "—",
-    "Số điện thoại": user.phoneNumber || "—",
-    "Địa chỉ": user.address || "—",
-    "Người theo dõi": user.follower ?? 0,
+/* 1 hàm tiện tạo typography đồng bộ  */
+const txt = (value, align = "left") => (
+  <ArgonTypography
+    variant="body2"
+    fontWeight="400"
+    color="text"
+    sx={{ fontSize: 13, textAlign: align }}
+  >
+    {value}
+  </ArgonTypography>
+);
+
+export const organizerTableData = (list = []) => {
+  const rows = list.map((o) => ({
+    /* trùng với field ở columns */
+    name     : txt(o.username   || "—"),
+    email    : txt(o.email      || "—"),
+    phone    : txt(o.phoneNumber|| "—", "center"),
+    address  : txt(o.address    || "—", "center"),
+    follower : txt(o.follower   ?? 0 , "center"),
   }));
 
   return { columns, rows };

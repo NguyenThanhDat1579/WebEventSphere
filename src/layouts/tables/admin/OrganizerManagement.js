@@ -15,12 +15,15 @@ import Table from "examples/Tables/Table";
 import userApi from "api/userApi";
 import organizerTableData from "layouts/tables/data/organizerTableData";
 
+// ... import giữ nguyên (đã có organizerTableData ở trên)
+
 function OrganizerManagement() {
   const [columns, setColumns] = useState([]);
-  const [rows, setRows] = useState([]);
+  const [rows, setRows]       = useState([]);
   const [loading, setLoading] = useState(true);
   const theme = useTheme();
 
+  /* --- Lấy dữ liệu --- */
   useEffect(() => {
     (async () => {
       try {
@@ -32,109 +35,79 @@ function OrganizerManagement() {
           setRows(rows);
         }
       } catch (err) {
-        console.error("Lỗi khi tải danh sách nhà tổ chức:", err);
+        console.error("Lỗi tải danh sách tổ chức:", err);
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-return (
-  <DashboardLayout>
-    <DashboardNavbar />
-    <ArgonBox py={3}>
-      <Card
-        sx={{
-          boxShadow: 4,
-          borderRadius: 3,
-          overflow: "hidden",
-        }}
-      >
-        {/* Header */}
-        <ArgonBox
-          px={3}
-          py={2}
-          sx={{
-            backgroundColor: theme.palette.primary.light,
-            color: theme.palette.primary.contrastText,
-            borderTopLeftRadius: 12,
-            borderTopRightRadius: 12,
-          }}
-        >
-          <ArgonTypography variant="h5" fontWeight="bold">
-            Danh sách nhà tổ chức
-          </ArgonTypography>
-        </ArgonBox>
+  /* ----------- RENDER ----------- */
+  return (
+    <DashboardLayout>
+      <DashboardNavbar />
 
-        <Divider />
-
-        {loading ? (
-          <ArgonBox display="flex" justifyContent="center" py={10}>
-            <CircularProgress />
+      <ArgonBox py={3}>
+        <Card sx={{ boxShadow: 4, borderRadius: 3, overflow: "hidden" }}>
+          {/* header */}
+          <ArgonBox px={3} py={2} bgcolor={theme.palette.primary.light} color="white">
+            <ArgonTypography variant="h5" fontWeight="bold">
+              Danh sách nhà tổ chức
+            </ArgonTypography>
           </ArgonBox>
-        ) : (
-          <Box
-            sx={{
-              width: "100%",
-              overflowX: "auto",
-              minWidth: 800,
 
-              "& table thead": {
-                position: "sticky",
-                top: 0,
-                zIndex: 1,
-                backgroundColor: theme.palette.grey[100],
-              },
+          <Divider />
 
-              "& table thead th": {
-                fontWeight: 600,
-                fontSize: 13,
-                color: theme.palette.grey[800],
-                padding: "12px 16px",
-                borderBottom: "1px solid #e0e0e0",
-                whiteSpace: "nowrap",
-              },
+          {/* body */}
+          {loading ? (
+            <ArgonBox display="flex" justifyContent="center" py={10}>
+              <CircularProgress />
+            </ArgonBox>
+          ) : (
+            <Box sx={{ width: "100%", overflowX: "auto" }}>
+              <Table
+                columns={columns}
+                rows={rows}
+                sxTable={{
+                  minWidth: 820,
+                  tableLayout: "fixed",
 
-              "& table tbody td": {
-                padding: "12px 16px",
-                fontSize: 13.5,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                borderBottom: "1px solid #e0e0e0",
-                color: theme.palette.text.primary,
-              },
+                  "& thead": { position: "sticky", top: 0, zIndex: 2, bgcolor: theme.palette.grey[100] },
+                  "& thead th": {
+                    fontWeight: 600,
+                    fontSize : 13,
+                    padding  : "12px 16px",
+                    borderBottom: "1px solid #e0e0e0",
+                    whiteSpace: "nowrap",
+                  },
 
-              "& table td:nth-of-type(3),\
-                 table th:nth-of-type(3),\
-                 table td:nth-of-type(4),\
-                 table th:nth-of-type(4),\
-                 table td:nth-of-type(5),\
-                 table th:nth-of-type(5)": {
-                textAlign: "center",
-              },
+                  "& tbody td": {
+                    padding: "12px 16px",
+                    fontSize: 13.5,
+                    whiteSpace: "nowrap",
+                    overflow : "hidden",
+                    textOverflow: "ellipsis",
+                    borderBottom: "1px solid #e0e0e0",
+                  },
 
-              "& table tbody tr:nth-of-type(even)": {
-                backgroundColor: "#f9f9f9",
-              },
+                  /* canh giữa 3 cột cuối */
+                  "& tbody td:nth-of-type(3), & tbody td:nth-of-type(4), & tbody td:nth-of-type(5)": {
+                    textAlign: "center",
+                  },
 
-              "& table tbody tr:hover": {
-                backgroundColor: theme.palette.action.hover,
-                cursor: "pointer",
-                transition: "all .2s",
-                boxShadow: "0 2px 8px rgba(0,0,0,.04)",
-              },
-            }}
-          >
-            <Table columns={columns} rows={rows} />
-          </Box>
-        )}
-      </Card>
-    </ArgonBox>
-    <Footer />
-  </DashboardLayout>
-);
+                  /* zebra & hover – phần này Table.jsx đã có nhưng thêm cũng không sao */
+                  "& tbody tr:nth-of-type(even)": { backgroundColor: "#f7f7f7" },
+                  "& tbody tr:hover":             { backgroundColor: "#e0e0e0", transition: ".2s" },
+                }}
+              />
+            </Box>
+          )}
+        </Card>
+      </ArgonBox>
 
+      <Footer />
+    </DashboardLayout>
+  );
 }
 
 export default OrganizerManagement;

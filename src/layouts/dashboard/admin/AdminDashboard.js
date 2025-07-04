@@ -1,8 +1,17 @@
 import { useEffect, useState } from "react";
 import {
-  Grid, Card, CardContent, Typography, Box, Chip, MenuItem, Select, FormControl, InputLabel,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  Chip,
+  MenuItem,
+  Select,
+  FormControl,
 } from "@mui/material";
 import PropTypes from "prop-types";
+import dayjs from "dayjs";
 
 import ArgonBox from "components/ArgonBox";
 import ArgonTypography from "components/ArgonTypography";
@@ -21,52 +30,70 @@ function AdminDashboard() {
     events: 0,
     ended: 0,
     prevRevenue: 0,
-    prevTickets: 0,
   });
   const [upcomingEvents, setUpcoming] = useState([]);
   const [filter, setFilter] = useState("month");
+  const [chartData, setChartData] = useState(null);
+
+  const getPrevMonthKey = () => dayjs().subtract(1, "month").format("YYYY-MM");
+  const getCurrMonthKey = () => dayjs().format("YYYY-MM");
+  const getCurrYearKey = () => dayjs().format("YYYY");
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const res = await revenueApi.getRevenue();
-        const raw = res.data.data;
+        const revenueRes = await revenueApi.getRevenue();
+        const list = revenueRes?.data?.data ?? [];
 
-        const data = raw.map(item => {
-          const sold = Number.isFinite(item.soldTickets)
-            ? item.soldTickets
-            : Math.floor(Math.random() * 51) + 100;
+        const monthKey = getCurrMonthKey();
+        const prevMonthKey = getPrevMonthKey();
+        const yearKey = getCurrYearKey();
 
-          const price = 100_000;
-          const revenue = Number.isFinite(item.revenue)
-            ? item.revenue
-            : Math.floor(Math.random() * 4_000_000_001) + 1_000_000_000;
+        let revenueThisMonth = 0;
+        let revenuePrevMonth = 0;
+        let totalTickets = 0;
+        let totalEvents = list.length;
+        let endedEvents = 0;
 
-          return { ...item, soldTickets: sold, revenue };
+        list.forEach((ev) => {
+          revenueThisMonth += ev.revenueByMonth?.[monthKey] ?? 0;
+          revenuePrevMonth += ev.revenueByMonth?.[prevMonthKey] ?? 0;
+
+          if (Number.isFinite(ev.soldTickets)) totalTickets += ev.soldTickets;
+          if (ev.status === "End") endedEvents += 1;
         });
 
-        const revenue = data.reduce((s, i) => s + i.revenue, 0);
-        const tickets = data.reduce((s, i) => s + i.soldTickets, 0);
-        const events = data.length;
-        const ended = data.filter(i => i.status === "End").length;
+        setKpi({
+          revenue: revenueThisMonth,
+          prevRevenue: revenuePrevMonth,
+          tickets: totalTickets,
+          events: totalEvents,
+          ended: endedEvents,
+        });
 
-        const prevRevenue = Math.round(revenue * (Math.random() * 0.5 + 0.6));
-        const prevTickets = Math.round(tickets * (Math.random() * 0.5 + 0.6));
-
-        setKpi({ revenue, tickets, events, ended, prevRevenue, prevTickets });
-      } catch (e) {
-        console.error("Fetch KPI error:", e);
+        setChartData({
+          labels: [
+            `Tháng ${dayjs(prevMonthKey).month() + 1}`,
+            `Tháng ${dayjs().month() + 1}`,
+          ],
+          datasets: [
+            {
+              label: "Doanh thu",
+              color: "info",
+              maxBarThickness: 60,
+              data: [revenuePrevMonth, revenueThisMonth],
+            },
+          ],
+        });
+      } catch (err) {
+        console.error("Lỗi lấy dashboard:", err);
       }
 
       try {
-        const evRes = await eventApi.getAllHome();
-        if (evRes.data.status) {
-          const now = Date.now();
-          const list = evRes.data.data.filter(ev => new Date(ev.timeEnd).getTime() > now);
-          setUpcoming(list);
-        }
-      } catch (e) {
-        console.error("Fetch events error:", e);
+        const eventRes = await eventApi.getAllHome();
+        setUpcoming(eventRes.data?.data ?? []);
+      } catch (err) {
+        console.error("Lỗi lấy danh sách sự kiện:", err);
       }
     };
 
@@ -84,177 +111,157 @@ function AdminDashboard() {
   };
 
   const revPct = pct(kpi.revenue, kpi.prevRevenue);
-
   const now = new Date();
-  const curMonth = now.toLocaleString("vi-VN", { month: "long" });       // VD: "tháng 7"
+  const curMonth = now.toLocaleString("vi-VN", { month: "long" });
   const prevMonth = new Date(now.setMonth(now.getMonth() - 1)).toLocaleString("vi-VN", { month: "long" });
 
   const barChartCompare = {
-  labels: [prevMonth, curMonth],
-  datasets: [
-    {
-      label: "Doanh thu",
-      color: "info",
-      data: [kpi.prevRevenue, kpi.revenue],
-      maxBarThickness: 80,
-      barPercentage: 0.7,
-      categoryPercentage: 0.6,
-      borderRadius: 6,
-    },
-  ],
-  options: {
-    scales: {
-      y: {
-        ticks: {
-          callback: value => value.toLocaleString("vi-VN"),
-        },
-        beginAtZero: true,
-        suggestedMax: Math.max(kpi.revenue, kpi.prevRevenue) * 1.2,
-        grace: "5%",
+    labels: [prevMonth, curMonth],
+    datasets: [
+      {
+        label: "Doanh thu",
+        color: "info",
+        data: [kpi.prevRevenue, kpi.revenue],
+        maxBarThickness: 80,
+        barPercentage: 0.7,
+        categoryPercentage: 0.6,
+        borderRadius: 6,
       },
-    },
-    plugins: {
-      tooltip: {
-        callbacks: {
-          label: ctx =>
-            `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString("vi-VN")} ₫`,
+    ],
+    options: {
+      scales: {
+        y: {
+          ticks: {
+            callback: value => value.toLocaleString("vi-VN"),
+          },
+          beginAtZero: true,
+          suggestedMax: Math.max(kpi.revenue, kpi.prevRevenue) * 1.2,
+          grace: "5%",
         },
       },
-      legend: { display: false },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: ctx =>
+              `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString("vi-VN")} ₫`,
+          },
+        },
+        legend: { display: false },
+      },
     },
-  },
-};
-
-
+  };
 
   return (
-  <DashboardLayout>
-    <DashboardNavbar />
+    <DashboardLayout>
+      <DashboardNavbar />
 
-    <ArgonBox py={3}>
-      {/* ==== KPI SECTION ================================================= */}
-      <Grid container spacing={3} mb={3}>
-        {/** 4 thẻ KPI nằm ngang, tự co giãn trên các kích cỡ màn hình */}
-        <Grid item xs={12} sm={6} md={3}>
-         <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3, backgroundColor: "#1976d2", color: "#fff" }}>
-  <ArgonTypography variant="button" fontWeight="medium" color="white" mb={1}>
-    TỔNG DOANH THU THÁNG NÀY
-  </ArgonTypography>
-  <ArgonTypography variant="h5" fontWeight="bold">
-    {kpi.revenue.toLocaleString("vi-VN")} ₫
-  </ArgonTypography>
-  <ArgonTypography variant="caption" fontWeight="regular">
-    {curMonth.charAt(0).toUpperCase() + curMonth.slice(1)} đạt {kpi.revenue.toLocaleString("vi-VN")} ₫<br />
-    ({revPct.value}% so với {prevMonth} – {revPct.value >= 0 ? "Tăng" : "Giảm"})
-  </ArgonTypography>
-</Card>
+      <ArgonBox py={3}>
+        {/* KPI SECTION */}
+        <Grid container spacing={3} mb={3}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3, backgroundColor: "#1976d2", color: "#fff" }}>
+              <ArgonTypography variant="button" fontWeight="medium" color="white" mb={1}>
+                TỔNG DOANH THU THÁNG NÀY
+              </ArgonTypography>
+              <ArgonTypography variant="h5" fontWeight="bold">
+                {kpi.revenue.toLocaleString("vi-VN")} ₫
+              </ArgonTypography>
+              <ArgonTypography variant="caption" fontWeight="regular">
+                {curMonth.charAt(0).toUpperCase() + curMonth.slice(1)} đạt {kpi.revenue.toLocaleString("vi-VN")} ₫<br />
+                ({revPct.value}% so với {prevMonth} – {revPct.value >= 0 ? "Tăng" : "Giảm"})
+              </ArgonTypography>
+            </Card>
+          </Grid>
 
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
+              <ArgonTypography variant="button" color="text" fontWeight="medium">
+                Tổng vé đã bán
+              </ArgonTypography>
+              <ArgonTypography variant="h5" fontWeight="bold">
+                {kpi.tickets}
+              </ArgonTypography>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
+              <ArgonTypography variant="button" color="text" fontWeight="medium">
+                Số sự kiện
+              </ArgonTypography>
+              <ArgonTypography variant="h5" fontWeight="bold">
+                {kpi.events}
+              </ArgonTypography>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
+              <ArgonTypography variant="button" color="text" fontWeight="medium">
+                Sự kiện đã kết thúc
+              </ArgonTypography>
+              <ArgonTypography variant="h5" fontWeight="bold">
+                {kpi.ended}
+              </ArgonTypography>
+            </Card>
+          </Grid>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3, height: "100%" }}>
-            <ArgonTypography variant="button" color="text" fontWeight="medium">
-              Tổng vé đã bán
-            </ArgonTypography>
-            <ArgonTypography variant="h5" fontWeight="bold">
-              {kpi.tickets}
-            </ArgonTypography>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3, height: "100%" }}>
-            <ArgonTypography variant="button" color="text" fontWeight="medium">
-              Số sự kiện
-            </ArgonTypography>
-            <ArgonTypography variant="h5" fontWeight="bold">
-              {kpi.events}
-            </ArgonTypography>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3, height: "100%" }}>
-            <ArgonTypography variant="button" color="text" fontWeight="medium">
-              Sự kiện đã kết thúc
-            </ArgonTypography>
-            <ArgonTypography variant="h5" fontWeight="bold">
-              {kpi.ended}
-            </ArgonTypography>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* ==== CHART + DROPDOWN =========================================== */}
-      <Grid container spacing={3} mb={3}>
-        <Grid item xs={12}>
-          <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
-            {/* tiêu đề + bộ lọc */}
-            <Grid
-              container
-              justifyContent="space-between"
-              alignItems="center"
-              mb={2}
-            >
-              <Grid item>
-                <ArgonTypography variant="h6" fontWeight="bold">
-                  So sánh doanh thu 2 tháng
-                </ArgonTypography>
-                <ArgonTypography variant="caption" color="text">
-                  Tháng này đạt&nbsp;
-                  <strong>{kpi.revenue.toLocaleString("vi-VN")} ₫</strong>&nbsp;
-                  ({revPct.value}% so với tháng trước&nbsp;
-                  {revPct.value >= 0 ? "– Tăng" : "– Giảm"})
-                </ArgonTypography>
+        {/* CHART SECTION */}
+        <Grid container spacing={3} mb={3}>
+          <Grid item xs={12}>
+            <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
+              <Grid container justifyContent="space-between" alignItems="center" mb={2}>
+                <Grid item>
+                  <ArgonTypography variant="h6" fontWeight="bold">
+                    So sánh doanh thu 2 tháng
+                  </ArgonTypography>
+                  <ArgonTypography variant="caption" color="text">
+                    Tháng này đạt <strong>{kpi.revenue.toLocaleString("vi-VN")} ₫</strong> ({revPct.value}% so với tháng trước – {revPct.value >= 0 ? "Tăng" : "Giảm"})
+                  </ArgonTypography>
+                </Grid>
+                <Grid item>
+                  <FormControl size="small">
+                    <Select value={filter} onChange={e => setFilter(e.target.value)} sx={{ minWidth: 140 }}>
+                      <MenuItem value="month">Theo tháng</MenuItem>
+                      <MenuItem value="year">Theo năm</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
               </Grid>
 
-              {/* Dropdown (tùy chọn) */}
-              <Grid item>
-                <FormControl size="small">
-                  <Select
-                    value={filter}                 /* state filter */
-                    onChange={e => setFilter(e.target.value)}
-                    sx={{ minWidth: 140 }}
-                  >
-                    <MenuItem value="month">Theo tháng</MenuItem>
-                    <MenuItem value="year">Theo năm</MenuItem>
-                  </Select>
-                </FormControl>
+              {chartData && (
+                <VerticalBarChart
+                  title=""
+                  description=""
+                  chart={barChartCompare}
+                />
+              )}
+            </Card>
+          </Grid>
+        </Grid>
+
+        {/* UPCOMING EVENTS */}
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
+              <ArgonTypography variant="h5" fontWeight="bold" mb={2}>
+                Sự kiện đang hoặc sắp diễn ra
+              </ArgonTypography>
+
+              <Grid container spacing={2}>
+                {upcomingEvents.map(ev => (
+                  <EventCard key={ev._id} event={ev} />
+                ))}
               </Grid>
-            </Grid>
-
-            {/* biểu đồ cột */}
-            <VerticalBarChart
-              title=""                 /* đã có title phía trên */
-              description=""
-              chart={barChartCompare}
-            />
-          </Card>
+            </Card>
+          </Grid>
         </Grid>
-      </Grid>
+      </ArgonBox>
 
-      {/* ==== UPCOMING EVENTS =========================================== */}
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
-            <ArgonTypography variant="h5" fontWeight="bold" mb={2}>
-              Sự kiện đang hoặc sắp diễn ra
-            </ArgonTypography>
-
-            <Grid container spacing={2}>
-              {upcomingEvents.map(ev => (
-                <EventCard key={ev._id} event={ev} />
-              ))}
-            </Grid>
-          </Card>
-        </Grid>
-      </Grid>
-    </ArgonBox>
-
-    <Footer />
-  </DashboardLayout>
-);
-
+      <Footer />
+    </DashboardLayout>
+  );
 }
 
 const EventCard = ({ event }) => {
@@ -282,8 +289,7 @@ const EventCard = ({ event }) => {
             {event.location}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {new Date(event.timeStart).toLocaleString()} –{" "}
-            {new Date(event.timeEnd).toLocaleString()}
+            {new Date(event.timeStart).toLocaleString()} – {new Date(event.timeEnd).toLocaleString()}
           </Typography>
           <Box mt={1}>
             <Chip label={label} color={color} size="small" />

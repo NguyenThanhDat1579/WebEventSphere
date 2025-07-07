@@ -1,8 +1,12 @@
-// src/examples/Tables/Table.jsx   <-- thay thế toàn bộ file này
 import { useMemo } from "react";
 import PropTypes from "prop-types";
 import { v4 as uuidv4 } from "uuid";
-import { Table as MuiTable, TableBody, TableContainer, TableRow } from "@mui/material";
+import {
+  Table as MuiTable,
+  TableBody,
+  TableContainer,
+  TableRow,
+} from "@mui/material";
 
 import ArgonBox from "components/ArgonBox";
 import ArgonAvatar from "components/ArgonAvatar";
@@ -42,7 +46,15 @@ function Table({ columns = [], rows = [], sxTable = {} }) {
           return (
             <ArgonBox key={uuidv4()} component="td" p={1} textAlign={align}>
               <ArgonBox display="flex" alignItems="center">
-                <ArgonAvatar src={src} name={label} variant="rounded" size="sm" mr={1.5} />
+               <ArgonAvatar
+  src={src}
+  name={label}
+  variant="rounded"
+  size="custom"
+  width="96px"
+  height="96px"
+/>
+
                 <ArgonTypography variant="body2">{label}</ArgonTypography>
               </ArgonBox>
             </ArgonBox>
@@ -66,11 +78,17 @@ function Table({ columns = [], rows = [], sxTable = {} }) {
         <MuiTable
           sx={{
             "& tbody tr:nth-of-type(even)": { backgroundColor: "#f7f7f7" },
-            "& tbody tr:hover": { backgroundColor: "#e0e0e0", transition: ".2s" },
+            "& tbody tr:hover": {
+              backgroundColor: "#e0e0e0",
+              transition: ".2s",
+            },
             ...sxTable,
           }}
         >
-          <ArgonBox component="thead" sx={{ position: "sticky", top: 0, zIndex: 2, bgcolor: "#fafafa" }}>
+          <ArgonBox
+            component="thead"
+            sx={{ position: "sticky", top: 0, zIndex: 2, bgcolor: "#fafafa" }}
+          >
             {header}
           </ArgonBox>
           <TableBody>{body}</TableBody>
@@ -84,13 +102,13 @@ function Table({ columns = [], rows = [], sxTable = {} }) {
 Table.propTypes = {
   columns: PropTypes.arrayOf(
     PropTypes.shape({
-      title:  PropTypes.string.isRequired, // nhãn cột
-      field:  PropTypes.string.isRequired, // key tra trong row
-      align:  PropTypes.oneOf(["left", "center", "right"]),
-      width:  PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+      title: PropTypes.string.isRequired, // nhãn cột
+      field: PropTypes.string.isRequired, // key tra trong row
+      align: PropTypes.oneOf(["left", "center", "right"]),
+      width: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     })
   ),
-  rows:    PropTypes.arrayOf(PropTypes.object),
+  rows: PropTypes.arrayOf(PropTypes.object),
   sxTable: PropTypes.object,
 };
 

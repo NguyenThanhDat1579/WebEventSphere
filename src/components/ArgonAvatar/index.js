@@ -22,7 +22,17 @@ import PropTypes from "prop-types";
 import ArgonAvatarRoot from "components/ArgonAvatar/ArgonAvatarRoot";
 
 const ArgonAvatar = forwardRef(({ bgColor, size, shadow, ...rest }, ref) => (
-  <ArgonAvatarRoot ref={ref} ownerState={{ shadow, bgColor, size }} {...rest} />
+  <ArgonAvatarRoot
+  ref={ref}
+  ownerState={{ shadow, bgColor, size }}
+  {...rest}
+  sx={{
+    width: size === "custom" ? rest.width : undefined,
+    height: size === "custom" ? rest.height : undefined,
+    ...rest.sx, // ưu tiên ghi đè bên ngoài
+  }}
+/>
+
 ));
 
 // Setting default values for the props of ArgonAvatar
@@ -45,7 +55,7 @@ ArgonAvatar.propTypes = {
     "light",
     "dark",
   ]),
-  size: PropTypes.oneOf(["xs", "sm", "md", "lg", "xl", "xxl"]),
+  size: PropTypes.oneOf(["xs", "sm", "md", "lg", "xl", "xxl", "custom"]),
   shadow: PropTypes.oneOf(["none", "xs", "sm", "md", "lg", "xl", "xxl", "inset"]),
 };
 

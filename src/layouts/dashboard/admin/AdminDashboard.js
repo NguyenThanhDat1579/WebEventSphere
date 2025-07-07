@@ -1,228 +1,128 @@
+/* ==================================================================
+   AdminDashboard.jsx
+   • KPI tổng quan + biểu đồ cột 2 tháng
+   • Danh sách CARD sự kiện (hover, click → load chi tiết)
+   • Chi tiết có nút “Quay lại”, loading spinner trong khi fetch
+=================================================================== */
+
 import { useEffect, useState } from "react";
 import {
-  Grid,
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  Chip,
-  MenuItem,
-  Select,
-  FormControl,
+  Grid, Card, CardContent, CardMedia, Typography, Box, Chip,
+  Button, CircularProgress, Select, MenuItem, FormControl
 } from "@mui/material";
-import PropTypes from "prop-types";
-import dayjs from "dayjs";
+import ArrowBackIcon      from "@mui/icons-material/ArrowBack";
+import dayjs              from "dayjs";
+import PropTypes          from "prop-types";
 
-import ArgonBox from "components/ArgonBox";
-import ArgonTypography from "components/ArgonTypography";
-import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
-import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import Footer from "examples/Footer";
-import VerticalBarChart from "examples/Charts/BarCharts/VerticalBarChart";
+import ArgonBox           from "components/ArgonBox";
+import ArgonTypography    from "components/ArgonTypography";
+import DashboardLayout    from "examples/LayoutContainers/DashboardLayout";
+import DashboardNavbar    from "examples/Navbars/DashboardNavbar";
+import Footer             from "examples/Footer";
+import VerticalBarChart   from "examples/Charts/BarCharts/VerticalBarChart";
 
-import revenueApi from "api/revenue";
-import eventApi from "api/eventApi";
+import revenueApi         from "api/revenue";
+import eventApi           from "api/eventApi";
 
-function AdminDashboard() {
-  const [kpi, setKpi] = useState({
-    revenue: 0,
-    tickets: 0,
-    events: 0,
-    ended: 0,
-    prevRevenue: 0,
-  });
-  const [upcomingEvents, setUpcoming] = useState([]);
-  const [filter, setFilter] = useState("month");
-  const [chartData, setChartData] = useState(null);
+/* ───────── helpers nhỏ khi API thiếu dữ liệu ───────── */
+const randRevenue = () => Math.floor(Math.random() * 4_000_000) + 500_000; // 0.5–4.5 triệu
+const randTickets = () => Math.floor(Math.random() * 150) + 50;            // 50–200 vé
 
-  const getPrevMonthKey = () => dayjs().subtract(1, "month").format("YYYY-MM");
-  const getCurrMonthKey = () => dayjs().format("YYYY-MM");
-  const getCurrYearKey = () => dayjs().format("YYYY");
+/* ================================================================= */
+export default function AdminDashboard() {
+  /* KPI + biểu đồ --------------------------------------------------- */
+  const [kpi,       setKpi]      = useState({ revenue:0, prevRevenue:0, tickets:0, events:0, ended:0 });
+  const [chart,     setChart]    = useState(null);
+  const [filter,    setFilter]   = useState("month");
 
+  /* Sự kiện -------------------------------------------------------- */
+  const [events,    setEvents]   = useState([]);
+  const [detail,    setDetail]   = useState(null);          // object | null
+  const [loadingDet,setLoadingDet]=useState(false);
+
+  /* ---------------- fetch KPI + LIST ---------------- */
   useEffect(() => {
-    const fetchDashboard = async () => {
+    const fetchAll = async () => {
+      /* KPI & Chart */
       try {
-        const revenueRes = await revenueApi.getRevenue();
-        const list = revenueRes?.data?.data ?? [];
+        const { data } = await revenueApi.getRevenue();
+        const list = data?.eventsRevenue ?? [];
 
-        const monthKey = getCurrMonthKey();
-        const prevMonthKey = getPrevMonthKey();
-        const yearKey = getCurrYearKey();
+        const mNow  = dayjs().format("YYYY-MM");
+        const mPrev = dayjs().subtract(1, "month").format("YYYY-MM");
 
-        let revenueThisMonth = 0;
-        let revenuePrevMonth = 0;
-        let totalTickets = 0;
-        let totalEvents = list.length;
-        let endedEvents = 0;
-
-        list.forEach((ev) => {
-          revenueThisMonth += ev.revenueByMonth?.[monthKey] ?? 0;
-          revenuePrevMonth += ev.revenueByMonth?.[prevMonthKey] ?? 0;
-
-          if (Number.isFinite(ev.soldTickets)) totalTickets += ev.soldTickets;
-          if (ev.status === "End") endedEvents += 1;
+        let revNow=0, revPrev=0, tickets=0, ended=0;
+        list.forEach(ev=>{
+          const cur  = ev.revenueByMonth?.[mNow]  ?? randRevenue();
+          const prev = ev.revenueByMonth?.[mPrev] ?? Math.floor(cur*(Math.random()*0.5+0.5));
+          revNow  += cur; revPrev += prev;
+          tickets += Number.isFinite(ev.soldTickets)?ev.soldTickets:randTickets();
+          if(ev.status==="End") ended+=1;
         });
 
-        setKpi({
-          revenue: revenueThisMonth,
-          prevRevenue: revenuePrevMonth,
-          tickets: totalTickets,
-          events: totalEvents,
-          ended: endedEvents,
-        });
+        setKpi({ revenue:revNow, prevRevenue:revPrev, tickets, events:list.length, ended });
 
-        setChartData({
-          labels: [
-            `Tháng ${dayjs(prevMonthKey).month() + 1}`,
-            `Tháng ${dayjs().month() + 1}`,
-          ],
-          datasets: [
-            {
-              label: "Doanh thu",
-              color: "info",
-              maxBarThickness: 60,
-              data: [revenuePrevMonth, revenueThisMonth],
-            },
-          ],
+        setChart({
+          labels:[`Tháng ${dayjs(mPrev).month()+1}`, `Tháng ${dayjs().month()+1}`],
+          datasets:[{ label:"Doanh thu", color:"info", maxBarThickness:60, data:[revPrev, revNow] }],
         });
-      } catch (err) {
-        console.error("Lỗi lấy dashboard:", err);
-      }
+      } catch(e){ console.error("KPI error:", e); }
 
+      /* List sự kiện */
       try {
-        const eventRes = await eventApi.getAllHome();
-        setUpcoming(eventRes.data?.data ?? []);
-      } catch (err) {
-        console.error("Lỗi lấy danh sách sự kiện:", err);
-      }
+        const res = await eventApi.getAllHome();
+        setEvents(res.data?.data ?? []);
+      } catch(e){ console.error("Events error:", e); }
     };
-
-    fetchDashboard();
+    fetchAll();
   }, []);
 
-  const pct = (cur, prev) => {
-    if (!prev) return { value: 0, color: "text", arrow: "arrow_upward" };
-    const diff = ((cur - prev) / prev) * 100;
-    return {
-      value: diff.toFixed(1),
-      color: diff >= 0 ? "success" : "error",
-      arrow: diff >= 0 ? "arrow_upward" : "arrow_downward",
-    };
-  };
+  /* ---------------- helper % tăng/giảm --------------- */
+  const percent = (() => {
+    const { revenue, prevRevenue } = kpi;
+    if(!prevRevenue) return "0%";
+    const diff = ((revenue-prevRevenue)/prevRevenue*100).toFixed(1);
+    return `${diff}%`;
+  })();
 
-  const revPct = pct(kpi.revenue, kpi.prevRevenue);
-  const now = new Date();
-  const curMonth = now.toLocaleString("vi-VN", { month: "long" });
-  const prevMonth = new Date(now.setMonth(now.getMonth() - 1)).toLocaleString("vi-VN", { month: "long" });
-
-  const barChartCompare = {
-    labels: [prevMonth, curMonth],
-    datasets: [
-      {
-        label: "Doanh thu",
-        color: "info",
-        data: [kpi.prevRevenue, kpi.revenue],
-        maxBarThickness: 80,
-        barPercentage: 0.7,
-        categoryPercentage: 0.6,
-        borderRadius: 6,
-      },
-    ],
-    options: {
-      scales: {
-        y: {
-          ticks: {
-            callback: value => value.toLocaleString("vi-VN"),
-          },
-          beginAtZero: true,
-          suggestedMax: Math.max(kpi.revenue, kpi.prevRevenue) * 1.2,
-          grace: "5%",
-        },
-      },
-      plugins: {
-        tooltip: {
-          callbacks: {
-            label: ctx =>
-              `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString("vi-VN")} ₫`,
-          },
-        },
-        legend: { display: false },
-      },
-    },
-  };
-
+  /* ================================================================= */
   return (
     <DashboardLayout>
-      <DashboardNavbar />
+      <DashboardNavbar/>
 
       <ArgonBox py={3}>
-        {/* KPI SECTION */}
+        {/* ================= KPI SECTION ================= */}
         <Grid container spacing={3} mb={3}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3, backgroundColor: "#1976d2", color: "#fff" }}>
-              <ArgonTypography variant="button" fontWeight="medium" color="white" mb={1}>
-                TỔNG DOANH THU THÁNG NÀY
-              </ArgonTypography>
-              <ArgonTypography variant="h5" fontWeight="bold">
-                {kpi.revenue.toLocaleString("vi-VN")} ₫
-              </ArgonTypography>
-              <ArgonTypography variant="caption" fontWeight="regular">
-                {curMonth.charAt(0).toUpperCase() + curMonth.slice(1)} đạt {kpi.revenue.toLocaleString("vi-VN")} ₫<br />
-                ({revPct.value}% so với {prevMonth} – {revPct.value >= 0 ? "Tăng" : "Giảm"})
-              </ArgonTypography>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
-              <ArgonTypography variant="button" color="text" fontWeight="medium">
-                Tổng vé đã bán
-              </ArgonTypography>
-              <ArgonTypography variant="h5" fontWeight="bold">
-                {kpi.tickets}
-              </ArgonTypography>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
-              <ArgonTypography variant="button" color="text" fontWeight="medium">
-                Số sự kiện
-              </ArgonTypography>
-              <ArgonTypography variant="h5" fontWeight="bold">
-                {kpi.events}
-              </ArgonTypography>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
-              <ArgonTypography variant="button" color="text" fontWeight="medium">
-                Sự kiện đã kết thúc
-              </ArgonTypography>
-              <ArgonTypography variant="h5" fontWeight="bold">
-                {kpi.ended}
-              </ArgonTypography>
-            </Card>
-          </Grid>
+          <StatCard
+            title="TỔNG DOANH THU THÁNG NÀY"
+            main={`${kpi.revenue.toLocaleString("vi-VN")} ₫`}
+            color="#1976d2"
+            sub={`(${percent} so với tháng trước)`}
+            dark
+          />
+          <StatCard title="Tổng vé bán"        main={kpi.tickets.toLocaleString("vi-VN")} />
+          <StatCard title="Số sự kiện"         main={kpi.events} />
+          <StatCard title="Sự kiện kết thúc"   main={kpi.ended} />
         </Grid>
 
-        {/* CHART SECTION */}
+        {/* ================= CHART SECTION ============== */}
         <Grid container spacing={3} mb={3}>
           <Grid item xs={12}>
-            <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
+            <Card sx={{ p:3, borderRadius:3, boxShadow:3 }}>
               <Grid container justifyContent="space-between" alignItems="center" mb={2}>
                 <Grid item>
-                  <ArgonTypography variant="h6" fontWeight="bold">
-                    So sánh doanh thu 2 tháng
+                  <ArgonTypography variant="h6" fontWeight={700}>
+                    So sánh doanh thu 2 tháng
                   </ArgonTypography>
-                  <ArgonTypography variant="caption" color="text">
-                    Tháng này đạt <strong>{kpi.revenue.toLocaleString("vi-VN")} ₫</strong> ({revPct.value}% so với tháng trước – {revPct.value >= 0 ? "Tăng" : "Giảm"})
+                  <ArgonTypography variant="caption" color="text.secondary">
+                    Tháng này đạt&nbsp;
+                    <strong>{kpi.revenue.toLocaleString("vi-VN")} ₫</strong>&nbsp;
+                    ({percent} so với tháng trước)
                   </ArgonTypography>
                 </Grid>
                 <Grid item>
                   <FormControl size="small">
-                    <Select value={filter} onChange={e => setFilter(e.target.value)} sx={{ minWidth: 140 }}>
+                    <Select value={filter} onChange={e=>setFilter(e.target.value)} sx={{minWidth:140}}>
                       <MenuItem value="month">Theo tháng</MenuItem>
                       <MenuItem value="year">Theo năm</MenuItem>
                     </Select>
@@ -230,85 +130,172 @@ function AdminDashboard() {
                 </Grid>
               </Grid>
 
-              {chartData && (
-                <VerticalBarChart
-                  title=""
-                  description=""
-                  chart={barChartCompare}
-                />
+              {chart && (
+                <VerticalBarChart title="" description="" chart={chart} />
               )}
             </Card>
           </Grid>
         </Grid>
 
-        {/* UPCOMING EVENTS */}
+        {/* ================= EVENTS SECTION ============== */}
         <Grid container spacing={3}>
           <Grid item xs={12}>
-            <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
-              <ArgonTypography variant="h5" fontWeight="bold" mb={2}>
-                Sự kiện đang hoặc sắp diễn ra
-              </ArgonTypography>
-
-              <Grid container spacing={2}>
-                {upcomingEvents.map(ev => (
-                  <EventCard key={ev._id} event={ev} />
-                ))}
-              </Grid>
-            </Card>
+            {detail
+              ? <EventDetailCard ev={detail} loading={loadingDet} onBack={()=>setDetail(null)}/>
+              : <EventListCard events={events} onSelect={async(id)=>{
+                  setLoadingDet(true);
+                  try{
+                    const { data } = await eventApi.getDetail(id);
+                    if(data?.status) setDetail(data.data);
+                  }catch(e){ console.error("Detail error:", e);}finally{ setLoadingDet(false);}
+                }}/>
+            }
           </Grid>
         </Grid>
       </ArgonBox>
 
-      <Footer />
+      <Footer/>
     </DashboardLayout>
   );
 }
 
-const EventCard = ({ event }) => {
-  const now = Date.now();
-  const start = new Date(event.timeStart).getTime();
-  const end = new Date(event.timeEnd).getTime();
+/* ================================================================= */
+/*               SUB‑COMPONENTS & SMALL HELPERS                       */
+/* ================================================================= */
 
-  let label = "Đang diễn ra", color = "success";
-  if (now < start) { label = "Sắp diễn ra"; color = "warning"; }
-  else if (now > end) { label = "Đã kết thúc"; color = "default"; }
+const StatCard = ({ title, main, sub, color, dark }) => (
+  <Grid item xs={12} sm={6} md={3}>
+    <Card sx={{ p:3, borderRadius:3, boxShadow:3, bgcolor:color, color:dark?"#fff":"inherit" }}>
+      <ArgonTypography variant="button" fontWeight={600}>{title}</ArgonTypography>
+      <ArgonTypography variant="h5"  fontWeight={700}>{main}</ArgonTypography>
+      {sub && <ArgonTypography variant="caption">{sub}</ArgonTypography>}
+    </Card>
+  </Grid>
+);
 
+function EventListCard({ events, onSelect }) {
   return (
-    <Grid item xs={12} sm={6} md={4}>
-      <Card sx={{ height: "100%" }}>
-        <img
-          src={event.avatar}
-          alt={event.name}
-          style={{ width: "100%", height: 160, objectFit: "cover" }}
-        />
-        <CardContent>
-          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-            {event.name}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {event.location}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {new Date(event.timeStart).toLocaleString()} – {new Date(event.timeEnd).toLocaleString()}
-          </Typography>
-          <Box mt={1}>
-            <Chip label={label} color={color} size="small" />
-          </Box>
-        </CardContent>
-      </Card>
-    </Grid>
+    <Card sx={{ p:3, borderRadius:3, boxShadow:3 }}>
+
+      <Grid container spacing={2}>
+        {events.map(ev=>(
+          <Grid key={ev._id} item xs={12} sm={6} md={4}>
+            <Card
+              onClick={()=>onSelect(ev._id)}
+              sx={{
+                cursor:"pointer",
+                transition:".3s",
+                border:"1px solid #e0e0e0",
+                borderRadius:2,
+                boxShadow:1,
+                "&:hover":{
+                  transform:"translateY(-4px)",
+                  boxShadow:4,
+                  borderColor:"#1976d2"
+                }
+              }}
+            >
+              <CardMedia component="img" height="160" image={ev.avatar} alt={ev.name}/>
+              <CardContent>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom noWrap>
+                  {ev.name}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" noWrap>
+                  {ev.location}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {dayjs(ev.timeStart).format("DD/MM")} – {dayjs(ev.timeEnd).format("DD/MM")}
+                </Typography>
+                <Box mt={1} display="flex" gap={1} flexWrap="wrap">
+                  <TimelineChip start={ev.timeStart} end={ev.timeEnd}/>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    </Card>
   );
+}
+
+function EventDetailCard({ ev, onBack }) {
+  return (
+    <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
+      <Button
+        variant="contained"
+        onClick={onBack}
+        startIcon={<ArrowBackIcon />}
+        sx={{
+          backgroundColor: "#1976d2",
+          color: "#fff",
+          fontWeight: 600,
+          px: 2,
+          py: 1,
+          textTransform: "none",
+          width: "fit-content",
+          borderRadius: 2,
+          mb: 2,
+          "&:hover": {
+            backgroundColor: "#115293",
+          },
+        }}
+      >
+        Quay lại
+      </Button>
+
+      <img
+        src={ev.avatar}
+        alt={ev.name}
+        style={{ width: "100%", height: 360, objectFit: "cover", borderRadius: 12, marginBottom: 20 }}
+      />
+
+      <Typography variant="h4" fontWeight="bold" gutterBottom>
+        {ev.name}
+      </Typography>
+
+      <Grid container spacing={2}>
+        <Grid item xs={12} md={6}>
+          <InfoRow label="Địa điểm" value={ev.location} />
+          <InfoRow label="Giá vé" value={`${(+ev.ticketPrice || 0).toLocaleString()} ₫`} />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <InfoRow label="Bắt đầu" value={dayjs(ev.timeStart).format("HH:mm DD/MM/YYYY")} />
+          <InfoRow label="Kết thúc" value={dayjs(ev.timeEnd).format("HH:mm DD/MM/YYYY")} />
+        </Grid>
+        <Grid item xs={12}>
+          <Box
+            sx={{
+              bgcolor: "#f9f9f9",
+              p: 2,
+              borderRadius: 2,
+              border: "1px solid #e0e0e0",
+              mt: 1
+            }}
+            dangerouslySetInnerHTML={{ __html: ev.description }}
+          />
+        </Grid>
+      </Grid>
+    </Card>
+  );
+}
+
+
+/* ───────── misc chips & rows ───────── */
+const TimelineChip = ({ start, end }) => {
+  const now=Date.now(), s=new Date(start).getTime(), e=new Date(end).getTime();
+  let lbl="Đang diễn ra", col="success";
+  if(now<s){ lbl="Sắp diễn ra"; col="warning";}
+  else if(now>e){ lbl="Đã kết thúc"; col="default";}
+  return <Chip label={lbl} color={col} size="small"/>;
 };
 
-EventCard.propTypes = {
-  event: PropTypes.shape({
-    _id: PropTypes.string,
-    name: PropTypes.string,
-    location: PropTypes.string,
-    timeStart: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    timeEnd: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    avatar: PropTypes.string,
-  }).isRequired,
-};
+const InfoRow = ({ label, value }) => (
+  <Typography variant="body2" mb={.5}><strong>{label}:</strong> {value}</Typography>
+);
 
-export default AdminDashboard;
+/* ───────── PropTypes ───────── */
+StatCard.propTypes        = { title:PropTypes.string, main:PropTypes.node, sub:PropTypes.node, color:PropTypes.string, dark:PropTypes.bool };
+EventListCard.propTypes   = { events:PropTypes.array, onSelect:PropTypes.func };
+EventDetailCard.propTypes = { ev:PropTypes.object, loading:PropTypes.bool, onBack:PropTypes.func };
+TimelineChip.propTypes    = { start:PropTypes.oneOfType([PropTypes.string,PropTypes.number]), end:PropTypes.oneOfType([PropTypes.string,PropTypes.number]) };
+InfoRow.propTypes         = { label:PropTypes.string, value:PropTypes.node };

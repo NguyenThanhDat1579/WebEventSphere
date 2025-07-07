@@ -1,264 +1,266 @@
+// src/pages/EventManagement.jsx
 import React, { useEffect, useState } from "react";
 import {
   Grid, Card, Typography, Button, CircularProgress, Box, Dialog,
-  DialogTitle, DialogContent, DialogActions, Divider
+  DialogTitle, DialogContent, DialogActions, Divider, Chip
 } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import CancelIcon from "@mui/icons-material/Cancel";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon       from "@mui/icons-material/Cancel";
+import CheckCircleIcon  from "@mui/icons-material/CheckCircle";
+import PropTypes        from "prop-types";
 
-import ArgonBox from "components/ArgonBox";
-import ArgonTypography from "components/ArgonTypography";
-import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
-import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import Footer from "examples/Footer";
-import Table from "examples/Tables/Table";
+import DashboardLayout  from "examples/LayoutContainers/DashboardLayout";
+import DashboardNavbar  from "examples/Navbars/DashboardNavbar";
+import Footer           from "examples/Footer";
+import Table            from "examples/Tables/Table";
+import eventApi         from "api/eventApi";
 
-import eventApi from "api/eventApi";
+/* ───────── CHIP helpers ───────── */
+const chipStatus = st => (
+  <Chip
+    label={st}
+    size="small"
+    color={st === "Đã duyệt" ? "success" : st === "Từ chối" ? "error" : "warning"}
+  />
+);
 
+const chipTimeline = (s, e) => {
+  const now = Date.now(), st = new Date(s).getTime(), ed = new Date(e).getTime();
+  let lbl = "Đang diễn ra", col = "success";
+  if (now < st)        { lbl = "Sắp diễn ra"; col = "warning"; }
+  else if (now > ed)   { lbl = "Đã diễn ra";  col = "default"; }
+  return <Chip label={lbl} size="small" color={col} />;
+};
+
+/* =================================================================== */
 function EventManagement() {
-  const [columns] = useState([
-    { title: "Ảnh", field: "thumb", align: "center" },
-    { title: "Tên sự kiện", field: "name", align: "left" },
-    { title: "Ngày bắt đầu", field: "start", align: "center" },
-    { title: "Giá vé", field: "price", align: "center" },
-    { title: "Diễn ra", field: "timeline", align: "center" },
-    { title: "Trạng thái", field: "status", align: "center" },
-    { title: "Hành động", field: "actions", align: "center" },
-  ]);
-  const [rows, setRows] = useState([]);
-  const [loadingTable, setLoadingTable] = useState(true);
-  const [detailMode, setDetailMode] = useState(false);
-  const [selected, setSelected] = useState(null);
-  const [loadingDetail, setLoadingDetail] = useState(false);
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [pendingStatus, setPendingStatus] = useState(null);
+  const [rows,       setRows]       = useState([]);
+  const [loadingTbl, setLoadingTbl] = useState(true);
 
-  const renderStatus = (status) => {
-    const colorMap = {
-      "Đã duyệt": "#2e7d32",
-      "Từ chối": "#d32f2f",
-      "Chưa duyệt": "#ed6c02",
-    };
-    return (
-      <Typography
-        variant="body2"
-        sx={{
-          backgroundColor: colorMap[status] || "#999",
-          color: "#fff",
-          fontWeight: "bold",
-          fontSize: "0.75rem",
-          borderRadius: "6px",
-          padding: "4px 12px",
-          display: "inline-block",
-        }}
-      >
-        {status}
-      </Typography>
-    );
-  };
+  const [detail,     setDetail]     = useState(null);
+  const [loadingDet, setLoadingDet] = useState(false);
 
-  const renderTimeline = (start, end) => {
-    const now = Date.now();
-    const startTime = new Date(start).getTime();
-    const endTime = new Date(end).getTime();
+  const [dlg, setDlg] = useState({ open: false, status: "" });
 
-    let label = "Đang diễn ra", color = "#2e7d32";
-    if (now < startTime) { label = "Sắp diễn ra"; color = "#d32f2f"; }
-    else if (now > endTime) { label = "Đã diễn ra"; color = "#757575"; }
+  /* ---------- table cols ---------- */
+  const columns = [
+    { title:"Ảnh",         field:"thumb",    align:"center" },
+    { title:"Tên sự kiện", field:"name",     align:"left"   },
+    { title:"Ngày bắt đầu",field:"start",    align:"center" },
+    { title:"Giá vé",      field:"price",    align:"center" },
+    { title:"Diễn ra",     field:"timeline", align:"center" },
+    { title:"Trạng thái",  field:"status",   align:"center" },
+    { title:"",            field:"action",   align:"center" },
+  ];
 
-    return (
-      <Typography
-        variant="body2"
-        sx={{
-          backgroundColor: color,
-          color: "#fff",
-          fontWeight: "bold",
-          fontSize: "0.75rem",
-          borderRadius: "6px",
-          padding: "4px 12px",
-          display: "inline-block",
-        }}
-      >
-        {label}
-      </Typography>
-    );
-  };
-
+  /* ---------- fetch list ---------- */
   useEffect(() => {
     (async () => {
       try {
         const { data } = await eventApi.getAllHome();
-        if (!data?.status) return;
-
-        const mapped = data.data.map(ev => ({
-          id: ev._id,
-          thumb: (
-            <img
-              src={ev.avatar}
-              alt={ev.name}
-              style={{ width: 42, height: 42, borderRadius: 6, objectFit: "cover" }}
-            />
-          ),
-          name: (
-            <Typography variant="body2" sx={{ whiteSpace: "normal", maxWidth: 200 }}>
+        const mapped = (data?.data || []).map(ev => ({
+          id   : ev._id,
+          thumb: <img src={ev.avatar} alt={ev.name}
+                      style={{ width: 52, height: 52, borderRadius: 8, objectFit: "cover" }} />,
+          name : (
+            <Typography variant="body2" sx={{
+              maxWidth: 240, fontSize: 14, fontWeight: 500,
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"
+            }}>
               {ev.name}
             </Typography>
           ),
-          start: new Date(ev.timeStart).toLocaleDateString("vi-VN"),
-          price: `${(+ev.ticketPrice || 0).toLocaleString("vi-VN")} ₫`,
-          timeline: renderTimeline(ev.timeStart, ev.timeEnd),
-          status: renderStatus(ev.status ?? "Chưa duyệt"),
-          actions: (
+          start   : new Date(ev.timeStart).toLocaleDateString("vi-VN"),
+          price   : `${(+ev.ticketPrice || 0).toLocaleString("vi-VN")} ₫`,
+          timeline: chipTimeline(ev.timeStart, ev.timeEnd),
+          status  : chipStatus(ev.status || "Chưa duyệt"),
+          action  : (
             <Button
               size="small"
               variant="contained"
+              color="info"
               startIcon={<InfoOutlinedIcon sx={{ fontSize: 16 }} />}
               onClick={() => openDetail(ev._id)}
-              sx={{
-                textTransform: "none",
-                fontSize: 12,
-                px: 1.5,
-                background: "#64b5f6",
-                "&:hover": { background: "#fff", color: "#64b5f6", border: "1px solid #64b5f6" },
-              }}
+              sx={{ textTransform: "none", fontSize: 12, px: 2 }}
             >
               Chi tiết
             </Button>
           ),
         }));
         setRows(mapped);
-      } catch (e) {
-        console.error("Fetch event list error:", e);
-      } finally {
-        setLoadingTable(false);
-      }
+      } catch (err) { console.error(err); }
+      finally       { setLoadingTbl(false); }
     })();
   }, []);
 
-  const openDetail = async (id) => {
-    setLoadingDetail(true);
+  /* ---------- open detail ---------- */
+  const openDetail = async id => {
+    setLoadingDet(true);
     try {
-      const res = await eventApi.getDetail(id);
-      if (res.data.status) {
-        setSelected(res.data.data);
-        setDetailMode(true);
-      }
-    } catch (e) {
-      console.error("Fetch detail error:", e);
-    } finally {
-      setLoadingDetail(false);
-    }
+      const { data } = await eventApi.getDetail(id);
+      if (data?.status) setDetail(data.data);
+    } catch (err) { console.error(err); }
+    finally       { setLoadingDet(false); }
   };
 
-  const updateEventStatus = (newStatus) => {
-    if (!selected) return;
-    setRows((prev) =>
-      prev.map((r) => (r.id === selected._id ? { ...r, status: renderStatus(newStatus) } : r))
-    );
-    setSelected({ ...selected, status: newStatus });
-    setConfirmDialogOpen(false);
-    setDetailMode(false);
+  /* ---------- apply status ---------- */
+  const applyStatus = st => {
+    setRows(prev => prev.map(r => r.id === detail._id ? { ...r, status: chipStatus(st) } : r));
+    setDetail(null);
+    setDlg({ open: false, status: "" });
   };
 
+  /* ===================== RENDER ====================== */
   return (
     <DashboardLayout>
       <DashboardNavbar />
-      <ArgonBox py={2}>
-        {detailMode ? (
-          <Card sx={{ p: 3 }}>
-            {loadingDetail ? (
-              <Box display="flex" justifyContent="center" py={5}>
-                <CircularProgress />
-              </Box>
+
+      <Box py={2}>
+        {/* LIST */}
+        {!detail ? (
+          <Card sx={{ borderRadius: 3, boxShadow: 4 }}>
+            <Box px={3} py={2} sx={{ backgroundColor: "primary.main", color: "#fff" }}>
+              <Typography variant="h5" fontWeight={700}>Danh sách sự kiện</Typography>
+            </Box>
+            <Divider />
+            {loadingTbl ? (
+              <Box py={8} display="flex" justifyContent="center"><CircularProgress /></Box>
             ) : (
-              <>
-                <Button
-                  variant="contained"
-                  sx={{
-                    backgroundColor: "#1976d2",
-                    color: "#fff",
-                    textTransform: "none",
-                    fontWeight: "bold",
-                    mb: 2,
-                  }}
-                  onClick={() => setDetailMode(false)}
-                >
-                  Quay lại danh sách
-                </Button>
-
-                <Typography variant="h4" fontWeight="bold" gutterBottom>
-                  {selected.name}
-                </Typography>
-
-                <img
-                  src={selected.avatar}
-                  alt={selected.name}
-                  style={{
-                    width: "100%",
-                    height: 350,
-                    objectFit: "cover",
-                    borderRadius: 12,
-                    border: "1px solid #ddd",
+              <Box sx={{ overflowX: "auto" }}>
+                <Table
+                  columns={columns}
+                  rows={rows}
+                  sxTable={{
+                    "& td, & th": { py: 1.25, fontSize: 13 },
+                    "& tbody tr:hover": { background: "#eef7ff" },
                   }}
                 />
-
-                <Grid container spacing={3} mt={1}>
-                  <Grid item xs={12} md={6}>
-                    <Typography><strong>Địa điểm:</strong> {selected.location}</Typography>
-                    <Typography><strong>Giá vé:</strong> {(selected.ticketPrice || 0).toLocaleString()} VNĐ</Typography>
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <Typography><strong>Bắt đầu:</strong> {new Date(selected.timeStart).toLocaleString()}</Typography>
-                    <Typography><strong>Kết thúc:</strong> {new Date(selected.timeEnd).toLocaleString()}</Typography>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Box mt={2} sx={{ background: "#f9f9f9", border: "1px solid #e0e0e0", borderRadius: 2, p: 2, maxHeight: 250, overflow: "auto" }}
-                      dangerouslySetInnerHTML={{ __html: selected.description }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} display="flex" gap={2}>
-                    <Button variant="outlined" color="error" startIcon={<CancelIcon />}
-                      onClick={() => { setPendingStatus("Từ chối"); setConfirmDialogOpen(true); }}>
-                      Từ chối
-                    </Button>
-                    <Button variant="outlined" color="success" startIcon={<CheckCircleIcon />}
-                      onClick={() => { setPendingStatus("Đã duyệt"); setConfirmDialogOpen(true); }}>
-                      Duyệt
-                    </Button>
-                  </Grid>
-                </Grid>
-              </>
+              </Box>
             )}
           </Card>
         ) : (
-          <Card sx={{ boxShadow: 4, borderRadius: 3 }}>
-            <ArgonBox px={3} py={2} bgcolor="primary.main" color="#fff">
-              <ArgonTypography variant="h5" fontWeight="bold">Danh sách sự kiện</ArgonTypography>
-            </ArgonBox>
-            <Divider />
-            {loadingTable ? (
-              <Box display="flex" justifyContent="center" py={8}><CircularProgress /></Box>
-            ) : (
-              <Box sx={{ overflowX: "auto", minWidth: 840 }}>
-                <Table columns={columns} rows={rows} />
+        /* DETAIL */
+        <Card sx={{ p: 3 }}>
+          {loadingDet ? (
+            <Box py={5} display="flex" justifyContent="center"><CircularProgress /></Box>
+          ) : (
+            <>
+              {/* Back button */}
+              <Box mb={2}>
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={() => setDetail(null)}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 600,
+                    px: 2,
+                    fontSize: 13,
+                    borderRadius: 2,
+                    backgroundColor: "#1976d2",
+                    color: "#fff",
+                    "&:hover": { backgroundColor: "#115293" },
+                  }}
+                >
+                  Quay lại danh sách
+                </Button>
               </Box>
-            )}
-          </Card>
-        )}
-      </ArgonBox>
 
-      {/* Dialog xác nhận */}
-      <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
-        <DialogTitle>Xác nhận hành động</DialogTitle>
+              {/* Banner */}
+              <Box sx={{ width: "100%", height: 340, borderRadius: 2, overflow: "hidden", mb: 3 }}>
+                <img src={detail.avatar} alt={detail.name}
+                     style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </Box>
+
+              <Typography variant="h5" fontWeight={700} mb={2}>{detail.name}</Typography>
+
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <Info label="Địa điểm" value={detail.location} />
+                  <Info label="Giá vé"   value={`${(+detail.ticketPrice || 0).toLocaleString()} ₫`} />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Info label="Bắt đầu"  value={new Date(detail.timeStart).toLocaleString()} />
+                  <Info label="Kết thúc" value={new Date(detail.timeEnd).toLocaleString()} />
+                </Grid>
+
+                {/* Description */}
+                <Grid item xs={12}>
+                  <Typography variant="h6" fontWeight="bold" mt={3} mb={1}>Mô tả chi tiết</Typography>
+                  <Box sx={{
+                      background: "#f9f9f9",
+                      border: "1px solid #e0e0e0",
+                      borderRadius: 2,
+                      p: 2,
+                      lineHeight: 1.75,
+                      fontSize: 15,
+                    }}
+                    dangerouslySetInnerHTML={{ __html: detail.description }}
+                  />
+                </Grid>
+
+                {/* Buttons */}
+                <Grid item xs={12} mt={2} display="flex" justifyContent="flex-end" gap={2}>
+                  <Button
+                    variant="contained"
+                    onClick={() => setDlg({ open: true, status: "Từ chối" })}
+                    sx={{
+                      textTransform: "none", fontWeight: 600,
+                      backgroundColor: "#e53935", color: "#fff",
+                      "&:hover": { backgroundColor: "#c62828" },
+                    }}
+                  >
+                    Từ chối
+                  </Button>
+                  <Button
+                    variant="contained"
+                    onClick={() => setDlg({ open: true, status: "Đã duyệt" })}
+                    sx={{
+                      textTransform: "none", fontWeight: 600,
+                      backgroundColor: "#43a047", color: "#fff",
+                      "&:hover": { backgroundColor: "#388e3c" },
+                    }}
+                  >
+                    Duyệt
+                  </Button>
+                </Grid>
+              </Grid>
+            </>
+          )}
+        </Card>
+        )}
+      </Box>
+
+      {/* Confirm dialog */}
+      <Dialog open={dlg.open} onClose={() => setDlg({ open: false, status: "" })}>
+        <DialogTitle>Xác nhận</DialogTitle>
         <DialogContent>
-          <Typography>
-            Bạn có chắc chắn muốn <strong>{pendingStatus === "Đã duyệt" ? "duyệt" : "từ chối"}</strong> sự kiện này không?
-          </Typography>
+          Bạn chắc chắn muốn&nbsp;
+          <strong>{dlg.status.toLowerCase()}</strong>&nbsp;sự kiện này?
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDialogOpen(false)}>Hủy</Button>
-          <Button onClick={() => updateEventStatus(pendingStatus)}>Xác nhận</Button>
+        <DialogActions sx={{ pb: 2, px: 3 }}>
+          <Button
+            variant="contained"
+            sx={{
+              textTransform: "none", fontWeight: 600,
+              backgroundColor: "#e53935", color: "#fff",
+              "&:hover": { backgroundColor: "#c62828" },
+            }}
+            onClick={() => setDlg({ open: false, status: "" })}
+          >
+            Hủy
+          </Button>
+          <Button
+            variant="contained"
+            sx={{
+              textTransform: "none", fontWeight: 600,
+              backgroundColor: "#43a047", color: "#fff",
+              "&:hover": { backgroundColor: "#388e3c" },
+            }}
+            onClick={() => applyStatus(dlg.status)}
+          >
+            Xác nhận
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -266,5 +268,14 @@ function EventManagement() {
     </DashboardLayout>
   );
 }
+
+/* -------- small Info row -------- */
+const Info = ({ label, value }) => (
+  <Typography variant="body2" sx={{ fontSize: 14, mb: 1.2 }}>
+    <strong>{label}:</strong> {value}
+  </Typography>
+);
+
+Info.propTypes = { label: PropTypes.string, value: PropTypes.node };
 
 export default EventManagement;

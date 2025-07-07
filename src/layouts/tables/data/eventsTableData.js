@@ -1,30 +1,41 @@
 import ArgonButton from "components/ArgonButton";
+import { Cell } from "../helpers/tableHelpers"; // ✅ dùng chung Cell từ helper
 
-const eventsTableData = (data, onDetailClick) => {
+// Hàm viết hoa chữ cái đầu
+const capitalize = (str) =>
+  typeof str === "string" ? str.charAt(0).toUpperCase() + str.slice(1) : "—";
+
+const eventsTableData = (data = [], onDetailClick = () => {}) => {
   const columns = [
-    { name: "tên", align: "left" },
-    { name: "giá vé", align: "center" },
-    { name: "đã bán", align: "center" },
-    { name: "trạng thái", align: "center" },
-    { name: "chi tiết", align: "center" }, // 👈 thêm cột chi tiết
+    { title: "Tên",       field: "name",     align: "left"   },
+    { title: "Giá vé",    field: "price",    align: "center" },
+    { title: "Đã bán",    field: "sold",     align: "center" },
+    { title: "Trạng thái",field: "status",   align: "center" },
+    { title: "Chi tiết",  field: "action",   align: "center" },
   ];
 
-  const rows = data.map((event) => ({
-    tên: event.name,
-    "giá vé": event.ticketPrice ? event.ticketPrice.toLocaleString() : "Chưa rõ",
-    "đã bán": event.soldTickets,
-    "trạng thái": event.status || "Chưa rõ",
-    "chi tiết": (
-      <ArgonButton
-        variant="outlined"
-        size="small"
-        color="info"
-        onClick={() => onDetailClick(event._id)}
-      >
-        Chi tiết
-      </ArgonButton>
-    ),
-  }));
+  const rows = data.map((event) => {
+    const price = event.ticketPrice
+      ? `${event.ticketPrice.toLocaleString()} ₫`
+      : "—";
+
+    return {
+      name:   Cell(event.name),
+      price:  Cell(price, "center"),
+      sold:   Cell(event.soldTickets ?? 0, "center"),
+      status: Cell(capitalize(event.status), "center"),
+      action: (
+        <ArgonButton
+          variant="outlined"
+          size="small"
+          color="info"
+          onClick={() => onDetailClick(event._id)}
+        >
+          Chi tiết
+        </ArgonButton>
+      ),
+    };
+  });
 
   return { columns, rows };
 };

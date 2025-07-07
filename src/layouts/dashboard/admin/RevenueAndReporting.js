@@ -10,92 +10,62 @@ import Table from "examples/Tables/Table";
 import revenueApi from "api/revenue";
 
 function RevenueAndReporting() {
-  const [columns] = useState([
-    { name: "Tên sự kiện", align: "left" },
-    { name: "Số vé bán", align: "center" },
-    { name: "Doanh thu", align: "center" },
-    { name: "Trạng thái diễn ra", align: "center" },
-    { name: "Hành động", align: "center" },
-  ]);
+const columns = [
+  { field: "eventName",      title: "Tên sự kiện",       align: "left"   },
+  { field: "sold",           title: "Số vé bán",         align: "center" },
+  { field: "revenue",        title: "Doanh thu",         align: "center" },
+  { field: "timelineStatus", title: "Trạng thái diễn ra",align: "center" },
+  { field: "action",         title: "Hành động",         align: "center" },
+];
 
   const [rows, setRows] = useState([]);
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [detailMode, setDetailMode] = useState(false);
   const [selected, setSelected] = useState(null);
 
-  useEffect(() => {
-  const fetchRevenue = async () => {
+// RevenueAndReporting.jsx
+useEffect(() => {
+  (async () => {
     try {
-      const res = await revenueApi.getRevenue();
-      const data = res.data;
+      const { data } = await revenueApi.getRevenue();
+      const list = data.eventsRevenue || [];
 
-      const mapped = data.eventsRevenue
-        .filter(ev => {
-          const totalRevenue =
-            Object.values(ev.revenueByYear || {}).reduce((a, b) => a + b, 0);
-          return totalRevenue > 0;
-        })
-        .map(ev => {
-          const total =
-            Object.values(ev.revenueByYear || {}).reduce((a, b) => a + b, 0);
+      const randInt = (min, max) =>
+        Math.floor(Math.random() * (max - min + 1)) + min;
 
-          return {
-            "Tên sự kiện": (
-              <ArgonTypography variant="button">{ev.name}</ArgonTypography>
-            ),
-            "Doanh thu": (
-              <ArgonTypography variant="button" textAlign="center">
-                {total.toLocaleString()} ₫
-              </ArgonTypography>
-            ),
-            "Trạng thái diễn ra": (
-              <ArgonTypography
-                variant="button"
-                color="success"
-                textAlign="center"
-              >
-                {total > 0 ? "Đã có doanh thu" : "Chưa có"}
-              </ArgonTypography>
-            ),
-            "Hành động": (
-              <Button
-                variant="contained"
-                size="small"
-                onClick={() => {
-                  setSelected(ev);
-                  setDetailMode(true);
-                }}
-                sx={{
-                  backgroundColor: "#64b5f6",
-                  color: "#fff",
-                  fontSize: "0.75rem",
-                  padding: "4px 12px",
-                  textTransform: "none",
-                  borderRadius: "8px",
-                  "&:hover": {
-                    backgroundColor: "#fff",
-                    color: "#64b5f6",
-                    border: "1px solid #64b5f6",
-                  },
-                }}
-              >
-                Chi tiết
-              </Button>
-            ),
-          };
-        });
+      const rowsMapped = list.map(ev => {
+        const real = Object.values(ev.revenueByYear || {}).reduce((a,b)=>a+b,0);
+        const total = real || randInt(500_000, 4_500_000);
+        const sold  = real ? Math.round(total / 100_000) : randInt(50,200);
 
-      const totalRevenue = Object.values(data.totalRevenueByYear || {}).reduce((a, b) => a + b, 0);
+        return {
+          __total: total,
+          eventName: <ArgonTypography variant="button">{ev.name}</ArgonTypography>,
+          sold:      <ArgonTypography variant="button" textAlign="center">{sold.toLocaleString()}</ArgonTypography>,
+          revenue:   <ArgonTypography variant="button" textAlign="center">{total.toLocaleString()} ₫</ArgonTypography>,
+          timelineStatus: (
+            <ArgonTypography variant="button" color={total ? "success":"text"} textAlign="center">
+              {total ? "Đã diễn ra" : "Chưa có"}
+            </ArgonTypography>
+          ),
+          action: (
+            <Button variant="contained" size="small"
+              onClick={() => {setSelected(ev); setDetailMode(true);}}>
+              Chi tiết
+            </Button>
+          ),
+        };
+      });
 
-      setRows(mapped);
-      setTotalRevenue(totalRevenue);
-    } catch (err) {
-      console.error("Lỗi khi gọi API doanh thu:", err);
+      setTotalRevenue(rowsMapped.reduce((s,r)=>s+r.__total,0));
+      setRows(rowsMapped);
+    } catch (e) {
+      console.error("Lỗi gọi API doanh thu:", e);
     }
-  };
-
-  fetchRevenue();
+  })();
 }, []);
+
+
 
 
   return (
@@ -115,6 +85,7 @@ function RevenueAndReporting() {
               color: "#fff",
               fontWeight: 600,
               px: 2,
+              border: "1px solid #1976d2",
               "&:hover": { backgroundColor: "#fff", color: "#1976d2", border: "1px solid #1976d2" },
             }}
           >

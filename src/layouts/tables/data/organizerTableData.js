@@ -1,34 +1,21 @@
-import ArgonTypography from "components/ArgonTypography";
+// organizerTableData.js
+import { Cell } from "../helpers/tableHelpers";
 
-/* ---- Cấu hình cột ---- */
 export const columns = [
-  { title: "Tên tổ chức",   field: "name",      align: "left"   },
-  { title: "Email",         field: "email",     align: "left"   },
-  { title: "Số ĐT",         field: "phone",     align: "center" },
-  { title: "Địa chỉ",       field: "address",   align: "center" },
-  { title: "Follower",      field: "follower",  align: "center" },
+  { title: "Tên nhà tổ chức", field: "name",      align: "left"   },
+  { title: "Email",           field: "email",     align: "left"   },
+  { title: "Số ĐT",           field: "phone",     align: "center" },
+  { title: "Địa chỉ",         field: "address",   align: "center" },
+  { title: "Người theo dõi",  field: "followers", align: "center" },
 ];
 
-/* 1 hàm tiện tạo typography đồng bộ  */
-const txt = (value, align = "left") => (
-  <ArgonTypography
-    variant="body2"
-    fontWeight="400"
-    color="text"
-    sx={{ fontSize: 13, textAlign: align }}
-  >
-    {value}
-  </ArgonTypography>
-);
-
-export const organizerTableData = (list = []) => {
-  const rows = list.map((o) => ({
-    /* trùng với field ở columns */
-    name     : txt(o.username   || "—"),
-    email    : txt(o.email      || "—"),
-    phone    : txt(o.phoneNumber|| "—", "center"),
-    address  : txt(o.address    || "—", "center"),
-    follower : txt(o.follower   ?? 0 , "center"),
+const organizerTableData = (list = []) => {
+  const rows = list.map(o => ({
+    name     : Cell(o.username),
+    email    : Cell(o.email),
+    phone    : Cell(o.phoneNumber, "center"),
+    address  : Cell(o.address, "center"),
+    followers: Cell(o.follower ?? 0, "center"),
   }));
 
   return { columns, rows };

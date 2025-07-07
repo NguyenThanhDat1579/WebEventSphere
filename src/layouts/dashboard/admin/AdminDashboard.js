@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  Grid, Card, CardContent, Typography, Box, Chip,
-} from "@mui/material";
+import { Grid, Card, CardContent, Typography, Box, Chip } from "@mui/material";
 import PropTypes from "prop-types";
 
 import ArgonBox from "components/ArgonBox";
@@ -31,9 +29,22 @@ function AdminDashboard() {
     const fetchDashboard = async () => {
       try {
         const res = await revenueApi.getRevenue();
-        const raw = res.data.data;
+        const raw = res.data?.data;
 
-        const data = raw.map(item => {
+        if (!Array.isArray(raw)) {
+          console.warn("KPI data is not an array:", raw);
+          setKpi({
+            revenue: 0,
+            tickets: 0,
+            events: 0,
+            ended: 0,
+            prevRevenue: 0,
+            prevTickets: 0,
+          });
+          return;
+        }
+
+        const data = raw.map((item) => {
           const sold = Number.isFinite(item.soldTickets)
             ? item.soldTickets
             : Math.floor(Math.random() * 51) + 100;
@@ -49,7 +60,7 @@ function AdminDashboard() {
         const revenue = data.reduce((s, i) => s + i.revenue, 0);
         const tickets = data.reduce((s, i) => s + i.soldTickets, 0);
         const events = data.length;
-        const ended = data.filter(i => i.status === "End").length;
+        const ended = data.filter((i) => i.status === "End").length;
 
         const prevRevenue = Math.round(revenue * (Math.random() * 0.5 + 0.6));
         const prevTickets = Math.round(tickets * (Math.random() * 0.5 + 0.6));
@@ -63,7 +74,7 @@ function AdminDashboard() {
         const evRes = await eventApi.getAllHome();
         if (evRes.data.status) {
           const now = Date.now();
-          const list = evRes.data.data.filter(ev => new Date(ev.timeEnd).getTime() > now);
+          const list = evRes.data.data.filter((ev) => new Date(ev.timeEnd).getTime() > now);
           setUpcoming(list);
         }
       } catch (e) {
@@ -88,9 +99,12 @@ function AdminDashboard() {
 
   const getBgColor = (color) => {
     switch (color) {
-      case "success": return "rgba(76, 175, 80, 0.1)";
-      case "error": return "rgba(244, 67, 54, 0.1)";
-      default: return "rgba(0, 0, 0, 0.05)";
+      case "success":
+        return "rgba(76, 175, 80, 0.1)";
+      case "error":
+        return "rgba(244, 67, 54, 0.1)";
+      default:
+        return "rgba(0, 0, 0, 0.05)";
     }
   };
 
@@ -108,8 +122,7 @@ function AdminDashboard() {
       plugins: {
         tooltip: {
           callbacks: {
-            label: ctx =>
-              `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString("vi-VN")} ₫`,
+            label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString("vi-VN")} ₫`,
           },
         },
       },
@@ -122,54 +135,51 @@ function AdminDashboard() {
       <ArgonBox py={3}>
         {/* KPI */}
         <Grid container spacing={3} justifyContent="center" mb={3}>
-        <Grid container spacing={3} mb={3}>
-  <Grid item xs={12} sm={6} md={3}>
-    <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
-      <ArgonTypography variant="button" fontWeight="medium" color="text" mb={1}>
-        Tổng doanh thu
-      </ArgonTypography>
-      <ArgonTypography variant="h5" fontWeight="bold" color="dark">
-        {kpi.revenue.toLocaleString()} ₫
-      </ArgonTypography>
-    
-    </Card>
-  </Grid>
+          <Grid container spacing={3} mb={3}>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
+                <ArgonTypography variant="button" fontWeight="medium" color="text" mb={1}>
+                  Tổng doanh thu
+                </ArgonTypography>
+                <ArgonTypography variant="h5" fontWeight="bold" color="dark">
+                  {kpi.revenue.toLocaleString()} ₫
+                </ArgonTypography>
+              </Card>
+            </Grid>
 
-  <Grid item xs={12} sm={6} md={3}>
-    <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
-      <ArgonTypography variant="button" fontWeight="medium" color="text" mb={1}>
-        Tổng vé đã bán
-      </ArgonTypography>
-      <ArgonTypography variant="h5" fontWeight="bold" color="dark">
-        {kpi.tickets}
-      </ArgonTypography>
-      
-    </Card>
-  </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
+                <ArgonTypography variant="button" fontWeight="medium" color="text" mb={1}>
+                  Tổng vé đã bán
+                </ArgonTypography>
+                <ArgonTypography variant="h5" fontWeight="bold" color="dark">
+                  {kpi.tickets}
+                </ArgonTypography>
+              </Card>
+            </Grid>
 
-  <Grid item xs={12} sm={6} md={3}>
-    <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
-      <ArgonTypography variant="button" fontWeight="medium" color="text" mb={1}>
-        Số sự kiện
-      </ArgonTypography>
-      <ArgonTypography variant="h5" fontWeight="bold" color="dark">
-        {kpi.events}
-      </ArgonTypography>
-    </Card>
-  </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
+                <ArgonTypography variant="button" fontWeight="medium" color="text" mb={1}>
+                  Số sự kiện
+                </ArgonTypography>
+                <ArgonTypography variant="h5" fontWeight="bold" color="dark">
+                  {kpi.events}
+                </ArgonTypography>
+              </Card>
+            </Grid>
 
-  <Grid item xs={12} sm={6} md={3}>
-    <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
-      <ArgonTypography variant="button" fontWeight="medium" color="text" mb={1}>
-        Sự kiện đã kết thúc
-      </ArgonTypography>
-      <ArgonTypography variant="h5" fontWeight="bold" color="dark">
-        {kpi.ended}
-      </ArgonTypography>
-    </Card>
-  </Grid>
-</Grid>
-
+            <Grid item xs={12} sm={6} md={3}>
+              <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3 }}>
+                <ArgonTypography variant="button" fontWeight="medium" color="text" mb={1}>
+                  Sự kiện đã kết thúc
+                </ArgonTypography>
+                <ArgonTypography variant="h5" fontWeight="bold" color="dark">
+                  {kpi.ended}
+                </ArgonTypography>
+              </Card>
+            </Grid>
+          </Grid>
         </Grid>
 
         {/* Biểu đồ */}
@@ -197,7 +207,7 @@ function AdminDashboard() {
                 Sự kiện đang hoặc sắp diễn ra
               </ArgonTypography>
               <Grid container spacing={2}>
-                {upcomingEvents.map(ev => (
+                {upcomingEvents.map((ev) => (
                   <EventCard key={ev._id} event={ev} />
                 ))}
               </Grid>
@@ -215,9 +225,15 @@ const EventCard = ({ event }) => {
   const start = new Date(event.timeStart).getTime();
   const end = new Date(event.timeEnd).getTime();
 
-  let label = "Đang diễn ra", color = "success";
-  if (now < start) { label = "Sắp diễn ra"; color = "warning"; }
-  else if (now > end) { label = "Đã kết thúc"; color = "default"; }
+  let label = "Đang diễn ra",
+    color = "success";
+  if (now < start) {
+    label = "Sắp diễn ra";
+    color = "warning";
+  } else if (now > end) {
+    label = "Đã kết thúc";
+    color = "default";
+  }
 
   return (
     <Grid item xs={12} sm={6} md={4}>

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 
+// Xử lý upload ảnh lên Cloudinary
 const imageUploadHandler = (blobInfo) => {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -25,14 +26,13 @@ const imageUploadHandler = (blobInfo) => {
 const TinyMCEEditor = ({ value = "", onChange, ready }) => {
   const editorRef = useRef(null);
   const tinymceEditor = useRef(null);
+  const scriptAppendedRef = useRef(false); // tránh gắn lại script nhiều lần
 
   useEffect(() => {
-    if (!ready) {
-      return;
-    }
+    if (!ready) return;
 
     const initTinyMCE = () => {
-      if (!editorRef.current) return;
+      if (!editorRef.current || !window.tinymce) return;
 
       window.tinymce.init({
         target: editorRef.current,
@@ -40,18 +40,18 @@ const TinyMCEEditor = ({ value = "", onChange, ready }) => {
         menubar: false,
         branding: false,
         placeholder: "Nhập nội dung...",
-        plugins: "image textcolor code align",
+        license_key: "gpl",
+        plugins: "image code advlist lists",
         toolbar:
           "undo redo | bold italic underline strikethrough | forecolor backcolor | " +
           "alignleft aligncenter alignright alignjustify | " +
-          "fontsizeselect headingselect | image code",
+          "customBullist customNumlist | fontsizeselect headingselect | image code",
         images_upload_handler: imageUploadHandler,
 
         setup: (editor) => {
           console.log("⚙️ [TinyMCE] setup() được gọi");
           tinymceEditor.current = editor;
           editor.on("Change KeyUp", () => {
-            console.log("✏️ [TinyMCE] Nội dung thay đổi:", editor.getContent());
             onChange(editor.getContent());
           });
 
@@ -96,6 +96,36 @@ const TinyMCEEditor = ({ value = "", onChange, ready }) => {
               );
             },
           });
+
+          editor.ui.registry.addToggleButton("customBullist", {
+            icon: "unordered-list",
+            tooltip: "Bullet List",
+            onAction: () => {
+              editor.execCommand("InsertUnorderedList");
+            },
+            onSetup: (api) => {
+              const toggleActive = () => {
+                api.setActive(editor.queryCommandState("InsertUnorderedList"));
+              };
+              editor.on("NodeChange", toggleActive);
+              return () => editor.off("NodeChange", toggleActive);
+            },
+          });
+
+          editor.ui.registry.addToggleButton("customNumlist", {
+            icon: "ordered-list",
+            tooltip: "Numbered List",
+            onAction: () => {
+              editor.execCommand("InsertOrderedList");
+            },
+            onSetup: (api) => {
+              const toggleActive = () => {
+                api.setActive(editor.queryCommandState("InsertOrderedList"));
+              };
+              editor.on("NodeChange", toggleActive);
+              return () => editor.off("NodeChange", toggleActive);
+            },
+          });
         },
 
         init_instance_callback: (editor) => {
@@ -104,23 +134,36 @@ const TinyMCEEditor = ({ value = "", onChange, ready }) => {
       });
     };
 
-    if (!window.tinymce) {
-      const script = document.createElement("script");
-      script.src =
-        "https://cdn.tiny.cloud/1/36nqqbctvop7f7408urdehcqzy0qg1hssepzhmb5w12yo3pd/tinymce/6/tinymce.min.js";
-      script.referrerPolicy = "origin";
-      script.onload = initTinyMCE;
-      document.body.appendChild(script);
-    } else {
-      initTinyMCE();
-    }
+    const loadScript = () => {
+      if (window.tinymce) {
+        initTinyMCE();
+        return;
+      }
+
+      if (!scriptAppendedRef.current) {
+        const script = document.createElement("script");
+        script.src = "/argon-dashboard-material-ui/tinymce/tinymce.min.js";
+        script.referrerPolicy = "origin";
+        script.onload = () => {
+          console.log("✅ tinymce.min.js đã load");
+          initTinyMCE();
+        };
+        script.onerror = () => {
+          console.error("❌ Không thể load tinymce.min.js");
+        };
+        document.body.appendChild(script);
+        scriptAppendedRef.current = true;
+      }
+    };
+
+    loadScript();
 
     return () => {
       if (window.tinymce) {
         window.tinymce.remove();
       }
     };
-  }, [ready]); // ✅ theo dõi ready để init đúng lúc
+  }, [ready]);
 
   return <textarea ref={editorRef} style={{ width: "100%" }} />;
 };

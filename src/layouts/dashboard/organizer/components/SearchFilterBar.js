@@ -7,17 +7,19 @@ import {
   ToggleButtonGroup,
   TextField,
   IconButton,
+  Button,
+  Stack,
+  Grid,
+  InputAdornment,
 } from "@mui/material";
 import Icon from "@mui/material/Icon";
-import { Button } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import viLocale from "date-fns/locale/vi";
-import Grid from "@mui/material/Grid";
 import ArgonBox from "components/ArgonBox";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import InputAdornment from "@mui/material/InputAdornment";
+import { useNavigate } from "react-router-dom";
 
 const labelTextFieldWrapper = {
   display: "flex",
@@ -34,9 +36,10 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, isMini = false
   const [fromOpen, setFromOpen] = useState(false);
   const [toOpen, setToOpen] = useState(false);
 
-  // refs cho input DatePicker để focus khi click icon
   const fromInputRef = useRef(null);
   const toInputRef = useRef(null);
+
+  const navigate = useNavigate();
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -61,20 +64,14 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, isMini = false
     }
   };
 
-  // Hàm mở popup và focus input 'Từ ngày'
   const handleOpenFromDate = () => {
     setFromOpen(true);
-    if (fromInputRef.current) {
-      fromInputRef.current.focus();
-    }
+    if (fromInputRef.current) fromInputRef.current.focus();
   };
 
-  // Hàm mở popup và focus input 'Đến ngày'
   const handleOpenToDate = () => {
     setToOpen(true);
-    if (toInputRef.current) {
-      toInputRef.current.focus();
-    }
+    if (toInputRef.current) toInputRef.current.focus();
   };
 
   const handleReset = () => {
@@ -82,10 +79,13 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, isMini = false
     setStatus("all");
     setFromDate(null);
     setToDate(null);
-
     onSearch?.("");
     onStatusFilter?.("all");
     onDateRange?.({ from: null, to: null });
+  };
+
+  const handleCreateEvent = () => {
+    navigate("/createnewevent-organizer");
   };
 
   return (
@@ -105,7 +105,7 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, isMini = false
                 height={100}
               >
                 {/* Search box */}
-                <Box sx={{ width: 250 /* kích thước cố định */ }}>
+                <Box sx={{ width: 250 }}>
                   <Box sx={labelTextFieldWrapper}>
                     <Typography variant="body2">Tìm kiếm:</Typography>
                     <TextField
@@ -126,7 +126,7 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, isMini = false
                 </Box>
 
                 {/* Status filter */}
-                <Box sx={{ width: 350 /* kích thước cố định */ }}>
+                <Box sx={{ width: 350 }}>
                   <Box sx={labelTextFieldWrapper}>
                     <Typography variant="body2">Trạng thái:</Typography>
                     <ToggleButtonGroup
@@ -135,7 +135,7 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, isMini = false
                       onChange={handleStatusChange}
                       sx={{
                         width: "fit-content",
-                        mx: "auto", // căn giữa
+                        mx: "auto",
                         "& .MuiToggleButton-root": {
                           borderRadius: 2,
                           border: "1px solid #ccc",
@@ -165,7 +165,7 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, isMini = false
                 </Box>
 
                 {/* Date filter */}
-                <Box sx={{ width: 175, display: "flex", gap: 4 /* khoảng cách cố định */ }}>
+                <Box sx={{ width: 175, display: "flex", gap: 4 }}>
                   <Box sx={{ ...labelTextFieldWrapper, flex: 1 }}>
                     <Typography variant="body2">Từ ngày:</Typography>
                     <DatePicker
@@ -180,13 +180,13 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, isMini = false
                           fullWidth
                           {...params}
                           placeholder="dd/mm/yyyy"
-                          inputRef={params.inputRef} // thêm ref input ở đây
+                          inputRef={params.inputRef}
                           InputProps={{
                             ...params.InputProps,
                             endAdornment: (
                               <InputAdornment position="end">
                                 <IconButton
-                                  onClick={handleOpenFromDate} // mở popup và focus input
+                                  onClick={handleOpenFromDate}
                                   edge="end"
                                   size="small"
                                   aria-label="open calendar"
@@ -215,13 +215,13 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, isMini = false
                           fullWidth
                           {...params}
                           placeholder="dd/mm/yyyy"
-                          inputRef={params.inputRef} // thêm ref input ở đây
+                          inputRef={params.inputRef}
                           InputProps={{
                             ...params.InputProps,
                             endAdornment: (
                               <InputAdornment position="end">
                                 <IconButton
-                                  onClick={handleOpenToDate} // mở popup và focus input đúng
+                                  onClick={handleOpenToDate}
                                   edge="end"
                                   size="small"
                                   aria-label="open calendar"
@@ -237,23 +237,45 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, isMini = false
                   </Box>
                 </Box>
               </Box>
+
+              {/* Button group */}
               <Box display="flex" justifyContent="flex-end" mt={-4} mb={1} pr={2}>
-                <Button
-                  onClick={handleReset}
-                  sx={{
-                    backgroundColor: "#1976d2",
-                    color: "#fff",
-                    border: "1px solid transparent",
-                    boxSizing: "border-box",
-                    "&:hover": {
-                      backgroundColor: "#fff",
-                      color: "#1565c0",
-                      borderColor: "#1565c0",
-                    },
-                  }}
-                >
-                  Làm mới
-                </Button>
+                <Stack direction="row" spacing={2}>
+                  <Button
+                    onClick={handleReset}
+                    sx={{
+                      backgroundColor: "#1976d2",
+                      color: "#fff",
+                      border: "1px solid transparent",
+                      textTransform: "none",
+                      fontWeight: 500,
+                      "&:hover": {
+                        backgroundColor: "#fff",
+                        color: "#1565c0",
+                        borderColor: "#1565c0",
+                      },
+                    }}
+                  >
+                    Làm mới
+                  </Button>
+                  <Button
+                    onClick={handleCreateEvent}
+                    sx={{
+                      backgroundColor: "#1976d2",
+                      color: "#fff",
+                      border: "1px solid transparent",
+                      textTransform: "none",
+                      fontWeight: 500,
+                      "&:hover": {
+                        backgroundColor: "#fff",
+                        color: "#1565c0",
+                        borderColor: "#1565c0",
+                      },
+                    }}
+                  >
+                    Tạo sự kiện
+                  </Button>
+                </Stack>
               </Box>
             </LocalizationProvider>
           </Box>

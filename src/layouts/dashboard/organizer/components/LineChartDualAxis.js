@@ -82,6 +82,8 @@ const LineChartDualAxis = ({ labels, revenueData, ticketData }) => {
           mode: "x",
           limits: {
             x: { min: 0, max: labels.length - 1 }, // Giới hạn trục X trong phạm vi dữ liệu
+            minRange: 3, // 👈 ít nhất hiển thị 3 điểm khi zoom
+            maxRange: 15, // 👈 không cho zoom quá rộng hơn 15 điểm
           },
         },
       },

@@ -163,7 +163,6 @@ function OrganizerDashboard() {
           </Grid>
         </Grid>
       </ArgonBox>
-      <Footer />
     </DashboardLayout>
   );
 }

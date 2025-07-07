@@ -21,6 +21,19 @@ const transformEvents = (events) =>
     const timeStart = convertTimestamp(event.timeStart);
     const timeEnd = convertTimestamp(event.timeEnd);
 
+     const timeStartMs = timeStart.getTime();
+    const timeEndMs = timeEnd.getTime();
+    const now = Date.now();
+
+    // ✅ Đồng bộ trạng thái theo thời gian
+    let status = "Upcoming";
+    if (timeStartMs <= now && now <= timeEndMs) {
+      status = "Ongoing";
+    } else if (timeEndMs < now) {
+      status = "Ended";
+    }
+
+
     const ticketPrice = parseInt(event.ticketPrice, 10) || 0;
     const soldTickets = event.soldTickets || 0;
     const totalTickets = event.ticketQuantity || 0;
@@ -47,7 +60,8 @@ const transformEvents = (events) =>
           ? event.eventTotalRevenue / event.soldTickets
           : 0,
 
-      status: event.timeEnd < Date.now() ? "Ended" : "Published",
+     
+      status, // Trạng thái sự kiện
     };
   });
 
@@ -84,7 +98,10 @@ function OrganizerMyEvent() {
   const transformedEvents = transformEvents(events);
 
   const filteredEvents = transformedEvents.filter((event) => {
-    const nameMatch = event.title.toLowerCase().includes(search.toLowerCase());
+    const keyword = typeof search === "string" ? search.toLowerCase() : "";
+    const title = typeof event.title === "string" ? event.title.toLowerCase() : "";
+
+    const nameMatch = title.includes(keyword);
 
     const now = Date.now(); // dùng timestamp cho khớp với event.timeStart
     let statusMatch = true;
@@ -152,7 +169,6 @@ function OrganizerMyEvent() {
           </>
         )}
       </ArgonBox>
-      <Footer />
     </DashboardLayout>
   );
 }

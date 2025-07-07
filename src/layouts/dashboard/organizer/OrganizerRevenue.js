@@ -134,7 +134,6 @@ function OrganizerRevenue() {
         const response = await eventApi.getEventOfOrganization();
         if (response.data.status === 200) {
           const originalEvents = response.data.events;
-          // 🎯 Giả định bạn có thông tin cập nhật số vé mới theo showtimeId
 
           setEvents(originalEvents);
         } else {

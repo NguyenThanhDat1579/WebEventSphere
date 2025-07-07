@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import PropTypes from "prop-types";
 import {
   Table,
@@ -7,17 +7,18 @@ import {
   TableContainer,
   TableRow,
   Paper,
-  Button,
+  Typography,
   Avatar,
   Box,
   Chip,
-  Typography,
   Stack,
+  IconButton,
 } from "@mui/material";
-import { format } from "date-fns";
+import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import ArgonTypography from "components/ArgonTypography";
-import eventApi from "api/eventApi";
 import { useNavigate } from "react-router-dom";
+
 function MyEventTable({ events, onViewDetail }) {
   const navigate = useNavigate();
 
@@ -27,17 +28,18 @@ function MyEventTable({ events, onViewDetail }) {
     const start = toDate(startTimestamp);
     const end = toDate(endTimestamp);
 
-    const startHours = String(start.getHours()).padStart(2, "0");
-    const startMinutes = String(start.getMinutes()).padStart(2, "0");
+    const startStr = `${String(start.getHours()).padStart(2, "0")}:${String(
+      start.getMinutes()
+    ).padStart(2, "0")}`;
+    const endStr = `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(
+      2,
+      "0"
+    )}`;
+    const dateStr = `${String(start.getDate()).padStart(2, "0")}/${String(
+      start.getMonth() + 1
+    ).padStart(2, "0")}/${start.getFullYear()}`;
 
-    const endHours = String(end.getHours()).padStart(2, "0");
-    const endMinutes = String(end.getMinutes()).padStart(2, "0");
-
-    const day = String(start.getDate()).padStart(2, "0");
-    const month = String(start.getMonth() + 1).padStart(2, "0");
-    const year = start.getFullYear();
-
-    return `${startHours}:${startMinutes} - ${endHours}:${endMinutes}, ${day}/${month}/${year}`;
+    return `${startStr} - ${endStr}, ${dateStr}`;
   };
 
   const getDisplayShowtime = (showtimes = []) => {
@@ -70,7 +72,6 @@ function MyEventTable({ events, onViewDetail }) {
     if (running) return `Đang diễn: ${formatTimeRange(running.startTime, running.endTime)}`;
     if (upcoming) return `Sắp diễn: ${formatTimeRange(upcoming.startTime, upcoming.endTime)}`;
     if (past) return `Đã diễn: ${formatTimeRange(past.startTime, past.endTime)}`;
-
     return "Chưa có suất phù hợp";
   };
 
@@ -113,86 +114,45 @@ function MyEventTable({ events, onViewDetail }) {
   };
 
   const handleViewRevenue = (eventId, eventTitle) => {
-    const encodedTitle = encodeURIComponent(eventTitle); // Encode để giữ khoảng trắng và ký tự đặc biệt
+    const encodedTitle = encodeURIComponent(eventTitle);
     navigate(`/revenue-organizer/${eventId}/${encodedTitle}`);
   };
 
-  return (
-    <TableContainer component={Paper} sx={{ boxShadow: 2, overflowX: "auto", mt: -3 }}>
-      <Table size="medium" sx={{ minWidth: 700, tableLayout: "fixed" }}>
-        <TableBody>
-          <TableRow>
-            <TableCell
-              sx={{
-                width: "25%",
-                fontWeight: 600,
-                fontSize: "0.95rem",
-                color: "#333",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Sự kiện
-            </TableCell>
-            <TableCell
-              sx={{
-                width: "20%",
-                fontWeight: 600,
-                fontSize: "0.95rem",
-                color: "#333",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Ngày diễn ra
-            </TableCell>
-            <TableCell
-              sx={{
-                width: "15%",
-                fontWeight: 600,
-                fontSize: "0.95rem",
-                color: "#333",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Trạng thái
-            </TableCell>
-            <TableCell
-              sx={{
-                width: "10%",
-                fontWeight: 600,
-                fontSize: "0.95rem",
-                color: "#333",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Vé đã bán
-            </TableCell>
-            <TableCell
-              sx={{
-                width: "10%",
-                fontWeight: 600,
-                fontSize: "0.95rem",
-                color: "#333",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Địa điểm
-            </TableCell>
-            <TableCell
-              sx={{
-                width: "10%",
-                fontWeight: 600,
-                fontSize: "0.95rem",
-                color: "#333",
-                whiteSpace: "nowrap",
-                textAlign: "center",
-              }}
-            >
-              Chi tiết
-            </TableCell>
-          </TableRow>
+  // === Pagination logic ===
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 5;
+  const totalPages = Math.ceil(events.length / rowsPerPage);
+  const paginatedEvents = events.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
-          {events.map((event, index) => {
-            return (
+  return (
+    <>
+      <TableContainer component={Paper} sx={{ boxShadow: 2, overflowX: "auto", mt: -3 }}>
+        <Table size="medium" sx={{ minWidth: 700, tableLayout: "fixed" }}>
+          <TableBody>
+            <TableRow>
+              <TableCell sx={{ width: "25%", fontWeight: 600, fontSize: "0.95rem" }}>
+                Sự kiện
+              </TableCell>
+              <TableCell sx={{ width: "20%", fontWeight: 600, fontSize: "0.95rem" }}>
+                Ngày diễn ra
+              </TableCell>
+              <TableCell sx={{ width: "15%", fontWeight: 600, fontSize: "0.95rem" }}>
+                Trạng thái
+              </TableCell>
+              <TableCell sx={{ width: "10%", fontWeight: 600, fontSize: "0.95rem" }}>
+                Vé đã bán
+              </TableCell>
+              <TableCell sx={{ width: "15%", fontWeight: 600, fontSize: "0.95rem" }}>
+                Địa điểm
+              </TableCell>
+              <TableCell
+                sx={{ width: "15%", fontWeight: 600, fontSize: "0.95rem", textAlign: "center" }}
+              >
+                Chi tiết
+              </TableCell>
+            </TableRow>
+
+            {paginatedEvents.map((event, index) => (
               <TableRow
                 key={event.id}
                 hover
@@ -208,88 +168,130 @@ function MyEventTable({ events, onViewDetail }) {
                       src={event.avatar}
                       alt={event.title}
                       variant="rounded"
-                      sx={{ width: 110, height: 110, borderRadius: 2 }}
+                      sx={{ width: 100, height: 100, borderRadius: 2 }}
                     />
-                    <Box>
-                      <ArgonTypography
-                        sx={{ fontWeight: 600, fontSize: "0.9rem", whiteSpace: "wrap" }}
-                      >
-                        {event.title}
-                      </ArgonTypography>
-                    </Box>
+                    <ArgonTypography sx={{ fontWeight: 600, fontSize: "0.9rem" }}>
+                      {event.title}
+                    </ArgonTypography>
                   </Box>
                 </TableCell>
 
                 <TableCell>
-                  <ArgonTypography
-                    color="text.primary"
-                    sx={{ fontWeight: "600", fontSize: "0.8rem", whiteSpace: "nowrap" }}
-                  >
+                  <Typography sx={{ fontWeight: 500, fontSize: "0.85rem" }}>
                     {getDisplayShowtime(event.showtimes)}
-                  </ArgonTypography>
+                  </Typography>
                 </TableCell>
 
-                <TableCell sx={{ fontWeight: "bold" }}>{getStatusChip(event)}</TableCell>
+                <TableCell> 
+                  <Chip
+                      label={
+                        event.status === "Ongoing"
+                          ? "Đang diễn ra"
+                          : event.status === "Upcoming"
+                          ? "Sắp diễn ra"
+                          : "Đã kết thúc"
+                      }
+                      color={
+                        event.status === "Ongoing"
+                          ? "success"
+                          : event.status === "Upcoming"
+                          ? "error"
+                          : "default"
+                      }
+                      size="small"
+                      sx={{ color: "#fff" }}
+                    /></TableCell>
+
                 <TableCell>
-                  <Typography variant="body2" sx={{ fontWeight: 400, fontSize: "0.9rem" }}>
+                  <Typography sx={{ fontWeight: 500, fontSize: "0.85rem" }}>
                     {event.soldTickets}/{event.totalTickets}
                   </Typography>
                 </TableCell>
+
                 <TableCell>
-                  <Typography variant="body2" sx={{ fontWeight: 400, fontSize: "0.9rem" }}>
+                  <Typography sx={{ fontWeight: 500, fontSize: "0.85rem" }}>
                     {event.location || "Đang cập nhật"}
                   </Typography>
                 </TableCell>
 
                 <TableCell sx={{ textAlign: "center" }}>
-                  <Box display="flex" flexDirection="column" alignItems="center" gap={0.5}>
-                    <Button
-                      variant="text"
-                      size="small"
+                  <Stack spacing={1} alignItems="center">
+                    <Box
                       onClick={() => onViewDetail(event.id)}
                       sx={{
-                        p: 0,
-                        minWidth: "unset",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 0.5,
+                        cursor: "pointer",
                         color: "#1A73E8",
-                        textTransform: "none",
                         fontSize: "0.95rem",
                         fontWeight: 500,
+                        px: 1,
+                        py: 0.5,
+                        borderRadius: 1,
+                        transition: "background-color 0.2s",
                         "&:hover": {
+                          backgroundColor: "#e8f0fe",
                           textDecoration: "underline",
-                          backgroundColor: "transparent",
                         },
                       }}
                     >
-                      Xem chi tiết
-                    </Button>
+                      <span>[Xem chi tiết]</span>
+                    </Box>
 
-                    <Button
-                      variant="text"
-                      size="small"
+                    <Box
                       onClick={() => handleViewRevenue(event.id, event.title)}
                       sx={{
-                        p: 0,
-                        minWidth: "unset",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 0.5,
+                        cursor: "pointer",
                         color: "#4CAF50",
-                        textTransform: "none",
                         fontSize: "0.95rem",
                         fontWeight: 500,
+                        px: 1,
+                        py: 0.5,
+                        borderRadius: 1,
+                        transition: "background-color 0.2s",
                         "&:hover": {
+                          backgroundColor: "#e8f5e9",
                           textDecoration: "underline",
-                          backgroundColor: "transparent",
                         },
                       }}
                     >
-                      Doanh thu
-                    </Button>
-                  </Box>
+                      <span>[Doanh thu]</span>
+                    </Box>
+                  </Stack>
                 </TableCell>
               </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </TableContainer>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {/* Pagination Control */}
+      <Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} mt={2}>
+        <IconButton
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+        >
+          <ArrowBackIosIcon sx={{ fontSize: 26 }} />
+        </IconButton>
+
+        <Typography
+          sx={{ fontWeight: 500, fontSize: "1rem", minWidth: "50px", textAlign: "center" }}
+        >
+          {currentPage}/{totalPages}
+        </Typography>
+
+        <IconButton
+          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+          disabled={currentPage === totalPages}
+        >
+          <ArrowForwardIosIcon sx={{ fontSize: 26 }} />
+        </IconButton>
+      </Stack>
+    </>
   );
 }
 

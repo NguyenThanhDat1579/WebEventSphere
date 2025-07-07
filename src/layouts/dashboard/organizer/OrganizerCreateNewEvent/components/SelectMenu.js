@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { Box, Typography, Popper, Paper, MenuList, MenuItem } from "@mui/material";
 import PropTypes from "prop-types";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-
+import ClickAwayListener from "@mui/material/ClickAwayListener";
 const SelectMenu = ({
   label = "Chọn",
   value,
@@ -10,15 +10,16 @@ const SelectMenu = ({
   options = [],
   error = false,
   helperText = "",
-  searchable = false, // ✅ thêm prop để bật tìm kiếm
+  searchable = false,
+  renderOption, // ✅ Thêm prop tùy biến hiển thị option
 }) => {
   const [open, setOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState(""); // ✅ state tìm kiếm
+  const [searchTerm, setSearchTerm] = useState("");
   const anchorRef = useRef(null);
 
   const handleToggle = () => {
     setOpen((prev) => !prev);
-    if (open) setSearchTerm(""); // ✅ reset ô tìm kiếm khi đóng
+    if (open) setSearchTerm("");
   };
 
   const handleSelect = (val) => {
@@ -27,10 +28,11 @@ const SelectMenu = ({
     setSearchTerm("");
   };
 
-  // ✅ Lọc danh sách theo từ khóa tìm kiếm (nếu có)
   const filteredOptions = options.filter((o) =>
     o.label?.toLowerCase().trim().includes(searchTerm.toLowerCase().trim())
   );
+
+  const selectedItem = options.find((o) => o.value === value);
 
   return (
     <>
@@ -54,74 +56,86 @@ const SelectMenu = ({
           },
         }}
       >
-        <Typography
-          variant="body2"
-          color={value ? "textPrimary" : "textSecondary"}
-          noWrap
-          sx={{ flexGrow: 1 }}
-        >
-          {value ? options.find((o) => o.value === value)?.label : label}
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexGrow: 1 }}>
+          {value && selectedItem ? (
+            renderOption ? (
+              renderOption(selectedItem)
+            ) : (
+              <Typography variant="body2" noWrap>
+                {selectedItem.label}
+              </Typography>
+            )
+          ) : (
+            <Typography variant="body2" color="textSecondary" noWrap>
+              {label}
+            </Typography>
+          )}
+        </Box>
         <KeyboardArrowDownIcon fontSize="small" />
       </Box>
 
-      {/* Hiển thị helperText nếu có lỗi */}
       {error && helperText && (
         <Typography variant="caption" color="error" sx={{ mt: "4px", ml: "4px", display: "block" }}>
           {helperText}
         </Typography>
       )}
-
-      <Popper
-        open={open}
-        anchorEl={anchorRef.current}
-        placement="bottom-start"
-        style={{ zIndex: 1600 }}
+      <ClickAwayListener
+        onClickAway={(event) => {
+          if (anchorRef.current?.contains(event.target)) return;
+          setOpen(false);
+        }}
       >
-        <Paper
-          elevation={3}
-          sx={{
-            width: anchorRef.current?.offsetWidth || "auto",
-          }}
+        <Popper
+          open={open}
+          anchorEl={anchorRef.current}
+          placement="bottom-start"
+          style={{ zIndex: 1600 }}
         >
-          {searchable && (
-            <Box sx={{ px: 1, py: 0.5 }}>
-              <input
-                type="text"
-                placeholder="Tìm kiếm..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "6px 10px",
-                  borderRadius: "4px",
-                  border: "1px solid #ccc",
-                  fontSize: "0.875rem",
-                }}
-              />
-            </Box>
-          )}
-
-          <MenuList
-            dense
-            disablePadding
+          <Paper
+            elevation={3}
             sx={{
-              maxHeight: 48 * 6,
-              overflowY: "auto",
+              width: anchorRef.current?.offsetWidth || "auto",
             }}
           >
-            {filteredOptions.length === 0 ? (
-              <MenuItem disabled>Không có kết quả</MenuItem>
-            ) : (
-              filteredOptions.map((item) => (
-                <MenuItem key={item.value} onClick={() => handleSelect(item.value)}>
-                  {item.label}
-                </MenuItem>
-              ))
+            {searchable && (
+              <Box sx={{ px: 1, py: 0.5 }}>
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "6px 10px",
+                    borderRadius: "4px",
+                    border: "1px solid #ccc",
+                    fontSize: "0.875rem",
+                  }}
+                />
+              </Box>
             )}
-          </MenuList>
-        </Paper>
-      </Popper>
+
+            <MenuList
+              dense
+              disablePadding
+              sx={{
+                maxHeight: 48 * 6,
+                overflowY: "auto",
+              }}
+            >
+              {filteredOptions.length === 0 ? (
+                <MenuItem disabled>Không có kết quả</MenuItem>
+              ) : (
+                filteredOptions.map((item) => (
+                  <MenuItem key={item.value} onClick={() => handleSelect(item.value)}>
+                    {renderOption ? renderOption(item) : item.label}
+                  </MenuItem>
+                ))
+              )}
+            </MenuList>
+          </Paper>
+        </Popper>
+      </ClickAwayListener>
     </>
   );
 };
@@ -138,7 +152,8 @@ SelectMenu.propTypes = {
   ).isRequired,
   error: PropTypes.bool,
   helperText: PropTypes.string,
-  searchable: PropTypes.bool, // ✅ prop mới
+  searchable: PropTypes.bool,
+  renderOption: PropTypes.func, // ✅ Prop render tùy biến
 };
 
 export default SelectMenu;

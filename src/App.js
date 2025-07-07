@@ -31,6 +31,7 @@ export default function App() {
   const role = useSelector((state) => state.auth?.role);
   const dispatch1 = useDispatch();
   console.log("Current user role:", role);
+
   const isAuthenticated = role !== null;
   const [initializing, setInitializing] = useState(true);
   const [controller, dispatch] = useArgonController();
@@ -90,6 +91,13 @@ export default function App() {
       return role && route.allowedRoles.includes(role);
     });
   }, [role]);
+
+  useEffect(() => {
+    console.log(
+      "Filtered routes:",
+      filteredRoutes.map((r) => r.route)
+    );
+  }, [filteredRoutes]);
 
   const handleOnMouseEnter = () => {
     if (miniSidenav && !onMouseEnter) {
@@ -198,7 +206,18 @@ export default function App() {
 
           <Routes>
             {getRoutes(filteredRoutes)}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route
+              path="*"
+              element={
+                role === 1 ? (
+                  <Navigate to="/dashboard-admin" replace />
+                ) : role === 2 ? (
+                  <Navigate to="/dashboard-organizer" replace />
+                ) : (
+                  <Navigate to="/dashboard-admin" replace />
+                )
+              }
+            />
           </Routes>
         </>
       </ThemeProvider>
@@ -219,27 +238,6 @@ export default function App() {
               onMouseLeave={handleOnMouseLeave}
             />
             <Configurator />
-            <ArgonBox
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              width="3.5rem"
-              height="3.5rem"
-              bgColor="white"
-              shadow="sm"
-              borderRadius="50%"
-              position="fixed"
-              right="2rem"
-              bottom="2rem"
-              zIndex={99}
-              color="dark"
-              sx={{ cursor: "pointer" }}
-              onClick={handleConfiguratorOpen}
-            >
-              <Icon fontSize="default" color="inherit">
-                settings
-              </Icon>
-            </ArgonBox>
           </>
         )}
 

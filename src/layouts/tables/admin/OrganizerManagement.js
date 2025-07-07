@@ -15,12 +15,15 @@ import Table from "examples/Tables/Table";
 import userApi from "api/userApi";
 import organizerTableData from "layouts/tables/data/organizerTableData";
 
+// ... import giữ nguyên (đã có organizerTableData ở trên)
+
 function OrganizerManagement() {
   const [columns, setColumns] = useState([]);
-  const [rows, setRows] = useState([]);
+  const [rows, setRows]       = useState([]);
   const [loading, setLoading] = useState(true);
   const theme = useTheme();
 
+  /* --- Lấy dữ liệu --- */
   useEffect(() => {
     (async () => {
       try {
@@ -32,19 +35,22 @@ function OrganizerManagement() {
           setRows(rows);
         }
       } catch (err) {
-        console.error("Lỗi khi tải danh sách nhà tổ chức:", err);
+        console.error("Lỗi tải danh sách tổ chức:", err);
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
+  /* ----------- RENDER ----------- */
   return (
     <DashboardLayout>
       <DashboardNavbar />
+
       <ArgonBox py={3}>
-        <Card sx={{ boxShadow: 3, borderRadius: 3, overflow: "hidden" }}>
-          <ArgonBox px={3} py={2} bgcolor={theme.palette.grey[100]}>
+        <Card sx={{ boxShadow: 4, borderRadius: 3, overflow: "hidden" }}>
+          {/* header */}
+          <ArgonBox px={3} py={2} bgcolor={theme.palette.primary.light} color="white">
             <ArgonTypography variant="h5" fontWeight="bold">
               Danh sách nhà tổ chức
             </ArgonTypography>
@@ -52,50 +58,53 @@ function OrganizerManagement() {
 
           <Divider />
 
+          {/* body */}
           {loading ? (
             <ArgonBox display="flex" justifyContent="center" py={10}>
               <CircularProgress />
             </ArgonBox>
           ) : (
-            <ArgonBox sx={{ overflowX: "auto" }}>
+            <Box sx={{ width: "100%", overflowX: "auto" }}>
               <Table
                 columns={columns}
                 rows={rows}
                 sxTable={{
+                  minWidth: 820,
                   tableLayout: "fixed",
-                  "& th, & td": {
+
+                  "& thead": { position: "sticky", top: 0, zIndex: 2, bgcolor: theme.palette.grey[100] },
+                  "& thead th": {
+                    fontWeight: 600,
+                    fontSize : 13,
+                    padding  : "12px 16px",
+                    borderBottom: "1px solid #e0e0e0",
                     whiteSpace: "nowrap",
-                    overflow: "hidden",
+                  },
+
+                  "& tbody td": {
+                    padding: "12px 16px",
+                    fontSize: 13.5,
+                    whiteSpace: "nowrap",
+                    overflow : "hidden",
                     textOverflow: "ellipsis",
-                    padding: "8px 12px",
-                    fontSize: "13px",
+                    borderBottom: "1px solid #e0e0e0",
                   },
-                  "& th:nth-of-type(1), & td:nth-of-type(1)": { width: 140 },
-                  "& th:nth-of-type(2), & td:nth-of-type(2)": { width: 200 },
-                  "& th:nth-of-type(3), & td:nth-of-type(3)": {
-                    width: 120,
+
+                  /* canh giữa 3 cột cuối */
+                  "& tbody td:nth-of-type(3), & tbody td:nth-of-type(4), & tbody td:nth-of-type(5)": {
                     textAlign: "center",
                   },
-                  "& th:nth-of-type(4), & td:nth-of-type(4)": {
-                    width: 200,
-                    textAlign: "center",
-                  },
-                  "& th:nth-of-type(5), & td:nth-of-type(5)": {
-                    width: 120,
-                    textAlign: "center",
-                  },
-                  "& tbody tr:nth-of-type(odd)": {
-                    backgroundColor: theme.palette.grey[50],
-                  },
-                  "& tbody tr:hover": {
-                    backgroundColor: theme.palette.action.hover,
-                  },
+
+                  /* zebra & hover – phần này Table.jsx đã có nhưng thêm cũng không sao */
+                  "& tbody tr:nth-of-type(even)": { backgroundColor: "#f7f7f7" },
+                  "& tbody tr:hover":             { backgroundColor: "#e0e0e0", transition: ".2s" },
                 }}
               />
-            </ArgonBox>
+            </Box>
           )}
         </Card>
       </ArgonBox>
+
       <Footer />
     </DashboardLayout>
   );

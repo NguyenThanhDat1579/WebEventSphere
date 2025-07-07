@@ -1,39 +1,21 @@
-import ArgonTypography from "components/ArgonTypography";
+// userTableData.js
+import { Cell } from "../helpers/tableHelpers";
 
-const userTableData = (userList) => {
-  const columns = [
-    { name: "Tên", align: "left" },
-    { name: "Email", align: "left" },
-    { name: "Số điện thoại", align: "center" },
-    { name: "Địa chỉ", align: "center" },
-    { name: "Vai trò", align: "center" },
-  ];
+export const columns = [
+  { title: "Tên",     field: "name",      align: "left"   },
+  { title: "Email",   field: "email",     align: "left"   },
+  { title: "Số ĐT",   field: "phone",     align: "center" },
+  { title: "Địa chỉ", field: "address",   align: "center" },
+  { title: "Vai trò", field: "roleLabel", align: "center" },
+];
 
-  const commonStyle = {
-    variant: "body2",
-    fontWeight: "400",
-    color: "text",
-    sx: { fontSize: "13px" },
-  };
-
-  const rows = userList.map((user) => ({
-    Tên: <ArgonTypography {...commonStyle}>{user.username || "—"}</ArgonTypography>,
-    Email: <ArgonTypography {...commonStyle}>{user.email || "—"}</ArgonTypography>,
-    "Số điện thoại": (
-      <ArgonTypography {...commonStyle} textAlign="center">
-        {user.phoneNumber || "—"}
-      </ArgonTypography>
-    ),
-    "Địa chỉ": (
-      <ArgonTypography {...commonStyle} textAlign="center">
-        {user.address || "—"}
-      </ArgonTypography>
-    ),
-    "Vai trò": (
-      <ArgonTypography {...commonStyle} textAlign="center">
-        {user.role === 3 ? "Người dùng" : "Nhà tổ chức"}
-      </ArgonTypography>
-    ),
+const userTableData = (users = []) => {
+  const rows = users.map(u => ({
+    name     : Cell(u.username),
+    email    : Cell(u.email),
+    phone    : Cell(u.phoneNumber, "center"),
+    address  : Cell(u.address, "center"),
+    roleLabel: Cell(u.role === 3 ? "Người dùng" : "Nhà tổ chức", "center"),
   }));
 
   return { columns, rows };

@@ -105,6 +105,7 @@ export default function AdminDashboard() {
           <StatCard title="Sự kiện kết thúc"   main={kpi.ended} />
         </Grid>
 
+      {/* hehehhee */}
         {/* ================= CHART SECTION ============== */}
         <Grid container spacing={3} mb={3}>
           <Grid item xs={12}>
@@ -224,7 +225,6 @@ function EventDetailCard({ ev, onBack }) {
       <Button
         variant="contained"
         onClick={onBack}
-        startIcon={<ArrowBackIcon />}
         sx={{
           backgroundColor: "#1976d2",
           color: "#fff",

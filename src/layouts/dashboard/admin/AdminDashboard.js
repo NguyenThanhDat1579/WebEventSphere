@@ -224,7 +224,6 @@ function EventDetailCard({ ev, onBack }) {
       <Button
         variant="contained"
         onClick={onBack}
-        startIcon={<ArrowBackIcon />}
         sx={{
           backgroundColor: "#1976d2",
           color: "#fff",

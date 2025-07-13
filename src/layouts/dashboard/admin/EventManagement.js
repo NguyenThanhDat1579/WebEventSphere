@@ -1,13 +1,15 @@
-// src/pages/EventManagement.jsx
 import React, { useEffect, useState } from "react";
 import {
   Grid, Card, Typography, Button, CircularProgress, Box, Dialog,
-  DialogTitle, DialogContent, DialogActions, Divider, Chip
+  DialogTitle, DialogContent, DialogActions, Divider, Chip, useTheme
 } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import CancelIcon       from "@mui/icons-material/Cancel";
 import CheckCircleIcon  from "@mui/icons-material/CheckCircle";
 import PropTypes        from "prop-types";
+
+import ArgonBox from "components/ArgonBox";
+import ArgonTypography from "components/ArgonTypography";
 
 import DashboardLayout  from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar  from "examples/Navbars/DashboardNavbar";
@@ -41,7 +43,7 @@ function EventManagement() {
   const [loadingDet, setLoadingDet] = useState(false);
 
   const [dlg, setDlg] = useState({ open: false, status: "" });
-
+const theme = useTheme();
   /* ---------- table cols ---------- */
   const columns = [
     { title:"Ảnh",         field:"thumb",    align:"center" },
@@ -119,9 +121,18 @@ function EventManagement() {
         {/* LIST */}
         {!detail ? (
           <Card sx={{ borderRadius: 3, boxShadow: 4 }}>
-            <Box px={3} py={2} sx={{ backgroundColor: "primary.main", color: "#fff" }}>
-              <Typography variant="h5" fontWeight={700}>Danh sách sự kiện</Typography>
-            </Box>
+            <ArgonBox
+  px={3}
+  py={2}
+  sx={{
+    bgcolor: theme.palette.primary.light,
+    color: theme.palette.primary.contrastText,
+  }}
+>
+  <ArgonTypography variant="h5" fontWeight="bold">
+    Danh sách sự kiện
+  </ArgonTypography>
+</ArgonBox>
             <Divider />
             {loadingTbl ? (
               <Box py={8} display="flex" justifyContent="center"><CircularProgress /></Box>
@@ -191,7 +202,7 @@ function EventManagement() {
                       background: "#f9f9f9",
                       border: "1px solid #e0e0e0",
                       borderRadius: 2,
-                      p: 2,
+                      p: 3,
                       lineHeight: 1.75,
                       fontSize: 15,
                     }}

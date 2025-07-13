@@ -41,41 +41,72 @@ export default function AdminDashboard() {
   const [loadingDet,setLoadingDet]=useState(false);
 
   /* ---------------- fetch KPI + LIST ---------------- */
-  useEffect(() => {
-    const fetchAll = async () => {
-      /* KPI & Chart */
-      try {
-        const { data } = await revenueApi.getRevenue();
-        const list = data?.eventsRevenue ?? [];
+/* ---------------- fetch KPI + LIST ---------------- */
+useEffect(() => {
+  const fetchAll = async () => {
+    try {
+      // gọi song song 2 API
+      const [revRes, evtRes] = await Promise.all([
+        revenueApi.getRevenue(),
+        eventApi.getAllHome(),
+      ]);
 
-        const mNow  = dayjs().format("YYYY-MM");
-        const mPrev = dayjs().subtract(1, "month").format("YYYY-MM");
+      const revenueData = revRes.data?.eventsRevenue ?? [];
+      const eventList   = evtRes.data?.data        ?? [];
 
-        let revNow=0, revPrev=0, tickets=0, ended=0;
-        list.forEach(ev=>{
-          const cur  = ev.revenueByMonth?.[mNow]  ?? randRevenue();
-          const prev = ev.revenueByMonth?.[mPrev] ?? Math.floor(cur*(Math.random()*0.5+0.5));
-          revNow  += cur; revPrev += prev;
-          tickets += Number.isFinite(ev.soldTickets)?ev.soldTickets:randTickets();
-          if(ev.status==="End") ended+=1;
-        });
+      /* ---------- Thời gian khóa ---------- */
+      const mNow  = dayjs().format("YYYY-MM");
+      const mPrev = dayjs().subtract(1, "month").format("YYYY-MM");
+      
 
-        setKpi({ revenue:revNow, prevRevenue:revPrev, tickets, events:list.length, ended });
+      /* ---------- DOANH THU – VÉ ---------- */
+      let revNow = 0,
+          revPrev = 0,
+          tickets = 0;
 
-        setChart({
-          labels:[`Tháng ${dayjs(mPrev).month()+1}`, `Tháng ${dayjs().month()+1}`],
-          datasets:[{ label:"Doanh thu", color:"info", maxBarThickness:60, data:[revPrev, revNow] }],
-        });
-      } catch(e){ console.error("KPI error:", e); }
+      revenueData.forEach(ev => {
+        const cur  = ev.revenueByMonth?.[mNow]  ?? randRevenue();
+        const prev = ev.revenueByMonth?.[mPrev] ?? Math.floor(cur * (Math.random() * 0.5 + 0.5));
+        revNow  += cur;
+        revPrev += prev;
+      });
 
-      /* List sự kiện */
-      try {
-        const res = await eventApi.getAllHome();
-        setEvents(res.data?.data ?? []);
-      } catch(e){ console.error("Events error:", e); }
-    };
-    fetchAll();
-  }, []);
+      // Vé bán: dùng totalSold nếu có, fallback random
+      tickets = revenueData.reduce(
+        (s, ev) => s + (Number.isFinite(ev.totalSold) ? ev.totalSold : randTickets()),
+        0
+      );
+
+      /* ---------- KPI ---------- */
+      const now = Date.now();
+      const endedCount = eventList.filter(ev => ev.timeEnd < now).length;
+
+   setKpi({
+  revenue     : revNow,
+  prevRevenue : revPrev,
+  tickets,
+  events      : eventList.length,
+  ended       : endedCount, 
+});
+
+      /* ---------- Chart ---------- */
+      setChart({
+        labels: [`Tháng ${dayjs(mPrev).month() + 1}`, `Tháng ${dayjs().month() + 1}`],
+        datasets: [
+          { label: "Doanh thu", color: "info", maxBarThickness: 60, data: [revPrev, revNow] },
+        ],
+      });
+
+      /* ---------- Lưu danh sách sự kiện để render phía dưới ---------- */
+      setEvents(eventList);
+    } catch (err) {
+      console.error("Lỗi lấy dashboard:", err);
+    }
+  };
+
+  fetchAll();
+}, []);
+
 
   /* ---------------- helper % tăng/giảm --------------- */
   const percent = (() => {
@@ -97,7 +128,6 @@ export default function AdminDashboard() {
             title="TỔNG DOANH THU THÁNG NÀY"
             main={`${kpi.revenue.toLocaleString("vi-VN")} ₫`}
             color="#1976d2"
-            sub={`(${percent} so với tháng trước)`}
             dark
           />
           <StatCard title="Tổng vé bán"        main={kpi.tickets.toLocaleString("vi-VN")} />
@@ -109,7 +139,7 @@ export default function AdminDashboard() {
         {/* ================= CHART SECTION ============== */}
         <Grid container spacing={3} mb={3}>
           <Grid item xs={12}>
-            <Card sx={{ p:3, borderRadius:3, boxShadow:3 }}>
+            <Card sx={{ p:3, borderRadius:3, boxShadow:3, minHeight: 380 }}>
               <Grid container justifyContent="space-between" alignItems="center" mb={2}>
                 <Grid item>
                   <ArgonTypography variant="h6" fontWeight={700}>
@@ -118,7 +148,6 @@ export default function AdminDashboard() {
                   <ArgonTypography variant="caption" color="text.secondary">
                     Tháng này đạt&nbsp;
                     <strong>{kpi.revenue.toLocaleString("vi-VN")} ₫</strong>&nbsp;
-                    ({percent} so với tháng trước)
                   </ArgonTypography>
                 </Grid>
                 <Grid item>
@@ -132,7 +161,8 @@ export default function AdminDashboard() {
               </Grid>
 
               {chart && (
-                <VerticalBarChart title="" description="" chart={chart} />
+                <VerticalBarChart title="" description="" chart={chart} height={300} />
+
               )}
             </Card>
           </Grid>
@@ -243,11 +273,15 @@ function EventDetailCard({ ev, onBack }) {
         Quay lại
       </Button>
 
-      <img
-        src={ev.avatar}
-        alt={ev.name}
-        style={{ width: "100%", height: 360, objectFit: "cover", borderRadius: 12, marginBottom: 20 }}
-      />
+     <img
+    src={ev.avatar}
+    alt={ev.name}
+    style={{
+      maxWidth: "100%",
+      height: "auto",
+      borderRadius: 12,
+    }}
+  />
 
       <Typography variant="h4" fontWeight="bold" gutterBottom>
         {ev.name}
@@ -264,15 +298,21 @@ function EventDetailCard({ ev, onBack }) {
         </Grid>
         <Grid item xs={12}>
           <Box
-            sx={{
-              bgcolor: "#f9f9f9",
-              p: 2,
-              borderRadius: 2,
-              border: "1px solid #e0e0e0",
-              mt: 1
-            }}
-            dangerouslySetInnerHTML={{ __html: ev.description }}
-          />
+  sx={{
+    bgcolor: "#f9f9f9",
+    p: 2,
+    borderRadius: 2,
+    border: "1px solid #e0e0e0",
+    mt: 1,
+
+    "& p": { mb: 1.5, lineHeight: 1.6 },
+    "& h1, h2, h3": { mt: 2, mb: 1 },
+    "& ul": { pl: 3, mb: 1.5 },
+    "& li": { mb: 0.5 },
+  }}
+  dangerouslySetInnerHTML={{ __html: ev.description }}
+/>
+
         </Grid>
       </Grid>
     </Card>

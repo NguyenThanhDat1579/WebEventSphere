@@ -34,7 +34,7 @@ export default function AdminDashboard() {
   const [kpi,       setKpi]      = useState({ revenue:0, prevRevenue:0, tickets:0, events:0, ended:0 });
   const [chart,     setChart]    = useState(null);
   const [filter,    setFilter]   = useState("month");
-
+  const [loadingDashboard, setLoadingDashboard] = useState(true);
   /* Sự kiện -------------------------------------------------------- */
   const [events,    setEvents]   = useState([]);
   const [detail,    setDetail]   = useState(null);          // object | null
@@ -45,6 +45,7 @@ export default function AdminDashboard() {
 useEffect(() => {
   const fetchAll = async () => {
     try {
+      setLoadingDashboard(true);
       // gọi song song 2 API
       const [revRes, evtRes] = await Promise.all([
         revenueApi.getRevenue(),
@@ -101,6 +102,8 @@ useEffect(() => {
       setEvents(eventList);
     } catch (err) {
       console.error("Lỗi lấy dashboard:", err);
+    } finally {
+      setLoadingDashboard(false); // KẾT THÚC LOADING
     }
   };
 
@@ -118,9 +121,19 @@ useEffect(() => {
 
   /* ================================================================= */
   return (
-    <DashboardLayout>
-      <DashboardNavbar/>
+  <DashboardLayout>
+    <DashboardNavbar />
 
+    {loadingDashboard ? (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="60vh"
+      >
+        <CircularProgress color="info" size={48} />
+      </Box>
+    ) : (
       <ArgonBox py={3}>
         {/* ================= KPI SECTION ================= */}
         <Grid container spacing={3} mb={3}>
@@ -184,10 +197,11 @@ useEffect(() => {
           </Grid>
         </Grid>
       </ArgonBox>
+    )}
 
-      <Footer/>
-    </DashboardLayout>
-  );
+    <Footer />
+  </DashboardLayout>
+);
 }
 
 /* ================================================================= */

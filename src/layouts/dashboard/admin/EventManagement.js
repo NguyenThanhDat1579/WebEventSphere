@@ -60,35 +60,44 @@ const theme = useTheme();
     (async () => {
       try {
         const { data } = await eventApi.getAllHome();
-        const mapped = (data?.data || []).map(ev => ({
-          id   : ev._id,
-          thumb: <img src={ev.avatar} alt={ev.name}
-                      style={{ width: 52, height: 52, borderRadius: 8, objectFit: "cover" }} />,
-          name : (
-            <Typography variant="body2" sx={{
-              maxWidth: 240, fontSize: 14, fontWeight: 500,
-              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"
-            }}>
-              {ev.name}
-            </Typography>
-          ),
-          start   : new Date(ev.timeStart).toLocaleDateString("vi-VN"),
-          price   : `${(+ev.ticketPrice || 0).toLocaleString("vi-VN")} ₫`,
-          timeline: chipTimeline(ev.timeStart, ev.timeEnd),
-          status  : chipStatus(ev.status || "Chưa duyệt"),
-          action  : (
-            <Button
-              size="small"
-              variant="contained"
-              color="info"
-              startIcon={<InfoOutlinedIcon sx={{ fontSize: 16 }} />}
-              onClick={() => openDetail(ev._id)}
-              sx={{ textTransform: "none", fontSize: 12, px: 2 }}
-            >
-              Chi tiết
-            </Button>
-          ),
-        }));
+       const mapped = (data?.data || [])
+  .filter(ev => ev.avatar && ev.avatar.trim() !== "") // lọc sự kiện lỗi ảnh
+  .map(ev => ({
+    id   : ev._id,
+    thumb: (
+      <img
+        src={ev.avatar}
+        alt={ev.name}
+        onError={(e) => { e.target.style.display = "none"; }}
+        style={{ width: 52, height: 52, borderRadius: 8, objectFit: "cover" }}
+      />
+    ),
+    name : (
+      <Typography variant="body2" sx={{
+        maxWidth: 240, fontSize: 14, fontWeight: 500,
+        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"
+      }}>
+        {ev.name}
+      </Typography>
+    ),
+    start   : new Date(ev.timeStart).toLocaleDateString("vi-VN"),
+    price   : `${(+ev.ticketPrice || 0).toLocaleString("vi-VN")} ₫`,
+    timeline: chipTimeline(ev.timeStart, ev.timeEnd),
+    status  : chipStatus(ev.status || "Chưa duyệt"),
+    action  : (
+      <Button
+        size="small"
+        variant="contained"
+        color="info"
+        startIcon={<InfoOutlinedIcon sx={{ fontSize: 16 }} />}
+        onClick={() => openDetail(ev._id)}
+        sx={{ textTransform: "none", fontSize: 12, px: 2 }}
+      >
+        Chi tiết
+      </Button>
+    ),
+  }));
+
         setRows(mapped);
       } catch (err) { console.error(err); }
       finally       { setLoadingTbl(false); }

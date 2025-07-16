@@ -1,30 +1,7 @@
-/**
-=========================================================
-* Argon Dashboard 2 MUI - v3.0.1
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/argon-dashboard-material-ui
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
-import { useEffect } from "react";
-
-// react-router-dom components
-import { useLocation } from "react-router-dom";
-
-// prop-types is a library for typechecking of props.
+import { useEffect, useState, useRef } from "react";
 import PropTypes from "prop-types";
-
-// Argon Dashboard 2 MUI components
+import { useLocation } from "react-router-dom";
 import ArgonBox from "components/ArgonBox";
-
-// Argon Dashboard 2 MUI context
 import { useArgonController, setLayout } from "context";
 
 function DashboardLayout({ bgColor, children, ...rest }) {
@@ -32,17 +9,29 @@ function DashboardLayout({ bgColor, children, ...rest }) {
   const { miniSidenav, darkMode } = controller;
   const { pathname } = useLocation();
 
+  const [layoutReady, setLayoutReady] = useState(false);
+
+  // Set layout on route change
   useEffect(() => {
     setLayout(dispatch, "dashboard");
   }, [pathname]);
 
+  // Wait for layout to be ready (avoids layout shift)
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setLayoutReady(true);
+    }, 100);
+    return () => clearTimeout(timeout);
+  }, [miniSidenav]);
+
   const background = darkMode && !bgColor ? "transparent" : bgColor;
+
+  if (!layoutReady) return null;
 
   return (
     <ArgonBox
       sx={({ breakpoints, transitions, functions: { pxToRem } }) => ({
         p: 3,
-
         [breakpoints.up("xl")]: {
           marginLeft: miniSidenav ? pxToRem(120) : pxToRem(274),
           transition: transitions.create(["margin-left", "margin-right"], {
@@ -67,7 +56,6 @@ function DashboardLayout({ bgColor, children, ...rest }) {
   );
 }
 
-// Typechecking props for the DashboardLayout
 DashboardLayout.propTypes = {
   bgColor: PropTypes.string,
   children: PropTypes.node.isRequired,

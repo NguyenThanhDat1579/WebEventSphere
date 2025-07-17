@@ -50,7 +50,7 @@ function OrganizerManagement() {
       <ArgonBox py={3}>
         <Card sx={{ boxShadow: 4, borderRadius: 3, overflow: "hidden" }}>
           {/* header */}
-          <ArgonBox px={3} py={2} bgcolor={theme.palette.primary.light} color="white">
+          <ArgonBox px={3} py={2} bgcolor={"#5669FF"} color="white">
             <ArgonTypography variant="h5" fontWeight="bold">
               Danh sách nhà tổ chức
             </ArgonTypography>

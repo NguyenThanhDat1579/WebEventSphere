@@ -140,7 +140,7 @@ useEffect(() => {
           <StatCard
             title="TỔNG DOANH THU THÁNG NÀY"
             main={`${kpi.revenue.toLocaleString("vi-VN")} ₫`}
-            color="#1976d2"
+            color="#5669FF"
             dark
           />
           <StatCard title="Tổng vé bán"        main={kpi.tickets.toLocaleString("vi-VN")} />
@@ -236,7 +236,7 @@ function EventListCard({ events, onSelect }) {
                 "&:hover":{
                   transform:"translateY(-4px)",
                   boxShadow:4,
-                  borderColor:"#1976d2"
+                  borderColor:"#5669FF"
                 }
               }}
             >
@@ -270,7 +270,7 @@ function EventDetailCard({ ev, onBack }) {
         variant="contained"
         onClick={onBack}
         sx={{
-          backgroundColor: "#1976d2",
+          backgroundColor: "#5669FF",
           color: "#fff",
           fontWeight: 600,
           px: 2,

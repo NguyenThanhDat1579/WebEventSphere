@@ -134,7 +134,7 @@ const theme = useTheme();
   px={3}
   py={2}
   sx={{
-    bgcolor: theme.palette.primary.light,
+    bgcolor: "#5669FF",
     color: theme.palette.primary.contrastText,
   }}
 >
@@ -177,7 +177,7 @@ const theme = useTheme();
                     px: 2,
                     fontSize: 13,
                     borderRadius: 2,
-                    backgroundColor: "#1976d2",
+                    backgroundColor: "#5669FF",
                     color: "#fff",
                     "&:hover": { backgroundColor: "#115293" },
                   }}

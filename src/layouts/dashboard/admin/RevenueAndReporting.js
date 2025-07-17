@@ -135,7 +135,7 @@ const sold = Object.values(ev.soldByDay || {}).reduce((a, b) => a + b, 0);
           <Card sx={{ borderRadius: 3, boxShadow: 4, p: 3 }}>
             <Box
               sx={{
-                background: "#1976d2",
+                background: "#5669FF",
                 borderRadius: 2,
                 px: 3,
                 py: 2,
@@ -181,7 +181,7 @@ const sold = Object.values(ev.soldByDay || {}).reduce((a, b) => a + b, 0);
           px: 2,
           borderRadius: 2,
           mb: 2,
-          backgroundColor: "#1976d2",
+          backgroundColor: "#5669FF",
           color: "#fff",
           width: "fit-content",
           "&:hover": { backgroundColor: "#115293" }
@@ -199,68 +199,112 @@ const sold = Object.values(ev.soldByDay || {}).reduce((a, b) => a + b, 0);
           Chưa có thống kê cho sự kiện này.
         </Typography>
       ) : (
-        <Grid container spacing={2} mb={3}>
-          <Grid item xs={12} md={3}>
-            <Card sx={{ p: 2, borderRadius: 2, boxShadow: 2 }}>
-              <Typography variant="subtitle2" color="textSecondary">
-                Tổng doanh thu
-              </Typography>
-              <Typography variant="h6" fontWeight="bold">
-                {detailTotalRevenue.toLocaleString()} ₫
-              </Typography>
-            </Card>
+        <>
+          {/* Thống kê tổng quan */}
+          <Grid container spacing={2} mb={3}>
+            <Grid item xs={12} md={3}>
+              <Box sx={{ p: 2, background: "#f1f1f1", borderRadius: 2 }}>
+                <Typography variant="subtitle2" color="textSecondary">
+                  Tổng doanh thu
+                </Typography>
+                <Typography variant="h6" fontWeight="bold">
+                  {detailTotalRevenue.toLocaleString()} ₫
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <Box sx={{ p: 2, background: "#f1f1f1", borderRadius: 2 }}>
+                <Typography variant="subtitle2" color="textSecondary">
+                  Tổng vé đã bán
+                </Typography>
+                <Typography variant="h6" fontWeight="bold">
+                  {totalTickets.toLocaleString()} vé
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <Box sx={{ p: 2, background: "#f1f1f1", borderRadius: 2 }}>
+                <Typography variant="subtitle2" color="textSecondary">
+                  Ngày có doanh thu
+                </Typography>
+                <Typography variant="h6" fontWeight="bold">
+                  {revenueDays} ngày
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <Box sx={{ p: 2, background: "#f1f1f1", borderRadius: 2 }}>
+                <Typography variant="subtitle2" color="textSecondary">
+                  Ngày bán vé
+                </Typography>
+                <Typography variant="h6" fontWeight="bold">
+                  {ticketDays} ngày
+                </Typography>
+              </Box>
+            </Grid>
           </Grid>
-          <Grid item xs={12} md={3}>
-            <Card sx={{ p: 2, borderRadius: 2, boxShadow: 2 }}>
-              <Typography variant="subtitle2" color="textSecondary">
-                Tổng vé đã bán
+
+          {/* Chi tiết theo ngày */}
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                Ngày bán & số vé
               </Typography>
-              <Typography variant="h6" fontWeight="bold">
-                {totalTickets.toLocaleString()} vé
-              </Typography>
-            </Card>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Card sx={{ p: 2, borderRadius: 2, boxShadow: 2 }}>
-              <Typography variant="subtitle2" color="textSecondary">
-                Ngày bán
-              </Typography>
-              {ticketDays > 0 ? (
-                <Box>
-                  {Object.keys(soldByDay).map(date => (
-                    <Typography key={date} variant="body2">
-                      {date}: {soldByDay[date]} vé
+              <Box
+                sx={{
+                  background: "#fafafa",
+                  border: "1px solid #eee",
+                  borderRadius: 2,
+                  p: 2,
+                  maxHeight: 300,
+                  overflow: "auto",
+                }}
+              >
+                {ticketDays > 0 ? (
+                  Object.entries(soldByDay).map(([date, qty]) => (
+                    <Typography key={date} variant="body2" sx={{ mb: 0.5 }}>
+                      {date}: {qty} vé
                     </Typography>
-                  ))}
-                </Box>
-              ) : (
-                <Typography variant="body2">Không có</Typography>
-              )}
-            </Card>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Card sx={{ p: 2, borderRadius: 2, boxShadow: 2 }}>
-              <Typography variant="subtitle2" color="textSecondary">
+                  ))
+                ) : (
+                  <Typography variant="body2">Không có</Typography>
+                )}
+              </Box>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                 Ngày có doanh thu
               </Typography>
-              {revenueDays > 0 ? (
-                <Box>
-                  {Object.keys(revenueByDay).map(date => (
-                    <Typography key={date} variant="body2">
-                      {date}: {revenueByDay[date].toLocaleString()} ₫
+              <Box
+                sx={{
+                  background: "#fafafa",
+                  border: "1px solid #eee",
+                  borderRadius: 2,
+                  p: 2,
+                  maxHeight: 300,
+                  overflow: "auto",
+                }}
+              >
+                {revenueDays > 0 ? (
+                  Object.entries(revenueByDay).map(([date, value]) => (
+                    <Typography key={date} variant="body2" sx={{ mb: 0.5 }}>
+                      {date}: {value.toLocaleString()} ₫
                     </Typography>
-                  ))}
-                </Box>
-              ) : (
-                <Typography variant="body2">Không có</Typography>
-              )}
-            </Card>
+                  ))
+                ) : (
+                  <Typography variant="body2">Không có</Typography>
+                )}
+              </Box>
+            </Grid>
           </Grid>
-        </Grid>
+        </>
       )}
     </Card>
   </Box>
 )}
+
+
 
 
       <Footer />

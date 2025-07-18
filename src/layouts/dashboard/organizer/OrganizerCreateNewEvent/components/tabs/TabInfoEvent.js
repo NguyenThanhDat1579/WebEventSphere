@@ -792,7 +792,7 @@ export default function TabInfoEvent({ onNext }) {
                   label={tag}
                   onDelete={() => setTags((prev) => prev.filter((_, i) => i !== index))}
                   deleteIcon={<CloseIcon />}
-                  color="primary"
+                  color="info"
                   variant="outlined"
                 />
               ))}
@@ -824,11 +824,11 @@ export default function TabInfoEvent({ onNext }) {
           color="primary"
           onClick={handleSaveEventInfos}
           sx={{
-            color: "#1976D2",
-            borderColor: "#1976D2",
+            color: "#5669FF",
+            borderColor: "#5669FF",
             backgroundColor: "#fff",
             "&:hover": {
-              backgroundColor: "#1976D2",
+              backgroundColor: "#5669FF",
               color: "#fff",
             },
           }}
@@ -839,12 +839,12 @@ export default function TabInfoEvent({ onNext }) {
         <Button
           variant="contained"
           sx={{
-            backgroundColor: "#1976D2",
+            backgroundColor: "#5669FF",
             color: "#fff",
-            border: "1px solid #1976D2",
+            border: "1px solid #5669FF",
             "&:hover": {
               backgroundColor: "#fff",
-              color: "#1976D2",
+              color: "#5669FF",
             },
           }}
           onClick={handleNextClick}

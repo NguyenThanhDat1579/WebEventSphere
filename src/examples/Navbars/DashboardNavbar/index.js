@@ -45,6 +45,7 @@ import {
 // Images
 import team2 from "assets/images/team-2.jpg";
 import logoSpotify from "assets/images/small-logos/logo-spotify.svg";
+import { colors } from "@mui/material";
 
 function DashboardNavbar({ absolute, light, isMini }) {
   const [navbarType, setNavbarType] = useState();
@@ -125,7 +126,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
       <NotificationItem
         color="secondary"
         image={
-          <Icon fontSize="small" sx={{ color: ({ palette: { white } }) => white.main }}>
+          <Icon fontSize="small" sx={{  color: "#fff" }}>
             payment
           </Icon>
         }
@@ -154,7 +155,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
             route={route}
             light={transparentNavbar ? light : false}
           /> */}
-          <Icon fontSize="medium" sx={navbarDesktopMenu} onClick={handleMiniSidenav}>
+          <Icon fontSize="medium" sx={{ ...navbarDesktopMenu, color: "#fff"}} onClick={handleMiniSidenav}>
             {miniSidenav ? "menu_open" : "menu"}
           </Icon>
         </ArgonBox>
@@ -172,18 +173,11 @@ function DashboardNavbar({ absolute, light, isMini }) {
             </ArgonBox>
             <ArgonBox color={light ? "white" : "inherit"}>
               <Link to="/authentication/sign-in/basic">
-                <IconButton sx={navbarIconButton} size="small" onClick={handleLogout}>
-                  <Icon
-                    sx={({ palette: { dark, white } }) => ({
-                      color: light && transparentNavbar ? white.main : dark.main,
-                    })}
-                  >
-                    account_circle
-                  </Icon>
+                <IconButton sx={navbarIconButton} size="small" onClick={handleLogout}>              
                   <ArgonTypography
                     variant="button"
                     fontWeight="medium"
-                    color={light && transparentNavbar ? "white" : "dark"}
+                    sx={{color: "#fff"}}
                   >
                     Đăng xuất
                   </ArgonTypography>
@@ -191,24 +185,14 @@ function DashboardNavbar({ absolute, light, isMini }) {
               </Link>
               <IconButton
                 size="small"
-                color={light && transparentNavbar ? "white" : "dark"}
-                sx={navbarMobileMenu}
-                onClick={handleMiniSidenav}
-              >
-                <Icon>{miniSidenav ? "menu_open" : "menu"}</Icon>
-              </IconButton>
-              <IconButton
-                size="small"
-                color={light && transparentNavbar ? "white" : "dark"}
-                sx={navbarIconButton}
+                sx={{...navbarIconButton, color: "#fff"}}
                 onClick={handleConfiguratorOpen}
               >
                 <Icon>settings</Icon>
               </IconButton>
               <IconButton
                 size="small"
-                color={light && transparentNavbar ? "white" : "dark"}
-                sx={navbarIconButton}
+                sx={{...navbarIconButton, color: "#fff"}}
                 aria-controls="notification-menu"
                 aria-haspopup="true"
                 variant="contained"

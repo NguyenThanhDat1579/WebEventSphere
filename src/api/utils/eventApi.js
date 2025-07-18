@@ -8,6 +8,8 @@ const eventApi = {
   addEvent: (eventInfo) => {
     return axiosInstance.post("/events/add", eventInfo);
   },
+  getAllTicketsByEvent: (eventId) =>
+    axiosInstance.get(`/tickets/all-tickets/${eventId}`),
 };
 
 export default eventApi;

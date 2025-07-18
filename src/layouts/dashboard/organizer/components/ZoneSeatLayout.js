@@ -15,6 +15,9 @@ const colorOptions = [
   { label: "Màu ghế VIP", value: "#7C89FF" },
   { label: "Màu ghế thường", value: "#c9b6f3" },
 ];
+const seatSize = 30;
+const seatMargin = 0.5 * 2;
+const seatTotal = seatSize + seatMargin;
 
 //  { label: "Đỏ", value: "#f44336" },
 //   { label: "Xanh biển", value: "#2196f3" },
@@ -336,7 +339,7 @@ const ZoneSeatLayout = ({ onSubmit }) => {
           />
         </Grid>
 
-        <Grid item xs={12} sm={2}>
+        <Grid item xs={12} sm={3}>
           <Box>
             <Typography variant="h6" mb={1}>
               Màu ghế
@@ -372,14 +375,14 @@ const ZoneSeatLayout = ({ onSubmit }) => {
               variant="contained"
               onClick={handleAddZone}
               sx={{
-                backgroundColor: "#1976D2",
+                backgroundColor: "#5669FF",
                 color: "#fff",
-                border: "1px solid #1976D2", // ✅ thêm vào trạng thái mặc định
+                border: "1px solid #5669FF", // ✅ thêm vào trạng thái mặc định
                 boxSizing: "border-box",
                 "&:hover": {
                   backgroundColor: "#fff",
-                  color: "#1976D2",
-                  border: "1px solid #1976D2", // giữ nguyên border khi hover
+                  color: "#5669FF",
+                  border: "1px solid #5669FF", // giữ nguyên border khi hover
                 },
               }}
             >
@@ -397,7 +400,10 @@ const ZoneSeatLayout = ({ onSubmit }) => {
             label="Số dòng"
             type="number"
             value={rows.toString()}
-            onChange={(e) => setRows(parseInt(e.target.value))}
+           onChange={(e) => {
+              const value = parseInt(e.target.value);
+              if (value >= 0) setRows(value);
+            }}
             disabled={isFinalized}
           />
         </Grid>
@@ -408,7 +414,10 @@ const ZoneSeatLayout = ({ onSubmit }) => {
             label="Số cột"
             type="number"
             value={cols.toString()}
-            onChange={(e) => setCols(parseInt(e.target.value))}
+            onChange={(e) => {
+              const value = parseInt(e.target.value);
+              if (value >= 0) setCols(value);
+            }}
             disabled={isFinalized}
           />
         </Grid>
@@ -582,68 +591,100 @@ const ZoneSeatLayout = ({ onSubmit }) => {
       </Box>
 
       {/* 5. Ma trận ghế */}
-      <Box
-        ref={containerRef}
-        onWheel={handleWheelZoom}
-        onMouseDown={handleMouseDownPan}
-        onMouseMove={handleMouseMovePan}
-        onMouseUp={handleMouseUpPan}
-        onMouseLeave={handleMouseUpPan}
-        sx={{
-          width: "100%",
-          height: 500,
-          overflow: "hidden",
-          border: "1px solid #ddd",
-          position: "relative",
-          cursor: selectedZone ? "default" : panRef.current.dragging ? "grabbing" : "grab",
-        }}
-      >
-        <Box
-          sx={{
-            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-            transformOrigin: "top left",
-          }}
-        >
-          {matrix.map((row, rowIdx) => (
-            <Box key={rowIdx} display="flex">
-              {row.map((cell, colIdx) => (
-                <Paper
-                  key={colIdx}
-                  onMouseDown={() => {
-                    isDrawing.current = true;
-                    toggleCellByClick(rowIdx, colIdx); // CLICK
-                  }}
-                  onMouseEnter={() => {
-                    if (isDrawing.current) {
-                      toggleCellByDrag(rowIdx, colIdx); // DRAG
-                    }
-                  }}
-                  sx={{
-                    width: 30,
-                    height: 30,
-                    margin: 0.5,
-                    backgroundColor:
-                      cell.selected && cell.area !== "none"
-                        ? zones.find((z) => z.name === cell.area)?.color || "#ccc"
-                        : "#e0e0e0",
-                    cursor: isFinalized ? "default" : "pointer",
-                    borderRadius: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#fff",
-                    fontWeight: "600",
-                    fontSize: "0.85rem",
-                    userSelect: "none",
-                  }}
-                >
-                  {cell.label !== "none" ? cell.label : ""}
-                </Paper>
-              ))}
-            </Box>
-          ))}
-        </Box>
+   <Box
+  ref={containerRef}
+  onWheel={handleWheelZoom}
+  onMouseDown={handleMouseDownPan}
+  onMouseMove={handleMouseMovePan}
+  onMouseUp={handleMouseUpPan}
+  onMouseLeave={handleMouseUpPan}
+  sx={{
+    width: "100%",
+    height: 500,
+    overflow: "hidden",
+    border: "1px solid #ddd",
+    position: "relative",
+    cursor: selectedZone ? "default" : panRef.current?.dragging ? "grabbing" : "grab",
+  }}
+>
+  <Box
+    sx={{
+      transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+      transformOrigin: "top left",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center", // 👉 để canh giữa sân khấu theo chiều ngang
+    }}
+  >
+    {/* ✅ Sân khấu */}
+  <Box
+  sx={{
+    width: `${cols * seatTotal}px`,
+    height: 40,
+    backgroundColor: "#333",
+    color: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 2,
+    mb: 1,
+  }}
+>
+  <Typography
+    fontWeight="bold"
+    sx={{
+      fontSize: `${Math.max(0.6, Math.min(1.5, cols * 0.08))}rem`,
+      textAlign: "center",
+      whiteSpace: "nowrap",
+    }}
+  >
+    SÂN KHẤU
+  </Typography>
+</Box>
+
+
+    {/* ✅ Ma trận ghế */}
+    {matrix.map((row, rowIdx) => (
+      <Box key={rowIdx} display="flex">
+        {row.map((cell, colIdx) => (
+          <Paper
+            key={colIdx}
+            onMouseDown={() => {
+              isDrawing.current = true;
+              toggleCellByClick(rowIdx, colIdx);
+            }}
+            onMouseEnter={() => {
+              if (isDrawing.current) {
+                toggleCellByDrag(rowIdx, colIdx);
+              }
+            }}
+            sx={{
+              width: seatTotal,
+              height: seatTotal,
+              margin: 0.5,
+              backgroundColor:
+                cell.selected && cell.area !== "none"
+                  ? zones.find((z) => z.name === cell.area)?.color || "#ccc"
+                  : "#e0e0e0",
+              cursor: isFinalized ? "default" : "pointer",
+              borderRadius: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#fff",
+              fontWeight: "600",
+              fontSize: "0.85rem",
+              userSelect: "none",
+            }}
+          >
+            {cell.label !== "none" ? cell.label : ""}
+          </Paper>
+        ))}
       </Box>
+    ))}
+  </Box>
+</Box>
+
       {/* 6. Nút hoàn thành */}
       <Box mt={2} display="flex" gap={2}>
         <Button
@@ -664,11 +705,11 @@ const ZoneSeatLayout = ({ onSubmit }) => {
           }}
           disabled={isFinalized}
           sx={{
-            color: "#1976D2",
-            borderColor: "#1976D2",
+            color: "#5669FF",
+            borderColor: "#5669FF",
             backgroundColor: "#fff",
             "&:hover": {
-              backgroundColor: "#1976D2",
+              backgroundColor: "#5669FF",
               color: "#fff",
             },
           }}
@@ -679,14 +720,14 @@ const ZoneSeatLayout = ({ onSubmit }) => {
         <Button
           variant="contained"
           sx={{
-            backgroundColor: "#1976D2",
+            backgroundColor: "#5669FF",
             color: "#fff",
-            border: "1px solid #1976D2",
+            border: "1px solid #5669FF",
             boxSizing: "border-box",
             "&:hover": {
               backgroundColor: "#fff",
-              color: "#1976D2",
-              border: "1px solid #1976D2",
+              color: "#5669FF",
+              border: "1px solid #5669FF",
             },
           }}
           onClick={handleGenerateSeats}

@@ -20,6 +20,7 @@ import viLocale from "date-fns/locale/vi";
 import ArgonBox from "components/ArgonBox";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import { useNavigate } from "react-router-dom";
+import ArgonButton from "components/ArgonButton";
 
 const labelTextFieldWrapper = {
   display: "flex",
@@ -28,7 +29,7 @@ const labelTextFieldWrapper = {
   width: "100%",
 };
 
-const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, isMini = false }) => {
+const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, onResetData, isMini = false }) => {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [fromDate, setFromDate] = useState(null);
@@ -82,6 +83,7 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, isMini = false
     onSearch?.("");
     onStatusFilter?.("all");
     onDateRange?.({ from: null, to: null });
+    onResetData?.();
   };
 
   const handleCreateEvent = () => {
@@ -240,41 +242,27 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, isMini = false
 
               {/* Button group */}
               <Box display="flex" justifyContent="flex-end" mt={-4} mb={1} pr={2}>
-                <Stack direction="row" spacing={2}>
-                  <Button
-                    onClick={handleReset}
-                    sx={{
-                      backgroundColor: "#1976d2",
-                      color: "#fff",
-                      border: "1px solid transparent",
-                      textTransform: "none",
-                      fontWeight: 500,
-                      "&:hover": {
-                        backgroundColor: "#fff",
-                        color: "#1565c0",
-                        borderColor: "#1565c0",
-                      },
-                    }}
-                  >
-                    Làm mới
-                  </Button>
-                  <Button
-                    onClick={handleCreateEvent}
-                    sx={{
-                      backgroundColor: "#1976d2",
-                      color: "#fff",
-                      border: "1px solid transparent",
-                      textTransform: "none",
-                      fontWeight: 500,
-                      "&:hover": {
-                        backgroundColor: "#fff",
-                        color: "#1565c0",
-                        borderColor: "#1565c0",
-                      },
-                    }}
-                  >
-                    Tạo sự kiện
-                  </Button>
+                <Stack direction="row" spacing={2}>               
+                    <ArgonBox mt={3} mb={1}>
+                      <ArgonButton
+                        color="info"
+                        size="small"
+                        onClick={handleReset}
+                        variant="contained"
+                      >
+                        Làm mới
+                      </ArgonButton>
+                    </ArgonBox>
+                      <ArgonBox mt={3} mb={1}>
+                      <ArgonButton
+                        color="info"
+                        size="small"
+                        variant="contained"
+                        onClick={handleCreateEvent}
+                      >
+                        Tạo sự kiện
+                      </ArgonButton>
+                    </ArgonBox>
                 </Stack>
               </Box>
             </LocalizationProvider>
@@ -289,6 +277,7 @@ SearchFilterBar.propTypes = {
   onSearch: PropTypes.func,
   onStatusFilter: PropTypes.func,
   onDateRange: PropTypes.func,
+  onResetData: PropTypes.func,
   isMini: PropTypes.bool,
 };
 

@@ -62,72 +62,76 @@ function OrganizerRevenue() {
   }
 
   function buildLineChartDataFromEvent(event) {
-    const dateLabels = getEventDateLabels(event); // Gọi hàm đã tách riêng
+  const dateLabels = getEventDateLabels(event);
+  const showtimes = event.showtimes || [];
 
-    const showtimes = event.showtimes || [];
-    const revenueByShowtime = event.revenueByShowtime || [];
+  const revenueData = [];
+  const ticketData = [];
 
-    const revenueData = [];
-    const ticketData = [];
+  // Chuyển labels thành các ngày thực tế để đối chiếu
+  const days = dateLabels.map((label) => {
+    const [day, month] = label.split("/").map(Number);
+    const year = new Date(event.timeStart).getFullYear();
+    return new Date(year, month - 1, day);
+  });
 
-    // Tạo danh sách đối tượng ngày tương ứng
-    const days = dateLabels.map((label) => {
-      const [day, month] = label.split("/").map(Number);
-      const year = new Date(event.timeStart).getFullYear();
-      return new Date(year, month - 1, day);
-    });
+  for (const day of days) {
+    // Lọc các showtime diễn ra trong ngày này
+    const showtimeInDay = showtimes.filter((st) =>
+      isSameDay(new Date(st.startTime), day)
+    );
 
-    for (const day of days) {
-      // Lấy các suất chiếu trong ngày đó
-      const showtimeIdsInDay = showtimes
-        .filter((st) => isSameDay(new Date(st.startTime), day))
-        .map((st) => st._id);
+    const revenueForDay = showtimeInDay.reduce(
+      (sum, s) => sum + (s.revenue || 0),
+      0
+    );
 
-      const revenueForDay = revenueByShowtime
-        .filter((r) => showtimeIdsInDay.includes(r.showtimeId))
-        .reduce((sum, r) => sum + (r.revenue || 0), 0);
+    const ticketsForDay = showtimeInDay.reduce(
+      (sum, s) => sum + (s.soldTickets || 0),
+      0
+    );
 
-      const ticketsForDay = revenueByShowtime
-        .filter((r) => showtimeIdsInDay.includes(r.showtimeId))
-        .reduce((sum, r) => sum + (r.soldTickets || 0), 0);
-
-      revenueData.push(revenueForDay);
-      ticketData.push(ticketsForDay);
-    }
-
-    return {
-      labels: dateLabels,
-      datasets: [
-        { label: "Doanh thu (₫)", data: revenueData, color: "info" },
-        { label: "Số vé đã bán", data: ticketData, color: "success" },
-      ],
-    };
+    revenueData.push(revenueForDay);
+    ticketData.push(ticketsForDay);
   }
+
+  return {
+    labels: dateLabels,
+    datasets: [
+      { label: "Doanh thu (₫)", data: revenueData, color: "info" },
+      { label: "Số vé đã bán", data: ticketData, color: "success" },
+    ],
+  };
+}
+
 
   function getShowtimeDetailsByEvent(event) {
-    if (!event || !event.showtimes) return [];
+  if (!event || !event.showtimes) return [];
 
-    return event.showtimes.map((showtime) => {
-      const revenueInfo = event.revenueByShowtime?.find((r) => r.showtimeId === showtime._id);
+  return event.showtimes.map((showtime) => {
+    const revenueInfo = event.revenueByShowtime?.find(
+      (r) => r.showtimeId === showtime._id
+    );
 
-      const startDate = new Date(showtime.startTime);
-      const endDate = new Date(showtime.endTime);
+    const startDate = new Date(showtime.startTime);
+    const endDate = new Date(showtime.endTime);
+    const now = Date.now();
 
-      const now = Date.now();
-      let status = "Chưa diễn ra";
-      if (now >= showtime.endTime) status = "Kết thúc";
-      else if (now >= showtime.startTime) status = "Đang diễn ra";
+    let status = "Chưa diễn ra";
+    if (now >= showtime.endTime) status = "Kết thúc";
+    else if (now >= showtime.startTime) status = "Đang diễn ra";
 
-      return {
-        name: `Suất ${format(startDate, "dd/MM")}`,
-        startTime: showtime.startTime,
-        endTime: showtime.endTime,
-        sold: revenueInfo?.soldTickets ?? 0,
-        revenue: revenueInfo?.revenue ?? 0,
-        status,
-      };
-    });
-  }
+    return {
+      name: `Suất ${format(startDate, "dd/MM")}`,
+      startTime: showtime.startTime,
+      endTime: showtime.endTime,
+      sold: showtime.soldTickets ?? revenueInfo?.soldTickets ?? 0,
+      revenue: showtime.revenue ?? revenueInfo?.revenue ?? 0,
+      status,
+    };
+  });
+}
+
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -170,6 +174,7 @@ function OrganizerRevenue() {
   const sold = getSoldTickets(selectedEvent);
   const total = getTotalTicketsOfEvent(selectedEvent);
   const ticketTableData = getShowtimeDetailsByEvent(selectedEvent);
+  console.log("ticketTableData ", ticketTableData)
   const ticketPrice = revenue / sold || 0; // Tránh chia cho 0
   const maxRevenue = total * ticketPrice;
 
@@ -191,6 +196,7 @@ function OrganizerRevenue() {
             value={selectedEventId}
             onChange={(val) => setSelectedEventId(val)}
             options={eventOptions}
+            searchable
           />
         </Box>
         <Grid container spacing={3} mt={0.5}>

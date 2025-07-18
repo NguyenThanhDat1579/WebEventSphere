@@ -88,7 +88,7 @@ function ProfileOrganizer() {
               />
               {editing && (
                 <Button variant="outlined" size="small">
-                  📤 Đổi ảnh đại diện
+                  Đổi ảnh đại diện
                 </Button>
               )}
             </Grid>
@@ -96,12 +96,12 @@ function ProfileOrganizer() {
             <Grid item xs={12} sm={9}>
               <Grid container spacing={2}>
                 <Grid item xs={12}>
-                  <Typography variant="h6">👤 THÔNG TIN NHÀ TỔ CHỨC</Typography>
+                  <Typography variant="h6">THÔNG TIN NHÀ TỔ CHỨC</Typography>
                 </Grid>
 
                 <Grid item xs={12} sm={6}>
                   <CustomTextField
-                    label="👤 Tên nhà tổ chức"
+                    label="Tên nhà tổ chức"
                     name="username"
                     value={formData.username}
                     onChange={handleChange}
@@ -112,7 +112,7 @@ function ProfileOrganizer() {
 
                 <Grid item xs={12} sm={6}>
                   <CustomTextField
-                    label="📧 Email liên hệ"
+                    label="Email liên hệ"
                     name="email"
                     value={formData.email}
                     fullWidth
@@ -122,7 +122,7 @@ function ProfileOrganizer() {
 
                 <Grid item xs={12} sm={6}>
                   <CustomTextField
-                    label="☎️ Số điện thoại"
+                    label="Số điện thoại"
                     name="phoneNumber"
                     value={formData.phoneNumber}
                     onChange={handleChange}

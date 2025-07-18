@@ -59,8 +59,6 @@ const transformEvents = (events) =>
         event.soldTickets && event.eventTotalRevenue
           ? event.eventTotalRevenue / event.soldTickets
           : 0,
-
-     
       status, // Trạng thái sự kiện
     };
   });
@@ -73,7 +71,8 @@ function OrganizerMyEvent() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isDetailView, setIsDetailView] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  useEffect(() => {
+
+
     const fetchEvents = async () => {
       try {
         setIsLoading(true); // bắt đầu loading
@@ -92,6 +91,8 @@ function OrganizerMyEvent() {
       }
     };
 
+
+  useEffect(() => {
     fetchEvents();
   }, []);
 
@@ -147,6 +148,7 @@ function OrganizerMyEvent() {
                   onSearch={handleSearch}
                   onStatusFilter={handleStatusFilter}
                   onDateRange={handleDateRange}
+                   onResetData={fetchEvents}
                 />
               </Grid>
             </Grid>

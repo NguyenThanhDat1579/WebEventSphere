@@ -24,6 +24,16 @@ function MyEventTable({ events, onViewDetail }) {
 
   const toDate = (timestamp) => new Date(timestamp > 1e12 ? timestamp : timestamp * 1000);
 
+
+  const formatDateDMY = (timestamp) => {
+  const date = new Date(timestamp > 1e12 ? timestamp : timestamp * 1000); // hỗ trợ cả giây và milli
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+
   const formatTimeRange = (startTimestamp, endTimestamp) => {
     const start = toDate(startTimestamp);
     const end = toDate(endTimestamp);
@@ -75,43 +85,21 @@ function MyEventTable({ events, onViewDetail }) {
     return "Chưa có suất phù hợp";
   };
 
-  const getStatusChip = (event) => {
-    const showtimes = event.showtimes || [];
-    const now = Date.now();
-    const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+ const getStatusChip = (event) => {
+  const now = Date.now();
 
-    if (!showtimes.length) {
-      return <Chip label="Chưa lên lịch" color="default" size="small" sx={{ color: "#fff" }} />;
-    }
+  const start = toDate(event.timeStart).getTime();
+  const end = toDate(event.timeEnd).getTime();
 
-    const isOngoing = showtimes.some((s) => {
-      const start = toDate(s.startTime).getTime();
-      const end = toDate(s.endTime).getTime();
-      return now >= start && now <= end;
-    });
+  if (now < start) {
+    return <Chip label="Sắp mở bán" color="warning" size="small" sx={{ color: "#fff" }} />;
+  } else if (now >= start && now <= end) {
+    return <Chip label="Đang mở bán vé" color="success" size="small" sx={{ color: "#fff" }} />;
+  } else {
+    return <Chip label="Đã kết thúc bán" color="default" size="small" sx={{ color: "#fff" }} />;
+  }
+};
 
-    if (isOngoing) {
-      return <Chip label="Đang diễn ra" color="success" size="small" sx={{ color: "#fff" }} />;
-    }
-
-    const allEnded = showtimes.every((s) => toDate(s.endTime).getTime() < now);
-    if (allEnded) {
-      return <Chip label="Đã kết thúc" color="default" size="small" sx={{ color: "#fff" }} />;
-    }
-
-    const upcomingTimes = showtimes
-      .filter((s) => toDate(s.startTime).getTime() > now)
-      .map((s) => toDate(s.startTime).getTime());
-
-    const soonest = Math.min(...upcomingTimes);
-    const timeUntilSoonest = soonest - now;
-
-    if (timeUntilSoonest <= oneWeekMs) {
-      return <Chip label="Sắp diễn ra" color="error" size="small" sx={{ color: "#fff" }} />;
-    }
-
-    return <Chip label="Chưa diễn ra" color="warning" size="small" sx={{ color: "#fff" }} />;
-  };
 
   const handleViewRevenue = (eventId, eventTitle) => {
     const encodedTitle = encodeURIComponent(eventTitle);
@@ -127,7 +115,7 @@ function MyEventTable({ events, onViewDetail }) {
   return (
     <>
       <TableContainer component={Paper} sx={{ boxShadow: 2, overflowX: "auto", mt: -3 }}>
-        <Table size="medium" sx={{ minWidth: 700, tableLayout: "fixed" }}>
+        <Table size="medium" sx={{ minWidth: 700, tableLayout: "fixed", }}>
           <TableBody>
             <TableRow>
               <TableCell sx={{ width: "25%", fontWeight: 600, fontSize: "0.95rem" }}>
@@ -177,13 +165,24 @@ function MyEventTable({ events, onViewDetail }) {
                 </TableCell>
 
                 <TableCell>
-                  <Typography sx={{ fontWeight: 500, fontSize: "0.85rem" }}>
-                    {getDisplayShowtime(event.showtimes)}
-                  </Typography>
+           
+                      <Stack spacing={0.5}>
+                        <Typography sx={{ fontWeight: 500, fontSize: "0.85rem" }}>
+                          {getDisplayShowtime(event.showtimes)}
+                        </Typography>
+
+                        {event.timeStart && event.timeEnd && (
+                          <Typography sx={{ fontSize: "0.75rem", color: "#666" }}>
+                            Bán vé: {formatDateDMY(event.timeStart)} - {formatDateDMY(event.timeEnd)}
+                          </Typography>
+                        )}
+                      </Stack>
+              
                 </TableCell>
 
                 <TableCell> 
-                  <Chip
+                  
+                  {/* <Chip
                       label={
                         event.status === "Ongoing"
                           ? "Đang diễn ra"
@@ -200,7 +199,9 @@ function MyEventTable({ events, onViewDetail }) {
                       }
                       size="small"
                       sx={{ color: "#fff" }}
-                    /></TableCell>
+                    /> */}
+                    {getStatusChip(event)}
+                    </TableCell>
 
                 <TableCell>
                   <Typography sx={{ fontWeight: 500, fontSize: "0.85rem" }}>

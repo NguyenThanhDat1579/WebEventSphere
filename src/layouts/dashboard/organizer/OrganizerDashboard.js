@@ -1,33 +1,18 @@
 // @mui material components
 import Grid from "@mui/material/Grid";
 import Icon from "@mui/material/Icon";
-
+import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
+import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
+import EventIcon from "@mui/icons-material/Event";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 // Argon Dashboard 2 MUI components
 import ArgonBox from "components/ArgonBox";
-import ArgonTypography from "components/ArgonTypography";
-
-// Argon Dashboard 2 MUI example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import Footer from "examples/Footer";
-import DetailedStatisticsCard from "examples/Cards/StatisticsCards/DetailedStatisticsCard/index";
-import SalesTable from "examples/Tables/SalesTable";
+import DetailedStatisticsCard from "./components/DetailedStaticsCard";
 import EventTable from "../organizer/components/EventTable";
-import CategoriesList from "examples/Lists/CategoriesList";
 import GradientLineChart from "examples/Charts/LineCharts/GradientLineChart";
-
-// Argon Dashboard 2 MUI base styles
-import typography from "assets/theme/base/typography";
-
-// Dashboard layout components
-import Slider from "layouts/dashboard/components/Slider";
-import categoryApi from "api/utils/categoryApi";
 import eventApi from "api/utils/eventApi";
-
-// Data
-import gradientLineChartData from "layouts/dashboard/data/gradientLineChartData";
-import salesTableData from "layouts/dashboard/data/salesTableData";
-import categoriesListData from "layouts/dashboard/data/categoriesListData";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
@@ -127,28 +112,28 @@ function OrganizerDashboard() {
             <DetailedStatisticsCard
               title="Tổng doanh thu"
               count={totalRevenue.toLocaleString() + " ₫"}
-              icon={{ color: "info", component: <i className="ni ni-money-coins" /> }}
+              icon={{ color: "info", component: <MonetizationOnIcon fontSize="small" /> }}
             />
           </Grid>
           <Grid item xs={12} md={6} lg={3}>
             <DetailedStatisticsCard
               title="Tổng vé đã bán"
               count={totalTickets}
-              icon={{ color: "error", component: <i className="ni ni-tag" /> }}
+              icon={{ color: "error", component: <ConfirmationNumberIcon fontSize="small" /> }}
             />
           </Grid>
           <Grid item xs={12} md={6} lg={3}>
             <DetailedStatisticsCard
               title="Sự kiện đang diễn ra"
               count={ongoingEventsCount}
-              icon={{ color: "success", component: <i className="ni ni-calendar-grid-58" /> }}
+              icon={{ color: "success", component: <EventAvailableIcon fontSize="small" /> }}
             />
           </Grid>
           <Grid item xs={12} md={6} lg={3}>
             <DetailedStatisticsCard
               title="Tổng sự kiện"
               count={events.length}
-              icon={{ color: "warning", component: <i className="ni ni-badge" /> }}
+              icon={{ color: "warning", component: <EventIcon fontSize="small" /> }}
             />
           </Grid>
         </Grid>

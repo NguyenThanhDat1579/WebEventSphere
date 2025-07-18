@@ -207,4 +207,4 @@ LineChartDualAxis.propTypes = {
   ticketData: PropTypes.arrayOf(PropTypes.number).isRequired,
 };
 
-export default LineChartDualAxis;
+export default React.memo(LineChartDualAxis);

@@ -1,20 +1,21 @@
-// src/layouts/tables/data/organizerTableData.js
+// organizerTableData.js
+import { Cell } from "../helpers/tableHelpers";
 
-const organizerTableData = (organizers) => {
-  const columns = [
-    { name: "Tên nhà tổ chức", align: "left" },
-    { name: "Email", align: "left" },
-    { name: "Số điện thoại", align: "center" },
-    { name: "Địa chỉ", align: "center" },
-    { name: "Người theo dõi", align: "center" },
-  ];
+export const columns = [
+  { title: "Tên nhà tổ chức", field: "name",      align: "left"   },
+  { title: "Email",           field: "email",     align: "left"   },
+  { title: "Số ĐT",           field: "phone",     align: "center" },
+  { title: "Địa chỉ",         field: "address",   align: "center" },
+  { title: "Người theo dõi",  field: "followers", align: "center" },
+];
 
-  const rows = organizers.map((user) => ({
-    "Tên nhà tổ chức": user.username || "—",
-    "Email": user.email || "—",
-    "Số điện thoại": user.phoneNumber || "—",
-    "Địa chỉ": user.address || "—",
-    "Người theo dõi": user.follower ?? 0,
+const organizerTableData = (list = []) => {
+  const rows = list.map(o => ({
+    name     : Cell(o.username),
+    email    : Cell(o.email),
+    phone    : Cell(o.phoneNumber, "center"),
+    address  : Cell(o.address, "center"),
+    followers: Cell(o.follower ?? 0, "center"),
   }));
 
   return { columns, rows };

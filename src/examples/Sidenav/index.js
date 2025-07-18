@@ -18,7 +18,7 @@ import sidenavLogoLabel from "examples/Sidenav/styles/sidenav";
 import { useArgonController, setMiniSidenav } from "context";
 import { useSelector } from "react-redux";
 
-function Sidenav({ color, brand, brandName, routes, ...rest }) {
+function Sidenav({ color, brand, brandNameImage, routes, ...rest }) {
   const [controller, dispatch] = useArgonController();
   const { miniSidenav, darkSidenav, layout } = controller;
   const location = useLocation();
@@ -80,18 +80,9 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
             <img
               src={titleImage}
               alt="section"
-              style={{ height: "20px", marginRight: "8px", objectFit: "contain" }}
+              style={{ height: "20px", objectFit: "contain" }}
             />
           )}
-          <ArgonTypography
-            color={darkSidenav ? "white" : "dark"}
-            variant="caption"
-            fontWeight="bold"
-            textTransform="uppercase"
-            opacity={0.6}
-          >
-            {title}
-          </ArgonTypography>
         </ArgonBox>
       );
     } else if (type === "divider") {
@@ -136,19 +127,24 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
           {brand && (
             <ArgonBox component="img" src={brand} alt="Argon Logo" width="2rem" mr={0.25} />
           )}
+          {brandNameImage && (
           <ArgonBox
-            width={!brandName && "100%"}
-            sx={(theme) => sidenavLogoLabel(theme, { miniSidenav })}
+            width="10%"
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            ml={7}
           >
-            <ArgonTypography
-              component="h6"
-              variant="button"
-              fontWeight="medium"
-              color={darkSidenav ? "white" : "dark"}
-            >
-              {brandName}
-            </ArgonTypography>
+            <ArgonBox
+              component="img"
+              src={brandNameImage}
+              alt="Brand Logo"
+              height="28px"
+              sx={(theme) => sidenavLogoLabel(theme, { miniSidenav })}
+            />
           </ArgonBox>
+        )}
+
         </ArgonBox>
       </ArgonBox>
       <Divider light={darkSidenav} />
@@ -164,12 +160,13 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
 Sidenav.defaultProps = {
   color: "info",
   brand: "",
+  brandNameImage: "",
 };
 
 Sidenav.propTypes = {
   color: PropTypes.oneOf(["primary", "secondary", "info", "success", "warning", "error", "dark"]),
   brand: PropTypes.string,
-  brandName: PropTypes.string.isRequired,
+  brandNameImage: PropTypes.string,
   routes: PropTypes.arrayOf(PropTypes.object).isRequired,
 };
 

@@ -420,7 +420,7 @@ export default function ScheduleSection() {
                 onChange={handleChangeTypeBase}
                 sx={{ p: 2 }}
               >
-                <FormControlLabel value="none" control={<Radio />} label="Thường" />
+                <FormControlLabel value="none" control={<Radio />} label="WorkShop" />
                 <FormControlLabel value="zone" control={<Radio />} label="Khu vực" />
                 <FormControlLabel value="seat" control={<Radio />} label="Ghế" />
               </RadioGroup>
@@ -443,7 +443,7 @@ export default function ScheduleSection() {
                       label="Giá vé"
                       type="number"
                       pop="money"
-                      value={ticketPriceZone}
+                      value={ticketPriceZone.toString()}
                       onChange={(e) => setTicketPriceZone(e.target.value)}
                       placeholder="Nhập giá vé"
                       error={Boolean(ticketPriceZoneError)}
@@ -452,7 +452,7 @@ export default function ScheduleSection() {
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <CustomTextField
-                      label="Tổng số lượng vé"
+                      label="Số lượng vé"
                       type="number"
                       value={ticketQuantity}
                       onChange={(e) => setTicketQuantity(e.target.value)}
@@ -502,14 +502,14 @@ export default function ScheduleSection() {
                         fullWidth
                         sx={{
                           mt: 4,
-                          backgroundColor: "#1976D2",
+                          backgroundColor: "#5669FF",
                           color: "#fff",
-                          border: "1px solid #1976D2", // ✅ thêm vào trạng thái mặc định
+                          border: "1px solid #5669FF", // ✅ thêm vào trạng thái mặc định
                           boxSizing: "border-box",
                           "&:hover": {
                             backgroundColor: "#fff",
-                            color: "#1976D2",
-                            border: "1px solid #1976D2", // giữ nguyên border khi hover
+                            color: "#5669FF",
+                            border: "1px solid #5669FF", // giữ nguyên border khi hover
                           },
                         }}
                       >
@@ -623,14 +623,14 @@ export default function ScheduleSection() {
                         variant="contained"
                         onClick={handleAddZone}
                         sx={{
-                          backgroundColor: "#1976D2",
+                          backgroundColor: "#5669FF",
                           color: "#fff",
-                          border: "1px solid #1976D2", // ✅ thêm vào trạng thái mặc định
+                          border: "1px solid #5669FF", // ✅ thêm vào trạng thái mặc định
                           boxSizing: "border-box",
                           "&:hover": {
                             backgroundColor: "#fff",
-                            color: "#1976D2",
-                            border: "1px solid #1976D2", // giữ nguyên border khi hover
+                            color: "#5669FF",
+                            border: "1px solid #5669FF", // giữ nguyên border khi hover
                           },
                         }}
                       >
@@ -731,14 +731,14 @@ export default function ScheduleSection() {
                         fullWidth
                         sx={{
                           mt: 4,
-                          backgroundColor: "#1976D2",
+                          backgroundColor: "#5669FF",
                           color: "#fff",
-                          border: "1px solid #1976D2", // ✅ thêm vào trạng thái mặc định
+                          border: "1px solid #5669FF", // ✅ thêm vào trạng thái mặc định
                           boxSizing: "border-box",
                           "&:hover": {
                             backgroundColor: "#fff",
-                            color: "#1976D2",
-                            border: "1px solid #1976D2", // giữ nguyên border khi hover
+                            color: "#5669FF",
+                            border: "1px solid #5669FF", // giữ nguyên border khi hover
                           },
                         }}
                       >
@@ -850,14 +850,14 @@ export default function ScheduleSection() {
                       fullWidth
                       sx={{
                         mt: 4,
-                        backgroundColor: "#1976D2",
+                        backgroundColor: "#5669FF",
                         color: "#fff",
-                        border: "1px solid #1976D2", // ✅ thêm vào trạng thái mặc định
+                        border: "1px solid #5669FF", // ✅ thêm vào trạng thái mặc định
                         boxSizing: "border-box",
                         "&:hover": {
                           backgroundColor: "#fff",
-                          color: "#1976D2",
-                          border: "1px solid #1976D2", // giữ nguyên border khi hover
+                          color: "#5669FF",
+                          border: "1px solid #5669FF", // giữ nguyên border khi hover
                         },
                       }}
                     >
@@ -916,7 +916,7 @@ export default function ScheduleSection() {
         </Paper>
       </Box>
       <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3 }}>
-        <Button
+        {/* <Button
           variant="outlined"
           onClick={handleSaveZoneOrSeat}
           sx={{
@@ -930,24 +930,24 @@ export default function ScheduleSection() {
           }}
         >
           Lưu khu vực
-        </Button>
+        </Button> */}
 
         <Button
           variant="contained"
           onClick={handleSubmit}
           sx={{
-            backgroundColor: "#1976D2",
+            backgroundColor: "#5669FF",
             color: "#fff",
-            border: "1px solid #1976D2",
+            border: "1px solid #5669FF",
             "&:hover": {
               backgroundColor: "#fff",
-              color: "#1976D2",
+              color: "#5669FF",
             },
           }}
         >
           Gửi
         </Button>
-        <Button
+        {/* <Button
           variant="contained"
           onClick={() => {
             dispatch(resetEventInfo());
@@ -964,7 +964,7 @@ export default function ScheduleSection() {
           }}
         >
           Xoá
-        </Button>
+        </Button> */}
         <Snackbar
           open={Boolean(alertStatus)}
           autoHideDuration={3000}

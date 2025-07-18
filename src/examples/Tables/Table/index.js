@@ -1,163 +1,115 @@
-/**
-=========================================================
-* Argon Dashboard 2 MUI - v3.0.1
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/argon-dashboard-material-ui
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
 import { useMemo } from "react";
-
-// prop-types is a library for typechecking of props
 import PropTypes from "prop-types";
-
-// uuid is a library for generating unique id
 import { v4 as uuidv4 } from "uuid";
+import {
+  Table as MuiTable,
+  TableBody,
+  TableContainer,
+  TableRow,
+} from "@mui/material";
 
-// @mui material components
-import { Table as MuiTable } from "@mui/material";
-import TableBody from "@mui/material/TableBody";
-import TableContainer from "@mui/material/TableContainer";
-import TableRow from "@mui/material/TableRow";
-
-// Argon Dashboard 2 MUI components
-import  ArgonBox from "components/ArgonBox";
+import ArgonBox from "components/ArgonBox";
 import ArgonAvatar from "components/ArgonAvatar";
 import ArgonTypography from "components/ArgonTypography";
 
-// Argon Dashboard 2 MUI base styles
-import typography from "assets/theme/base/typography";
-import borders from "assets/theme/base/borders";
+function Table({ columns = [], rows = [], sxTable = {} }) {
+  /* ---------- HEADER ---------- */
+  const header = (
+    <TableRow>
+      {columns.map(({ title, align = "left", width }, i) => (
+        <ArgonBox
+          key={i}
+          component="th"
+          width={width || "auto"}
+          px={3}
+          py={1.5}
+          textAlign={align}
+          fontSize="0.82rem"
+          fontWeight={700}
+          sx={{ whiteSpace: "nowrap", borderBottom: "1px solid #e0e0e0" }}
+        >
+          {title?.toUpperCase()}
+        </ArgonBox>
+      ))}
+    </TableRow>
+  );
 
-function Table({ columns, rows }) {
-  const { size, fontWeightBold } = typography;
-  const { borderWidth } = borders;
+  /* ---------- BODY ---------- */
+  const body = rows.map((row, rIdx) => (
+    <TableRow key={`row-${rIdx}`}>
+      {columns.map(({ field, align = "left" }) => {
+        const cell = row[field];
 
-  const renderColumns = columns.map(({ name, align, width }, key) => {
-    let pl;
-    let pr;
+        // hỗ trợ kiểu [avatarUrl, label]
+        if (Array.isArray(cell)) {
+          const [src, label] = cell;
+          return (
+            <ArgonBox key={uuidv4()} component="td" p={1} textAlign={align}>
+              <ArgonBox display="flex" alignItems="center">
+               <ArgonAvatar
+  src={src}
+  name={label}
+  variant="rounded"
+  size="custom"
+  width="96px"
+  height="96px"
+/>
 
-    if (key === 0) {
-      pl = 3;
-      pr = 3;
-    } else if (key === columns.length - 1) {
-      pl = 3;
-      pr = 3;
-    } else {
-      pl = 1;
-      pr = 1;
-    }
-
-    return (
-      <ArgonBox
-        key={name}
-        component="th"
-        width={width || "auto"}
-        pt={1.5}
-        pb={1.25}
-        pl={align === "left" ? pl : 3}
-        pr={align === "right" ? pr : 3}
-        textAlign={align}
-        fontSize="0.8rem"
-        fontWeight={fontWeightBold}
-        color="secondary"
-        opacity={0.7}
-        sx={({ palette: { light } }) => ({ borderBottom: `${borderWidth[1]} solid ${light.main}` })}
-      >
-        {name.toUpperCase()}
-      </ArgonBox>
-    );
-  });
-
-  const renderRows = rows.map((row, key) => {
-    const rowKey = `row-${key}`;
-
-    const tableRow = columns.map(({ name, align }) => {
-      let template;
-
-      if (Array.isArray(row[name])) {
-        template = (
-          <ArgonBox
-            key={uuidv4()}
-            component="td"
-            p={1}
-            sx={({ palette: { light } }) => ({
-              borderBottom: row.hasBorder ? `${borderWidth[1]} solid ${light.main}` : null,
-            })}
-          >
-            <ArgonBox display="flex" alignItems="center" py={0.5} px={1}>
-              <ArgonBox mr={2}>
-                <ArgonAvatar src={row[name][0]} name={row[name][1]} variant="rounded" size="sm" />
+                <ArgonTypography variant="body2">{label}</ArgonTypography>
               </ArgonBox>
-              <ArgonTypography variant="button" fontWeight="medium" sx={{ width: "max-content" }}>
-                {row[name][1]}
-              </ArgonTypography>
             </ArgonBox>
+          );
+        }
+
+        // ô bình thường
+        return (
+          <ArgonBox key={uuidv4()} component="td" p={1} textAlign={align}>
+            {cell}
           </ArgonBox>
         );
-      } else {
-        template = (
-          <ArgonBox
-            key={uuidv4()}
-            component="td"
-            p={1}
-            textAlign={align}
-            verticalAlign="middle"
-            lineHeight={0.65}
-            sx={({ palette: { light } }) => ({
-              borderBottom: row.hasBorder ? `${borderWidth[1]} solid ${light.main}` : null,
-            })}
-          >
-            <ArgonTypography
-              variant="button"
-              fontWeight="regular"
-              color="secondary"
-              sx={{ display: "inline-block", width: "max-content" }}
-            >
-              {row[name]}
-            </ArgonTypography>
-          </ArgonBox>
-        );
-      }
+      })}
+    </TableRow>
+  ));
 
-      return template;
-    });
-
-    return <TableRow key={rowKey}>{tableRow}</TableRow>;
-  });
-
+  /* ---------- RENDER ---------- */
   return useMemo(
     () => (
       <TableContainer>
-        <MuiTable>
-          <ArgonBox component="thead">
-            <TableRow>{renderColumns}</TableRow>
+        <MuiTable
+          sx={{
+            "& tbody tr:nth-of-type(even)": { backgroundColor: "#f7f7f7" },
+            "& tbody tr:hover": {
+              backgroundColor: "#e0e0e0",
+              transition: ".2s",
+            },
+            ...sxTable,
+          }}
+        >
+          <ArgonBox
+            component="thead"
+            sx={{ position: "sticky", top: 0, zIndex: 2, bgcolor: "#fafafa" }}
+          >
+            {header}
           </ArgonBox>
-          <TableBody>{renderRows}</TableBody>
+          <TableBody>{body}</TableBody>
         </MuiTable>
       </TableContainer>
     ),
-    [columns, rows]
+    [columns, rows, sxTable]
   );
 }
 
-// Setting default values for the props of Table
-Table.defaultProps = {
-  columns: [],
-  rows: [{}],
-};
-
-// Typechecking props for the Table
 Table.propTypes = {
-  columns: PropTypes.arrayOf(PropTypes.object),
+  columns: PropTypes.arrayOf(
+    PropTypes.shape({
+      title: PropTypes.string.isRequired, // nhãn cột
+      field: PropTypes.string.isRequired, // key tra trong row
+      align: PropTypes.oneOf(["left", "center", "right"]),
+      width: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    })
+  ),
   rows: PropTypes.arrayOf(PropTypes.object),
+  sxTable: PropTypes.object,
 };
 
 export default Table;

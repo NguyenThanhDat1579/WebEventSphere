@@ -49,7 +49,7 @@ function UserManagement() {
             px={3}
             py={2}
             sx={{
-              bgcolor: theme.palette.primary.light,
+              bgcolor: "#5669FF",
               color: theme.palette.primary.contrastText,
             }}
           >

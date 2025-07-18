@@ -1,99 +1,138 @@
-/**
-=========================================================
-* Argon Dashboard 2 MUI - v3.0.1
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/argon-dashboard-material-ui
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
 import { useMemo } from "react";
-
-// porp-types is a library for typechecking of props
 import PropTypes from "prop-types";
-
-// react-chartjs-2 components
 import { Bar } from "react-chartjs-2";
 
-// @mui material components
+// MUI
 import Card from "@mui/material/Card";
 
-// Argon Dashboard 2 MUI components
+// Argon Dashboard components
 import ArgonBox from "components/ArgonBox";
 import ArgonTypography from "components/ArgonTypography";
 
-// VerticalBarChart configurations
-import configs from "examples/Charts/BarCharts/VerticalBarChart/configs";
-
-// Argon Dashboard 2 MUI base styles
+// Base theme
 import colors from "assets/theme/base/colors";
 
+// Chart.js auto register
+import Chart from "chart.js/auto";
+
+// Gradient function
+const createGradient = (ctx, area) => {
+  const gradient = ctx.createLinearGradient(0, area.bottom, 0, area.top);
+  gradient.addColorStop(0, "#42a5f5");  // light blue
+  gradient.addColorStop(1, "#1e88e5");  // darker blue
+  return gradient;
+};
+
 function VerticalBarChart({ title, description, height, chart }) {
-  const chartDatasets = chart.datasets
-    ? chart.datasets.map((dataset) => ({
-        ...dataset,
-        weight: 5,
-        borderWidth: 0,
-        borderRadius: 4,
-        backgroundColor: colors[dataset.color]
-          ? colors[dataset.color || "dark"].main
-          : colors.dark.main,
-        fill: false,
-        maxBarThickness: 35,
-      }))
-    : [];
+const chartData = useMemo(() => {
+  const datasets = chart.datasets.map((dataset) => ({
+    ...dataset,
+    backgroundColor: (context) => {
+      const { ctx, chartArea } = context.chart;
+      if (!chartArea) return "#42a5f5";
+      return createGradient(ctx, chartArea);
+    },
+    borderRadius: {
+      topLeft: 12,   // ✅ Bo tròn góc trên trái
+      topRight: 12,  // ✅ Bo tròn góc trên phải
+      bottomLeft: 0,
+      bottomRight: 0,
+    },
+    borderSkipped: "bottom",  // ✅ Chỉ bỏ bo ở đáy (để bo trên)
+    barThickness: 60,
+    hoverBackgroundColor: "#1976d2",
+  }));
 
-  const { data, options } = configs(chart.labels || [], chartDatasets);
+  return {
+    labels: chart.labels,
+    datasets,
+  };
+}, [chart]);
 
-  const renderChart = (
-    <ArgonBox p={2}>
-      {title || description ? (
-        <ArgonBox px={description ? 1 : 0} pt={description ? 1 : 0}>
-          {title && (
-            <ArgonBox mb={1}>
-              <ArgonTypography variant="h6">{title}</ArgonTypography>
-            </ArgonBox>
-          )}
-          <ArgonBox mb={2}>
-            <ArgonTypography component="div" variant="button" fontWeight="regular" color="text">
-              {description}
-            </ArgonTypography>
+
+  const chartOptions = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: {
+      duration: 800,
+      easing: "easeOutQuart",
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: "#fff",
+        titleColor: "#000",
+        bodyColor: "#000",
+        borderColor: "#ccc",
+        borderWidth: 1,
+        cornerRadius: 6,
+        padding: 10,
+      },
+    },
+    scales: {
+      x: {
+        ticks: {
+          font: { size: 13, weight: "600" },
+          color: "#333",
+        },
+        grid: {
+          display: false,
+        },
+      },
+      y: {
+        ticks: {
+          font: { size: 13 },
+          color: "#666",
+        },
+        grid: {
+          color: "#e0e0e0",
+          borderDash: [4, 4],
+        },
+      },
+    },
+  }), []);
+
+  return (
+    <Card>
+      <ArgonBox p={2}>
+        {(title || description) && (
+          <ArgonBox px={description ? 1 : 0} pt={description ? 1 : 0}>
+            {title && (
+              <ArgonBox mb={1}>
+                <ArgonTypography variant="h6">{title}</ArgonTypography>
+              </ArgonBox>
+            )}
+            {description && (
+              <ArgonBox mb={2}>
+                <ArgonTypography component="div" variant="button" fontWeight="regular" color="text">
+                  {description}
+                </ArgonTypography>
+              </ArgonBox>
+            )}
           </ArgonBox>
+        )}
+        <ArgonBox height={height}>
+          <Bar data={chartData} options={chartOptions} />
         </ArgonBox>
-      ) : null}
-      {useMemo(
-        () => (
-          <ArgonBox height={height}>
-            <Bar data={data} options={options} />
-          </ArgonBox>
-        ),
-        [chart, height]
-      )}
-    </ArgonBox>
+      </ArgonBox>
+    </Card>
   );
-
-  return title || description ? <Card>{renderChart}</Card> : renderChart;
 }
 
-// Setting default values for the props of VerticalBarChart
 VerticalBarChart.defaultProps = {
   title: "",
   description: "",
   height: "19.125rem",
 };
 
-// Typechecking props for the VerticalBarChart
 VerticalBarChart.propTypes = {
   title: PropTypes.string,
   description: PropTypes.oneOfType([PropTypes.string, PropTypes.node]),
   height: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  chart: PropTypes.objectOf(PropTypes.array).isRequired,
+  chart: PropTypes.shape({
+    labels: PropTypes.array,
+    datasets: PropTypes.array,
+  }).isRequired,
 };
 
 export default VerticalBarChart;

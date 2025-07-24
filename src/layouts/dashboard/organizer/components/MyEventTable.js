@@ -112,6 +112,8 @@ function MyEventTable({ events, onViewDetail }) {
   const totalPages = Math.ceil(events.length / rowsPerPage);
   const paginatedEvents = events.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
+  
+
   return (
     <>
       <TableContainer component={Paper} sx={{ boxShadow: 2, overflowX: "auto", mt: -3 }}>
@@ -181,25 +183,6 @@ function MyEventTable({ events, onViewDetail }) {
                 </TableCell>
 
                 <TableCell> 
-                  
-                  {/* <Chip
-                      label={
-                        event.status === "Ongoing"
-                          ? "Đang diễn ra"
-                          : event.status === "Upcoming"
-                          ? "Sắp diễn ra"
-                          : "Đã kết thúc"
-                      }
-                      color={
-                        event.status === "Ongoing"
-                          ? "success"
-                          : event.status === "Upcoming"
-                          ? "error"
-                          : "default"
-                      }
-                      size="small"
-                      sx={{ color: "#fff" }}
-                    /> */}
                     {getStatusChip(event)}
                     </TableCell>
 
@@ -210,9 +193,11 @@ function MyEventTable({ events, onViewDetail }) {
                 </TableCell>
 
                 <TableCell>
-                  <Typography sx={{ fontWeight: 500, fontSize: "0.85rem" }}>
-                    {event.location || "Đang cập nhật"}
-                  </Typography>
+                  <Typography sx={{ fontWeight: 500, fontSize: "0.85rem", whiteSpace: "pre-line" }}>
+                      {event.location
+    ? event.location.split(", ").join("\n")
+    : "Đang cập nhật"}
+                    </Typography>
                 </TableCell>
 
                 <TableCell sx={{ textAlign: "center" }}>

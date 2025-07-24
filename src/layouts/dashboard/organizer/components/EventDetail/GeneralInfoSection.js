@@ -74,7 +74,6 @@ const GeneralInfoSection = ({
               border: "1px solid #ccc",
               borderRadius: 2,
               p: 5,
-              
               mt: 1,
             }}
             dangerouslySetInnerHTML={{

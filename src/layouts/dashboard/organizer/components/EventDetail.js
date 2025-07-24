@@ -122,6 +122,7 @@ const EventDetail = ({ eventId, onClose }) => {
 
               if (newZones.length > 0) {
                 changedData.zones = newZones;
+                changedData.showtimes = dataToSend.showtimes || [];
               }
 
               continue;
@@ -138,6 +139,26 @@ const EventDetail = ({ eventId, onClose }) => {
                   layout: newLayout,
                 },
               ];
+            }
+
+            const newShowtimes = dataToSend.showtimes || [];
+            const initialShowtimes = initialFormData.showtimes || [];
+
+            const cleanNew = newShowtimes.map((s) => ({
+              startTime: s.startTime,
+              endTime: s.endTime,
+            }));
+
+            const cleanInitial = initialShowtimes.map((s) => ({
+              startTime: s.startTime,
+              endTime: s.endTime,
+            }));
+
+            if (
+              JSON.stringify(cleanNew) !== JSON.stringify(cleanInitial) ||
+              initialShowtimes.length > 0 // 🟡 Có dữ liệu ban đầu
+            ) {
+              changedData.showtimes = cleanNew;
             }
 
             continue;

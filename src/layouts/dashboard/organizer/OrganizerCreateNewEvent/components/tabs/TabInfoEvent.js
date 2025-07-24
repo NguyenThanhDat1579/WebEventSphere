@@ -549,12 +549,12 @@ export default function TabInfoEvent({ onNext }) {
               </Typography>
             )}
           </Grid>
-          <Typography variant="h6" gutterBottom sx={{ mt: 5, px: 3, mb: -6 }}>
+          {/* <Typography variant="h6" gutterBottom sx={{ mt: 5, px: 3, mb: -6 }}>
             <span style={{ color: "red" }}>*</span> Hình ảnh liên quan
           </Typography>
 
           <Grid container spacing={2} sx={{ flexWrap: "nowrap", overflowX: "auto", mt: 2, p: 3 }}>
-            {/* Ảnh đã lưu (link cloudinary) */}
+        
             {images.map((url, index) => (
               <Grid item key={`saved-${index}`} sx={{ position: "relative" }}>
                 <img
@@ -588,7 +588,6 @@ export default function TabInfoEvent({ onNext }) {
               </Grid>
             ))}
 
-            {/* Ảnh tạm chưa upload */}
             {previewGallery.map((url, index) => (
               <Grid item key={`preview-${index}`} sx={{ position: "relative" }}>
                 <img
@@ -623,7 +622,6 @@ export default function TabInfoEvent({ onNext }) {
               </Grid>
             ))}
 
-            {/* Nút thêm ảnh mới */}
             <Grid item>
               <Box
                 component="label"
@@ -657,7 +655,7 @@ export default function TabInfoEvent({ onNext }) {
                 />
               </Box>
             </Grid>
-          </Grid>
+          </Grid> */}
           <Grid item xs={12}>
             <CustomTextField
               name="eventName"

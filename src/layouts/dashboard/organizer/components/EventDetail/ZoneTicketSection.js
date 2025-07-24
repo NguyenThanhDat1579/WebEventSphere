@@ -67,6 +67,12 @@ const ZoneTicketSection = ({ formData, setFormData, isEditing }) => {
     }));
   };
 
+  const uniqueZones = formData.zoneTickets.filter(
+  (zone, index, self) =>
+    index === self.findIndex((z) => z.name.trim().toLowerCase() === zone.name.trim().toLowerCase())
+);
+
+
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
@@ -78,7 +84,7 @@ const ZoneTicketSection = ({ formData, setFormData, isEditing }) => {
       <Divider sx={{ my: 2 }} />
 
      <Grid container spacing={2}>
-        {formData.zoneTickets.map((zone, index) => (
+        {uniqueZones.map((zone, index) => (
           <Grid item xs={12} sm={6} key={index}>
             <Paper sx={{ p: 2, mb: 2, border: '1px solid #ccc', }}>
               <Grid container spacing={2} alignItems="center">

@@ -116,7 +116,7 @@ const ImageSection = ({
       </Grid>
 
       {/* Ảnh liên quan */}
-      {(isEditing || initialFormData.images?.length > 0 || formData.images?.length > 0) && (
+      {/* {(isEditing || initialFormData.images?.length > 0 || formData.images?.length > 0) && (
         <Grid item xs={12}>
           <Box mt={3}>
             <Typography fontSize={16} fontWeight={600} gutterBottom>
@@ -205,7 +205,7 @@ const ImageSection = ({
             </Box>
           </Box>
         </Grid>
-      )}
+      )} */}
     </>
   );
 };

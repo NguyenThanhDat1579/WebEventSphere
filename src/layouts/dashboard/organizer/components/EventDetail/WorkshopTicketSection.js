@@ -14,8 +14,8 @@ const WorkshopTicketSection = ({ formData, setFormData, isEditing }) => {
   // Đồng bộ giá trị từ formData vào local state mỗi khi mở chỉnh sửa
   useEffect(() => {
     if (isEditingWorkshop) {
-      setLocalPrice(formData.ticketPrice || "");
-      setLocalQuantity(formData.ticketQuantity || "");
+      setLocalPrice(formData?.showtimes[0]?.ticketPrice || "");
+      setLocalQuantity(formData?.showtimes[0]?.ticketQuantity || "");  
     }
   }, [isEditingWorkshop, formData.ticketPrice, formData.ticketQuantity]);
 
@@ -91,37 +91,39 @@ const WorkshopTicketSection = ({ formData, setFormData, isEditing }) => {
           </Typography>
 
           {isEditing && (
-            <IconButton onClick={() => setIsEditingWorkshop(true)}>
+            <IconButton  onClick={() => {                    
+                      setIsEditingWorkshop(true);
+                    }}>
               <EditIcon />
             </IconButton>
           )}
         </Box>
-      ) : (
-        <Box mt={2} display="flex" gap={2} alignItems="center">
-          <CustomTextField
-            label="Giá vé"
-            pop="money"
-            type="number"
-            value={localPrice}
-            onChange={(e) => handleFieldChange("ticketPrice", e.target.value)}
-            error={Boolean(error.ticketPrice)}
-            helperText={error.ticketPrice}
-          />
+      ) : isEditing ? (
+            <Box mt={2} display="flex" gap={2} alignItems="center">
+              <CustomTextField
+                label="Giá vé"
+                pop="money"
+                type="number"
+                value={localPrice}
+                onChange={(e) => handleFieldChange("ticketPrice", e.target.value)}
+                error={Boolean(error.ticketPrice)}
+                helperText={error.ticketPrice}
+              />
 
-          <CustomTextField
-            label="Số lượng vé"
-            type="number"
-            value={localQuantity}
-            onChange={(e) => handleFieldChange("ticketQuantity", e.target.value)}
-            error={Boolean(error.ticketQuantity)}
-            helperText={error.ticketQuantity}
-          />
+              <CustomTextField
+                label="Số lượng vé"
+                type="number"
+                value={localQuantity}
+                onChange={(e) => handleFieldChange("ticketQuantity", e.target.value)}
+                error={Boolean(error.ticketQuantity)}
+                helperText={error.ticketQuantity}
+              />
 
-          <IconButton onClick={handleSave} sx={{ mt: 4 }} >
-            <CheckIcon  color="success" />
-          </IconButton>
-        </Box>
-      )}
+              <IconButton onClick={handleSave} sx={{ mt: 4 }} >
+                <CheckIcon  color="success" />
+              </IconButton>
+            </Box>
+          ) : null }
     </Box>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Grid,
   Typography,
@@ -37,7 +37,6 @@ function OrganizerRevenue() {
   const [selectedEventId, setSelectedEventId] = useState(eventId || "");
   const [selectedEvent, setSelectedEvent] = useState([]);
   const [events, setEvents] = useState([]);
-  const [gradientChart, setGradientChart] = useState({ labels: [], datasets: [] });
   function getEventRevenue(event) {
     return event?.eventTotalRevenue || 0;
   }
@@ -48,63 +47,56 @@ function OrganizerRevenue() {
     return event?.totalTicketsEvent || 0;
   }
 
-  function getEventDateLabels(event) {
-    const startDate = new Date(event.timeStart);
-    const endDate = new Date(event.timeEnd);
+  function calculateEstimatedRevenue(event) {
+  if (!event || !event.showtimes) return 0;
 
-    if (!startDate || !endDate || isNaN(startDate) || isNaN(endDate) || startDate > endDate) {
-      console.error("❌ Invalid interval:", { startDate, endDate });
-      return [];
+  return event.showtimes.reduce((total, showtime) => {
+    if (event.typeBase === 'none') {
+      // Dạng "none": ticketPrice * ticketQuantity
+      const price = showtime.ticketPrice || 0;
+      const quantity = showtime.ticketQuantity || 0;
+      return total + price * quantity;
     }
 
-    const days = eachDayOfInterval({ start: startDate, end: endDate });
-    return days.map((day) => format(day, "dd/MM"));
-  }
+    if (event.typeBase === 'seat' || event.typeBase === 'zone') {
+      const sold = showtime.soldTickets || 0;
+      const revenue = showtime.revenue || 0;
+      const totalTickets = showtime.totalTickets || 0;
 
-  function buildLineChartDataFromEvent(event) {
-  const dateLabels = getEventDateLabels(event);
-  const showtimes = event.showtimes || [];
+      if (sold === 0 || revenue === 0 || totalTickets === 0) return total;
 
-  const revenueData = [];
-  const ticketData = [];
+      const avgPrice = revenue / sold;
+      return total + avgPrice * totalTickets;
+    }
 
-  // Chuyển labels thành các ngày thực tế để đối chiếu
-  const days = dateLabels.map((label) => {
-    const [day, month] = label.split("/").map(Number);
-    const year = new Date(event.timeStart).getFullYear();
-    return new Date(year, month - 1, day);
-  });
-
-  for (const day of days) {
-    // Lọc các showtime diễn ra trong ngày này
-    const showtimeInDay = showtimes.filter((st) =>
-      isSameDay(new Date(st.startTime), day)
-    );
-
-    const revenueForDay = showtimeInDay.reduce(
-      (sum, s) => sum + (s.revenue || 0),
-      0
-    );
-
-    const ticketsForDay = showtimeInDay.reduce(
-      (sum, s) => sum + (s.soldTickets || 0),
-      0
-    );
-
-    revenueData.push(revenueForDay);
-    ticketData.push(ticketsForDay);
-  }
-
-  return {
-    labels: dateLabels,
-    datasets: [
-      { label: "Doanh thu (₫)", data: revenueData, color: "info" },
-      { label: "Số vé đã bán", data: ticketData, color: "success" },
-    ],
-  };
+    return total;
+  }, 0);
 }
+  function calculateEstimatedRevenue(event) {
+    if (!event || !event.showtimes) return 0;
 
+    return event.showtimes.reduce((total, showtime) => {
+      if (event.typeBase === 'none') {
+        // Dạng "none": ticketPrice * ticketQuantity
+        const price = showtime.ticketPrice || 0;
+        const quantity = showtime.ticketQuantity || 0;
+        return total + price * quantity;
+      }
 
+      if (event.typeBase === 'seat' || event.typeBase === 'zone') {
+        const sold = showtime.soldTickets || 0;
+        const revenue = showtime.revenue || 0;
+        const totalTickets = showtime.totalTickets || 0;
+
+        if (sold === 0 || revenue === 0 || totalTickets === 0) return total;
+
+        const avgPrice = revenue / sold;
+        return total + avgPrice * totalTickets;
+      }
+
+      return total;
+    }, 0);
+  }
   function getShowtimeDetailsByEvent(event) {
   if (!event || !event.showtimes) return [];
 
@@ -162,12 +154,7 @@ function OrganizerRevenue() {
     }
   }, [selectedEventId, eventId, events]);
 
-  useEffect(() => {
-    if (selectedEvent) {
-      const chartData = buildLineChartDataFromEvent(selectedEvent);
-      setGradientChart(chartData);
-    }
-  }, [selectedEvent]);
+
   console.log("event", JSON.stringify(selectedEvent, null, 2));
 
   const revenue = getEventRevenue(selectedEvent);
@@ -176,7 +163,8 @@ function OrganizerRevenue() {
   const ticketTableData = getShowtimeDetailsByEvent(selectedEvent);
   console.log("ticketTableData ", ticketTableData)
   const ticketPrice = revenue / sold || 0; // Tránh chia cho 0
-  const maxRevenue = total * ticketPrice;
+  const maxRevenue = calculateEstimatedRevenue(selectedEvent);
+   console.log("maxRevenue ", maxRevenue)
 
   const eventOptions = events.map((e) => ({
     label: e.name,
@@ -274,12 +262,7 @@ function OrganizerRevenue() {
           <Grid container spacing={3} mb={3} ml={0.5}>
             <Grid item xs={12}>
               <Box mt={4} sx={{ backgroundColor: "#fff", p: 3, borderRadius: 5 }}>
-                <LineChartDualAxis
-                  key={selectedEventId}
-                  labels={gradientChart.labels}
-                  revenueData={gradientChart.datasets?.[0]?.data || []}
-                  ticketData={gradientChart.datasets?.[1]?.data || []}
-                />
+                <LineChartDualAxis event={selectedEvent} />
               </Box>
             </Grid>
           </Grid>

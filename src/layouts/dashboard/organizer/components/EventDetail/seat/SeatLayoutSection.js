@@ -32,7 +32,6 @@ const SeatLayoutSection = ({ isEditing, formData, setFormData }) => {
       }
 
       const nextFormData = { ...prev, zones: updatedZones };
-      console.log("🧩 SeatLayoutSection cập nhật layout:",nextFormData.zones?.[0]?.layout);
 
       return nextFormData;
     });

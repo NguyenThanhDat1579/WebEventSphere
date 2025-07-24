@@ -11,6 +11,7 @@ import {
   TableCell,
   TableBody,
   Paper,
+  Chip,
 } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
@@ -19,166 +20,115 @@ import SelectMenu from "./OrganizerCreateNewEvent/components/SelectMenu";
 import eventApi from "../../../api/utils/eventApi";
 import ArgonBox from "components/ArgonBox";
 import ArgonButton from "components/ArgonButton";
+import CheckIcon from "@mui/icons-material/Check";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import CancelIcon from "@mui/icons-material/Cancel";
 
 function OrganizerTicketsAndAttendees() {
-  const [selectedEvent, setSelectedEvent] = useState("");
-  const [selectedShowtime, setSelectedShowtime] = useState("");
-  const [ticketFilter, setTicketFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [attendees, setAttendees] = useState([]);
   const [organizationEvents, setOrganizationEvents] = useState([]);
-  const [showtimeOptions, setShowtimeOptions] = useState([]); // lấy từ tickets API
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [eventDetail, setEventDetail] = useState({});
+  const [selectedShowtime, setSelectedShowtime] = useState("");
+  const [attendees, setAttendees] = useState([]);
 
- // 1. Lấy danh sách sự kiện mà tổ chức đang sở hữu
-    useEffect(() => {
-      const fetchEvents = async () => {
-        try {
-          const res = await eventApi.getEventOfOrganization();
-          setOrganizationEvents(res.data?.events || []);
-        } catch (error) {
-          console.error("❌ Lỗi lấy danh sách sự kiện của tổ chức:", error);
-        }
-      };
+  const [localAttendees, setLocalAttendees] = useState(attendees);
 
-      fetchEvents();
-    }, []);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const filteredAttendees = localAttendees.filter((attendee) => {
+  const matchesSearch =
+    attendee.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    attendee.email?.toLowerCase().includes(searchTerm.toLowerCase());
+
+  const matchesStatus =
+    statusFilter === "all" || attendee.status === statusFilter;
+
+  return matchesSearch && matchesStatus;
+});
 
 
-// 2. Khi chọn sự kiện, gọi API lấy vé + danh sách suất diễn (zoneTicketId)
-useEffect(() => {
-  const fetchTickets = async () => {
-    if (!selectedEvent) {
-      setShowtimeOptions([]);
-      return;
-    }
-
-    try {
-      const res = await eventApi.getAllTicketsByEvent(selectedEvent);
-      const tickets = res.data?.data?.tickets || [];
-     const groupBy = (array, keyGetter) => {
-      const map = new Map();
-      array.forEach((item) => {
-        const key = keyGetter(item);
-        const collection = map.get(key);
-        if (!collection) {
-          map.set(key, [item]);
-        } else {
-          collection.push(item);
-        }
-      });
-      return map;
+  const handleLocalCheckIn = (index) => {
+      setLocalAttendees((prev) =>
+        prev.map((attendee, i) =>
+          i === index ? { ...attendee, status: "used" } : attendee
+        )
+      );
     };
 
-    const formatTime = (date) =>
-      `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+  const handleLocalCancel = (index) => {
+      setLocalAttendees((prev) => {
+        const updated = [...prev];
+        const current = updated[index];
 
-    const formatDate = (date) =>
-      `${date.getDate().toString().padStart(2, "0")}/${
-        (date.getMonth() + 1).toString().padStart(2, "0")
-      }/${date.getFullYear()}`;
+        if (current.status === "canceled") {
+          current.status = "issued"; // Bỏ hủy
+        } else {
+          current.status = "canceled"; // Hủy
+        }
 
-    const grouped = groupBy(tickets, (t) => t.name);
+        return updated;
+      });
+    };
 
-    const formattedShowtimes = Array.from(grouped.entries()).map(([name, items]) => {
-      const times = items.map((t) => ({
-        start: new Date(t.startTime),
-        end: new Date(t.endTime),
-        value: t.zoneTicketId || t.ticketId || t._id,
-      }));
 
-      // Dùng thời gian sớm nhất và trễ nhất
-      const earliestStart = new Date(Math.min(...times.map((t) => t.start.getTime())));
-      const latestEnd = new Date(Math.max(...times.map((t) => t.end.getTime())));
+  // Lấy danh sách sự kiện của tổ chức
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const res = await eventApi.getEventOfOrganization();
+        setOrganizationEvents(res.data?.events || []);
+      } catch (error) {
+        console.error("❌ Lỗi lấy danh sách sự kiện của tổ chức:", error);
+      }
+    };
 
-      return {
-        label: `${formatTime(earliestStart)} - ${formatTime(latestEnd)} ${formatDate(earliestStart)} - ${name}`,
-        value: times[0].value, // chọn 1 value đại diện (hoặc cần xử lý nhiều value nếu dùng)
-      };
-    });
+    fetchEvents();
+  }, []);
 
-    setShowtimeOptions(formattedShowtimes);
+  // Gọi danh sách vé theo sự kiện
+  useEffect(() => {
+    const fetchAttendees = async () => {
+      if (!selectedEvent) {
+        setAttendees([]);
+        return;
+      }
 
-    } catch (error) {
-      console.error("Lỗi khi lấy danh sách suất diễn:", error);
-      setShowtimeOptions([]);
-    }
-  };
+      try {
+        const res = await eventApi.getAllTicketsByEvent(selectedEvent);
+        console.log("danh sách vé", res.data);
+        setEventDetail(res.data.data)
+      } catch (error) {
+        console.error("❌ Lỗi lấy danh sách vé của sự kiện:", error);
+      }
+    };
 
-  fetchTickets();
-}, [selectedEvent]);
+    fetchAttendees();
+  }, [selectedEvent]);
 
-// 3. Khi chọn cả sự kiện và suất diễn, lọc người dùng đã mua vé theo zone
-useEffect(() => {
-  const fetchAttendees = async () => {
-    if (!selectedEvent || !selectedShowtime) {
+
+   useEffect(() => {
+    if (!eventDetail?.soldTickets) {
       setAttendees([]);
       return;
     }
 
-    try {
-      const res = await eventApi.getAllTicketsByEvent(selectedEvent);
-      const soldTickets = res.data?.data?.soldTickets || [];
-
-      const filtered = soldTickets.filter(
-        (ticket) => ticket.zoneTicketId === selectedShowtime
+    if (selectedShowtime) {
+      const filtered = eventDetail.soldTickets.filter(
+        (ticket) => ticket.showtimeId === selectedShowtime
       );
-
-      const mapped = filtered.map((item) => ({
-        id: item.ticketId,
-        name: item.userName,
-        email: item.userName,
-        ticketType: item.zoneName,
-        status:
-          item.status === "issued"
-            ? "not-used"
-            : item.status === "used"
-            ? "checked-in"
-            : "cancelled",
-      }));
-
-      setAttendees(mapped);
-    } catch (error) {
-      console.error("Lỗi lấy danh sách người tham dự:", error);
-      setAttendees([]);
+      setAttendees(filtered);
+    } else {
+      // Không có selectedShowtime → hiện toàn bộ
+      setAttendees(eventDetail.soldTickets);
     }
-  };
+  }, [selectedShowtime, eventDetail]);
 
-  fetchAttendees();
-}, [selectedEvent, selectedShowtime]);
+  useEffect(() => {
+  setLocalAttendees(attendees);
+}, [attendees]);
 
-  // Check-in một người
-  const handleCheckIn = (id) => {
-    setAttendees((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status: "checked-in" } : a))
-    );
-  };
 
-  // Hủy vé một người
-  const handleCancel = (id) => {
-    setAttendees((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status: "cancelled" } : a))
-    );
-  };
-
-  // Làm mới bộ lọc
-  const handleResetFilters = () => {
-    setTicketFilter("");
-    setStatusFilter("");
-    setSearchTerm("");
-  };
-
-  // Lọc người tham dự theo từ khoá, loại vé, trạng thái
-  const filteredAttendees = attendees.filter((attendee) => {
-    const matchesSearch =
-      attendee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      attendee.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTicket =
-      ticketFilter === "" || attendee.ticketType.toLowerCase() === ticketFilter;
-    const matchesStatus =
-      statusFilter === "" || attendee.status === statusFilter;
-    return matchesSearch && matchesTicket && matchesStatus;
-  });
 
   return (
     <DashboardLayout>
@@ -206,16 +156,7 @@ useEffect(() => {
           value: event._id,
         }))}
            />
-        </Box>
-
-        <Box sx={{ minWidth: 500 }}>
-          <SelectMenu
-            label="Chọn suất diễn"
-            value={selectedShowtime}
-            onChange={(val) => setSelectedShowtime(val)}
-           options={showtimeOptions}
-          />
-        </Box>
+        </Box>     
       </Box>
     </Paper>
 
@@ -229,18 +170,31 @@ useEffect(() => {
             <TextField
               placeholder="Tìm kiếm tên / email"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+               onChange={(e) => setSearchTerm(e.target.value)}
+
               sx={{ minWidth: 300 }}
             />
-            <Box sx={{ minWidth: 150 }}>
+              <Box sx={{ minWidth: 300 }}>
+            <SelectMenu
+              label="Chọn suất chiếu"
+              value={selectedShowtime}
+              onChange={(val) => setSelectedShowtime(val)}
+              options={ eventDetail?.tickets?.map((ticket) => ({
+                label: ticket.name,
+                value: ticket.showtimeId,
+              }))}
+            />
+            </Box>
+            <Box sx={{ minWidth: 180 }}>
               <SelectMenu
                 label="Trạng thái"
                 value={statusFilter}
                 onChange={(val) => setStatusFilter(val)}
                 options={[
-                  { label: "✅ Đã check-in", value: "checked-in" },
-                  { label: "❌ Chưa sử dụng", value: "not-used" },
-                  { label: "🚫 Hủy", value: "cancelled" },
+                  { label: "Tất cả", value: "all" },
+                  { label: "Đã check-in", value: "used" },
+                  { label: "Chưa sử dụng", value: "issued" },
+                  { label: "Đã huỷ", value: "canceled" },
                 ]}
               />
             </Box>
@@ -249,7 +203,11 @@ useEffect(() => {
                   color="info"
                   size="small"
                   variant="contained"
-                  onClick={handleResetFilters}
+                   onClick={() => {
+                    setSearchTerm("");
+                    setStatusFilter("all");
+                    setSelectedShowtime("")
+                  }}
                 >
                    Làm mới
                 </ArgonButton>
@@ -258,67 +216,77 @@ useEffect(() => {
           </Box>
 
           {/* Bảng danh sách người tham dự */}
-          <TableContainer>
+           <TableContainer>
             <Table>
-      
-                <TableRow>
-                  <TableCell sx={{ width: "25%",fontWeight: 600, fontSize: "0.95rem"}}>Tên khách</TableCell>
-                  <TableCell sx={{ width: "25%",fontWeight: 600, fontSize: "0.95rem" }}>Email</TableCell>
-                  <TableCell sx={{ width: "15%",fontWeight: 600, fontSize: "0.95rem" }}>Loại vé</TableCell>
-                  <TableCell sx={{ width: "15%",fontWeight: 600, fontSize: "0.95rem" }}>Trạng thái</TableCell>
-                  <TableCell sx={{ width: "20%",fontWeight: 600, fontSize: "0.95rem" }}>Hành động</TableCell>
-                </TableRow>
-
+              <TableRow>
+                 <TableCell sx={{ width: "5%", fontWeight: 600 }}>STT</TableCell>
+                <TableCell sx={{ width: "25%", fontWeight: 600 }}>
+                  Email
+                </TableCell>
+                <TableCell sx={{ width: "15%", fontWeight: 600 }}>
+                  Trạng thái
+                </TableCell>
+                <TableCell sx={{ width: "20%", fontWeight: 600 }}>
+                  Hành động
+                </TableCell>
+              </TableRow>
               <TableBody>
-                {filteredAttendees.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5}>Không có người tham dự</TableCell>
+               {filteredAttendees.map((attendee, index) => (
+                  <TableRow key={attendee.id}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{attendee.userName}</TableCell>
+                    <TableCell>
+                     {attendee.status === "used" ? (
+                        <Chip
+                          label="Đã check-in"
+                          color="success"
+                          icon={<CheckIcon />}
+                          sx={{ color: '#fff' }}
+                        />
+                      ) : attendee.status === "issued" ? (
+                        <Chip
+                          label="Chưa sử dụng"
+                          color="warning"
+                          icon={<AccessTimeIcon />}
+                          sx={{ color: '#fff' }}
+                        />
+                      ) : (
+                        <Chip
+                          label="Đã hủy"
+                          color="error"
+                          icon={<CancelIcon />}
+                           sx={{ color: '#fff' }}
+                        />
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {attendee.status === "issued" && (
+                        <Button
+                          size="small"
+                          color="success"
+                          onClick={() => handleLocalCheckIn(index)}
+                        >
+                          Check-in
+                        </Button>
+                      )}
+                      {attendee.status !== "used" && (
+                        <Button
+                          size="small"
+                          color="error"
+                          onClick={() => handleLocalCancel(index)}
+                          sx={{ ml: 1 }}
+                        >
+                           {attendee.status === "canceled" ? "Bỏ hủy" : "Hủy"}
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
-                ) : (
-                  filteredAttendees.map((attendee) => (
-                    <TableRow key={attendee.id}>
-                      <TableCell>{attendee.name}</TableCell>
-                      <TableCell>{attendee.email}</TableCell>
-                      <TableCell>{attendee.ticketType}</TableCell>
-                      <TableCell>
-                        {attendee.status === "checked-in"
-                          ? "✅ Đã check-in"
-                          : attendee.status === "not-used"
-                          ? "❌ Chưa sử dụng"
-                          : "🚫 Hủy"}
-                      </TableCell>
-                      <TableCell>
-                        {attendee.status === "not-used" && (
-                          <Button
-                            size="small"
-                            color="success"
-                            onClick={() => handleCheckIn(attendee.id)}
-                          >
-                            Check-in
-                          </Button>
-                        )}
-                        {attendee.status !== "cancelled" && (
-                          <Button
-                            size="small"
-                            color="error"
-                            onClick={() => handleCancel(attendee.id)}
-                            sx={{ ml: 1 }}
-                          >
-                            Hủy
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
+                ))}
+
               </TableBody>
             </Table>
           </TableContainer>
-
-          
         </Paper>
-
-        <Footer />
       </Box>
     </DashboardLayout>
   );

@@ -34,9 +34,6 @@ const transformEvents = (events) =>
     }
 
 
-    const ticketPrice = parseInt(event.ticketPrice, 10) || 0;
-    const soldTickets = event.soldTickets || 0;
-    const totalTickets = event.ticketQuantity || 0;
 
     return {
       id: event._id, // giữ nguyên
@@ -44,7 +41,7 @@ const transformEvents = (events) =>
       avatar: event.avatar,
       timeStart: event.timeStart,
       timeEnd: event.timeEnd,
-      location: "Đang cập nhật", // giả định
+      location: event.location, // giả định
       showtimes: event.showtimes ?? [], // ✅ thêm showtimes đầy đủ
 
       // Tổng số vé và vé đã bán toàn sự kiện
@@ -134,6 +131,7 @@ function OrganizerMyEvent() {
     setIsDetailView(true);
   };
 
+
   return (
     <DashboardLayout>
       <DashboardNavbar />
@@ -148,7 +146,7 @@ function OrganizerMyEvent() {
                   onSearch={handleSearch}
                   onStatusFilter={handleStatusFilter}
                   onDateRange={handleDateRange}
-                   onResetData={fetchEvents}
+                  onResetData={fetchEvents}
                 />
               </Grid>
             </Grid>

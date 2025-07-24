@@ -25,33 +25,29 @@ const ITEMS_PER_PAGE = 8;
 function EventTable({ events }) {
   const [currentPage, setCurrentPage] = useState(1);
 
-  const getStatusChip = (event) => {
-    const now = Date.now();
-    const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
-    const showtimes = event.showtimes || [];
+  console.log("✅ Sự kiện truyền vào EventTable:", events);
 
-    if (!showtimes.length) {
+  const getStatusChip = (event) => {
+  const now = Date.now();
+  const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+
+  const { timeStart, timeEnd } = event;
+
+    if (!timeStart || !timeEnd) {
       return <Chip label="Chưa có lịch" color="default" size="small" sx={{ color: "#fff" }} />;
     }
 
-    const start = Math.min(...showtimes.map((s) => s.startTime));
-    const end = Math.max(...showtimes.map((s) => s.endTime));
-
-    if (now >= start && now <= end) {
-      return <Chip label="Đang diễn ra" color="success" size="small" sx={{ color: "#fff" }} />;
+    if (now > timeEnd) {
+      return <Chip label="Kết thúc bán vé" color="default" size="small" sx={{ color: "#fff" }} />;
     }
 
-    const timeUntilStart = start - now;
-    if (timeUntilStart > 0 && timeUntilStart <= oneWeekMs) {
-      return <Chip label="Sắp diễn ra" color="error" size="small" sx={{ color: "#fff" }} />;
+    if (timeStart - now > oneWeekMs) {
+      return <Chip label="Sắp mở bán" color="warning" size="small" sx={{ color: "#fff" }} />;
     }
 
-    if (timeUntilStart > oneWeekMs) {
-      return <Chip label="Chưa diễn ra" color="warning" size="small" sx={{ color: "#fff" }} />;
-    }
-
-    return <Chip label="Đã kết thúc" color="default" size="small" sx={{ color: "#fff" }} />;
+    return <Chip label="Đang mở bán" color="success" size="small" sx={{ color: "#fff" }} />;
   };
+
 
   const totalPages = Math.ceil(events.length / ITEMS_PER_PAGE);
   const paginatedEvents = events.slice(
@@ -59,16 +55,18 @@ function EventTable({ events }) {
     currentPage * ITEMS_PER_PAGE
   );
 
+  
+
   return (
     <Box>
       <TableContainer component={Paper} sx={{ boxShadow: 2, overflowX: "auto" }}>
         <Table size="medium" sx={{ minWidth: 1000 }}>
           <TableRow sx={{ backgroundColor: "#fff" }}>
-            <TableCell sx={{ width: "25%", fontWeight: 600, fontSize: "0.95rem" }}>
+            <TableCell sx={{ width: "30%", fontWeight: 600, fontSize: "0.95rem" }}>
               Sự kiện
             </TableCell>
             <TableCell sx={{ width: "20%", fontWeight: 600, fontSize: "0.95rem" }}>
-              Ngày diễn ra
+              Các ngày diễn ra
             </TableCell>
             <TableCell sx={{ width: "20%", fontWeight: 600, fontSize: "0.95rem" }}>
               Trạng thái
@@ -83,20 +81,29 @@ function EventTable({ events }) {
 
           <TableBody>
             {paginatedEvents.map((event, index) => {
-              const showtimes = event.showtimes || [];
-
+              const showtimes = event.showtimes || []; // Lấy showtimes từ từng sự kiện
               let dateDisplay = "Chưa có lịch";
+              let detailedShowtimes = [];
+
               if (showtimes.length > 0) {
                 const minStart = Math.min(...showtimes.map((s) => s.startTime));
                 const maxEnd = Math.max(...showtimes.map((s) => s.endTime));
                 const startDate = format(new Date(minStart), "dd/MM/yyyy");
                 const endDate = format(new Date(maxEnd), "dd/MM/yyyy");
                 dateDisplay = startDate === endDate ? startDate : `${startDate} - ${endDate}`;
+
+                // ✅ Danh sách suất diễn chi tiết
+                detailedShowtimes = showtimes.map((s) => {
+                  const start = format(new Date(s.startTime), "HH:mm");
+                  const end = format(new Date(s.endTime), "HH:mm");
+                  const date = format(new Date(s.startTime), "dd/MM/yyyy");
+                  return `${start} - ${end} ${date}`;
+                });
               }
 
               const soldTickets = event.soldTickets || 0;
-              const totalTickets = event.ticketQuantity || 0;
-              const revenue = event.revenue || 0;
+              const totalTickets = event.totalTicketsEvent || 0;
+              const revenue = event.eventTotalRevenue || 0;
 
               return (
                 <TableRow
@@ -122,7 +129,14 @@ function EventTable({ events }) {
 
                   <TableCell>
                     <Typography sx={{ fontWeight: 500, fontSize: "0.85rem" }}>
-                      {dateDisplay}
+                      {detailedShowtimes.length > 0
+                        ? detailedShowtimes.map((item, index) => (
+                            <span key={index}>
+                              {item}
+                              <br />
+                            </span>
+                          ))
+                        : "Chưa có lịch"}
                     </Typography>
                   </TableCell>
 
@@ -136,7 +150,7 @@ function EventTable({ events }) {
 
                   <TableCell>
                     <Typography sx={{ fontWeight: 600, fontSize: "0.85rem" }}>
-                      {revenue > 0 ? revenue.toLocaleString("vi-VN") + " ₫" : "Miễn phí"}
+                      {revenue > 0 ? revenue.toLocaleString("vi-VN") + " ₫" : "0 đ"}
                     </Typography>
                   </TableCell>
                 </TableRow>

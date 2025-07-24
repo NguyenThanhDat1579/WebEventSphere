@@ -1,10 +1,3 @@
-/* ==================================================================
-   AdminDashboard.jsx
-   • KPI tổng quan + biểu đồ cột 2 tháng
-   • Danh sách CARD sự kiện (hover, click → load chi tiết)
-   • Chi tiết có nút “Quay lại”, loading spinner trong khi fetch
-=================================================================== */
-
 import { useEffect, useState } from "react";
 import {
   Grid, Card, CardContent, CardMedia, Typography, Box, Chip,
@@ -46,7 +39,7 @@ useEffect(() => {
   const fetchAll = async () => {
     try {
       setLoadingDashboard(true);
-      // gọi song song 2 API
+
       const [revRes, evtRes] = await Promise.all([
         revenueApi.getRevenue(),
         eventApi.getAllHome(),
@@ -55,42 +48,53 @@ useEffect(() => {
       const revenueData = revRes.data?.eventsRevenue ?? [];
       const eventList   = evtRes.data?.data        ?? [];
 
-      /* ---------- Thời gian khóa ---------- */
+      // map revenue theo eventId để dễ tra
+      const revenueMap = new Map();
+      revenueData.forEach(ev => revenueMap.set(ev.eventId, ev));
+
+      // lọc chỉ các sự kiện có revenue
+      // lọc chỉ các sự kiện có revenue VÀ có avatar + location + timeStart/timeEnd đầy đủ
+const filteredEvents = eventList.filter(ev =>
+  revenueMap.has(ev._id) &&
+  ev.avatar &&
+  ev.location &&
+  ev.timeStart &&
+  ev.timeEnd
+);
+
+
+      // Khóa thời gian tháng hiện tại và trước
       const mNow  = dayjs().format("YYYY-MM");
       const mPrev = dayjs().subtract(1, "month").format("YYYY-MM");
-      
 
-      /* ---------- DOANH THU – VÉ ---------- */
-      let revNow = 0,
-          revPrev = 0,
-          tickets = 0;
+      let revNow = 0, revPrev = 0, tickets = 0;
+      const now = Date.now();
+      let endedCount = 0;
 
-      revenueData.forEach(ev => {
-        const cur  = ev.revenueByMonth?.[mNow]  ?? randRevenue();
-        const prev = ev.revenueByMonth?.[mPrev] ?? Math.floor(cur * (Math.random() * 0.5 + 0.5));
+      filteredEvents.forEach(ev => {
+        const rev = revenueMap.get(ev._id);
+        const cur  = rev.revenueByMonth?.[mNow]  ?? 0;
+const prev = rev.revenueByMonth?.[mPrev] ?? 0;
+
+
         revNow  += cur;
         revPrev += prev;
+
+tickets += Number.isFinite(rev.totalSold) ? rev.totalSold : 0;
+
+        if (ev.timeEnd < now) endedCount++;
       });
 
-      // Vé bán: dùng totalSold nếu có, fallback random
-      tickets = revenueData.reduce(
-        (s, ev) => s + (Number.isFinite(ev.totalSold) ? ev.totalSold : randTickets()),
-        0
-      );
+      // KPI
+      setKpi({
+        revenue     : revNow,
+        prevRevenue : revPrev,
+        tickets,
+        events      : filteredEvents.length,
+        ended       : endedCount,
+      });
 
-      /* ---------- KPI ---------- */
-      const now = Date.now();
-      const endedCount = eventList.filter(ev => ev.timeEnd < now).length;
-
-   setKpi({
-  revenue     : revNow,
-  prevRevenue : revPrev,
-  tickets,
-  events      : eventList.length,
-  ended       : endedCount, 
-});
-
-      /* ---------- Chart ---------- */
+      // Chart
       setChart({
         labels: [`Tháng ${dayjs(mPrev).month() + 1}`, `Tháng ${dayjs().month() + 1}`],
         datasets: [
@@ -98,12 +102,12 @@ useEffect(() => {
         ],
       });
 
-      /* ---------- Lưu danh sách sự kiện để render phía dưới ---------- */
-      setEvents(eventList);
+      // chỉ render các sự kiện có revenue
+      setEvents(filteredEvents);
     } catch (err) {
       console.error("Lỗi lấy dashboard:", err);
     } finally {
-      setLoadingDashboard(false); // KẾT THÚC LOADING
+      setLoadingDashboard(false);
     }
   };
 
@@ -163,14 +167,7 @@ useEffect(() => {
                     <strong>{kpi.revenue.toLocaleString("vi-VN")} ₫</strong>&nbsp;
                   </ArgonTypography>
                 </Grid>
-                <Grid item>
-                  <FormControl size="small">
-                    <Select value={filter} onChange={e=>setFilter(e.target.value)} sx={{minWidth:140}}>
-                      <MenuItem value="month">Theo tháng</MenuItem>
-                      <MenuItem value="year">Theo năm</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
+               
               </Grid>
 
               {chart && (

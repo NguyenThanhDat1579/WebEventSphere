@@ -2,12 +2,15 @@
 import React, { useEffect, useState } from "react";
 import {
   Grid, Card, Typography, Button, CircularProgress, Box, Dialog,
-  DialogTitle, DialogContent, DialogActions, Divider, Chip
+  DialogTitle, DialogContent, DialogActions, Divider, Chip, useTheme
 } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import CancelIcon       from "@mui/icons-material/Cancel";
 import CheckCircleIcon  from "@mui/icons-material/CheckCircle";
 import PropTypes        from "prop-types";
+
+import ArgonBox from "components/ArgonBox";
+import ArgonTypography from "components/ArgonTypography";
 
 import DashboardLayout  from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar  from "examples/Navbars/DashboardNavbar";
@@ -41,7 +44,7 @@ function EventManagement() {
   const [loadingDet, setLoadingDet] = useState(false);
 
   const [dlg, setDlg] = useState({ open: false, status: "" });
-
+const theme = useTheme();
   /* ---------- table cols ---------- */
   const columns = [
     { title:"Ảnh",         field:"thumb",    align:"center" },
@@ -58,35 +61,44 @@ function EventManagement() {
     (async () => {
       try {
         const { data } = await eventApi.getAllHome();
-        const mapped = (data?.data || []).map(ev => ({
-          id   : ev._id,
-          thumb: <img src={ev.avatar} alt={ev.name}
-                      style={{ width: 52, height: 52, borderRadius: 8, objectFit: "cover" }} />,
-          name : (
-            <Typography variant="body2" sx={{
-              maxWidth: 240, fontSize: 14, fontWeight: 500,
-              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"
-            }}>
-              {ev.name}
-            </Typography>
-          ),
-          start   : new Date(ev.timeStart).toLocaleDateString("vi-VN"),
-          price   : `${(+ev.ticketPrice || 0).toLocaleString("vi-VN")} ₫`,
-          timeline: chipTimeline(ev.timeStart, ev.timeEnd),
-          status  : chipStatus(ev.status || "Chưa duyệt"),
-          action  : (
-            <Button
-              size="small"
-              variant="contained"
-              color="info"
-              startIcon={<InfoOutlinedIcon sx={{ fontSize: 16 }} />}
-              onClick={() => openDetail(ev._id)}
-              sx={{ textTransform: "none", fontSize: 12, px: 2 }}
-            >
-              Chi tiết
-            </Button>
-          ),
-        }));
+       const mapped = (data?.data || [])
+  .filter(ev => ev.avatar && ev.avatar.trim() !== "") // lọc sự kiện lỗi ảnh
+  .map(ev => ({
+    id   : ev._id,
+    thumb: (
+      <img
+        src={ev.avatar}
+        alt={ev.name}
+        onError={(e) => { e.target.style.display = "none"; }}
+        style={{ width: 52, height: 52, borderRadius: 8, objectFit: "cover" }}
+      />
+    ),
+    name : (
+      <Typography variant="body2" sx={{
+        maxWidth: 240, fontSize: 14, fontWeight: 500,
+        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"
+      }}>
+        {ev.name}
+      </Typography>
+    ),
+    start   : new Date(ev.timeStart).toLocaleDateString("vi-VN"),
+    price   : `${(+ev.ticketPrice || 0).toLocaleString("vi-VN")} ₫`,
+    timeline: chipTimeline(ev.timeStart, ev.timeEnd),
+    status  : chipStatus(ev.status || "Chưa duyệt"),
+    action  : (
+      <Button
+        size="small"
+        variant="contained"
+        color="info"
+        startIcon={<InfoOutlinedIcon sx={{ fontSize: 16 }} />}
+        onClick={() => openDetail(ev._id)}
+        sx={{ textTransform: "none", fontSize: 12, px: 2 }}
+      >
+        Chi tiết
+      </Button>
+    ),
+  }));
+
         setRows(mapped);
       } catch (err) { console.error(err); }
       finally       { setLoadingTbl(false); }
@@ -119,9 +131,18 @@ function EventManagement() {
         {/* LIST */}
         {!detail ? (
           <Card sx={{ borderRadius: 3, boxShadow: 4 }}>
-            <Box px={3} py={2} sx={{ backgroundColor: "primary.main", color: "#fff" }}>
-              <Typography variant="h5" fontWeight={700}>Danh sách sự kiện</Typography>
-            </Box>
+            <ArgonBox
+  px={3}
+  py={2}
+  sx={{
+    bgcolor: "#5669FF",
+    color: theme.palette.primary.contrastText,
+  }}
+>
+  <ArgonTypography variant="h5" fontWeight="bold">
+    Danh sách sự kiện
+  </ArgonTypography>
+</ArgonBox>
             <Divider />
             {loadingTbl ? (
               <Box py={8} display="flex" justifyContent="center"><CircularProgress /></Box>
@@ -157,7 +178,7 @@ function EventManagement() {
                     px: 2,
                     fontSize: 13,
                     borderRadius: 2,
-                    backgroundColor: "#1976d2",
+                    backgroundColor: "#5669FF",
                     color: "#fff",
                     "&:hover": { backgroundColor: "#115293" },
                   }}
@@ -191,7 +212,7 @@ function EventManagement() {
                       background: "#f9f9f9",
                       border: "1px solid #e0e0e0",
                       borderRadius: 2,
-                      p: 2,
+                      p: 3,
                       lineHeight: 1.75,
                       fontSize: 15,
                     }}

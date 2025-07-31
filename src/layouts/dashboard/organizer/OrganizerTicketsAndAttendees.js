@@ -23,6 +23,7 @@ import ArgonButton from "components/ArgonButton";
 import CheckIcon from "@mui/icons-material/Check";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CancelIcon from "@mui/icons-material/Cancel";
+import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 
 function OrganizerTicketsAndAttendees() {
   const [organizationEvents, setOrganizationEvents] = useState([]);
@@ -70,6 +71,17 @@ function OrganizerTicketsAndAttendees() {
         return updated;
       });
     };
+
+    const formatDate = (dateStr) => {
+        const date = new Date(dateStr);
+        const day = String(date.getDate()).padStart(2, "0");
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const year = date.getFullYear();
+        const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        return `${day}/${month}/${year} - ${time}`;
+      };
+
 
 
   // Lấy danh sách sự kiện của tổ chức
@@ -132,12 +144,13 @@ function OrganizerTicketsAndAttendees() {
 
   return (
     <DashboardLayout>
+      <DashboardNavbar />
       <Box sx={{ position: "relative"}}>
     
         {/* Chọn sự kiện và suất diễn */}
         <Paper elevation={2} sx={{ mb: 4, p: 2 }}>
       <Typography variant="h6" gutterBottom>
-        Chọn sự kiện & suất chiếu
+        Chọn sự kiện & suất diễn
       </Typography>
 
       <Box display="flex" flexWrap="wrap" gap={2}>
@@ -174,9 +187,9 @@ function OrganizerTicketsAndAttendees() {
 
               sx={{ minWidth: 300 }}
             />
-              <Box sx={{ minWidth: 300 }}>
+              {/* <Box sx={{ minWidth: 300 }}>
             <SelectMenu
-              label="Chọn suất chiếu"
+              label="Chọn suất diễn"
               value={selectedShowtime}
               onChange={(val) => setSelectedShowtime(val)}
               options={ eventDetail?.tickets?.map((ticket) => ({
@@ -184,7 +197,7 @@ function OrganizerTicketsAndAttendees() {
                 value: ticket.showtimeId,
               }))}
             />
-            </Box>
+            </Box> */}
             <Box sx={{ minWidth: 180 }}>
               <SelectMenu
                 label="Trạng thái"
@@ -220,20 +233,27 @@ function OrganizerTicketsAndAttendees() {
             <Table>
               <TableRow>
                  <TableCell sx={{ width: "5%", fontWeight: 600 }}>STT</TableCell>
+                  <TableCell sx={{ width: "15%", fontWeight: 600 }}>
+                  Mã vé
+                </TableCell>
                 <TableCell sx={{ width: "25%", fontWeight: 600 }}>
                   Email
                 </TableCell>
                 <TableCell sx={{ width: "15%", fontWeight: 600 }}>
                   Trạng thái
                 </TableCell>
-                <TableCell sx={{ width: "20%", fontWeight: 600 }}>
+                {/* <TableCell sx={{ width: "20%", fontWeight: 600 }}>
                   Hành động
+                </TableCell> */}
+                <TableCell sx={{ width: "20%", fontWeight: 600 }}>
+                  Ngày phát hành
                 </TableCell>
               </TableRow>
               <TableBody>
                {filteredAttendees.map((attendee, index) => (
                   <TableRow key={attendee.id}>
                     <TableCell>{index + 1}</TableCell>
+                      <TableCell>{attendee.ticketId}</TableCell>
                     <TableCell>{attendee.userName}</TableCell>
                     <TableCell>
                      {attendee.status === "used" ? (
@@ -241,25 +261,25 @@ function OrganizerTicketsAndAttendees() {
                           label="Đã check-in"
                           color="success"
                           icon={<CheckIcon />}
-                          sx={{ color: '#fff' }}
+                          sx={{ color: '#fff' , p: 1}}
                         />
                       ) : attendee.status === "issued" ? (
                         <Chip
                           label="Chưa sử dụng"
                           color="warning"
                           icon={<AccessTimeIcon />}
-                          sx={{ color: '#fff' }}
+                          sx={{ color: '#fff', p: 1 }}
                         />
                       ) : (
                         <Chip
                           label="Đã hủy"
                           color="error"
                           icon={<CancelIcon />}
-                           sx={{ color: '#fff' }}
+                           sx={{ color: '#fff', p: 1 }}
                         />
                       )}
                     </TableCell>
-                    <TableCell>
+                    {/* <TableCell>
                       {attendee.status === "issued" && (
                         <Button
                           size="small"
@@ -279,7 +299,8 @@ function OrganizerTicketsAndAttendees() {
                            {attendee.status === "canceled" ? "Bỏ hủy" : "Hủy"}
                         </Button>
                       )}
-                    </TableCell>
+                    </TableCell> */}
+                    <TableCell>{formatDate(attendee.issuedAt)}</TableCell>
                   </TableRow>
                 ))}
 

@@ -22,9 +22,9 @@ import authApi from "api/utils/authApi";
 // React
 import { useState } from "react";
 import { Typography } from "@mui/material";
+import bgImage from '../../../assets/images/imgAuthetication.png'
+import avImage from '../../../assets/images/avImg.jpg'
 
-const bgImage =
-  "https://res.cloudinary.com/deoqppiun/image/upload/v1752238173/images_lwwgko.png";
 function Cover() {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
@@ -39,8 +39,8 @@ function Cover() {
 
     if (!username.trim()) {
       tempErrors.username = "Vui lòng nhập tên";
-    } else if (username.length < 3 || username.length > 20) {
-      tempErrors.username = "Tên người dùng phải từ 3 đến 20 ký tự";
+    } else if (username.length < 3 || username.length > 50) {
+      tempErrors.username = "Tên người dùng phải từ 3 đến 50 ký tự";
     } else if (!/^[a-zA-ZÀ-ỹ\d_ ]+$/.test(username)) {
       tempErrors.username = "Tên người dùng không được chứa kí tự đặc biệt";
     }
@@ -110,7 +110,7 @@ function Cover() {
         {/* ✅ Logo và tiêu đề */}
         <ArgonBox textAlign="center" mb={3}>
           <img
-            src="https://res.cloudinary.com/deoqppiun/image/upload/v1752066762/Logo_det6xk.jpg" // 👉 thay bằng logo của bạn
+            src={avImage}
             alt="Logo"
             style={{ width: "40%", marginBottom: 8 }}
           />

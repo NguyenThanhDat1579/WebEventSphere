@@ -10,6 +10,13 @@ const eventApi = {
   },
   getAllTicketsByEvent: (eventId) =>
     axiosInstance.get(`/tickets/all-tickets/${eventId}`),
+  verifyTicket: ({ ticketId, showtimeId }) => {
+    return axiosInstance.post("/tickets/verify-ticket", {
+      ticketId,
+      showtimeId,
+    });
+  },
+
 };
 
 export default eventApi;

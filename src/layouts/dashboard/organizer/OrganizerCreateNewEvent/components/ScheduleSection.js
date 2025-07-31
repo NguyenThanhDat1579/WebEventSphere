@@ -19,7 +19,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 import CustomTextField from "./CustomTextField";
-import CustomDateTimePicker from "./CustomDateTimePicker";
+
 
 import DeleteIcon from "@mui/icons-material/Delete";
 import eventApi from "../../../../../api/utils/eventApi";
@@ -131,9 +131,9 @@ export default function ScheduleSection() {
     const saleEnd = new Date(endTime);
 
     if (showEnd <= showStart) {
-      setShowtimeError("Kết thúc suất chiếu phải lớn hơn bắt đầu.");
+      setShowtimeError("Kết thúc suất diễn phải lớn hơn bắt đầu.");
     } else if (showStart < saleEnd) {
-      setShowtimeError("Suất chiếu phải bắt đầu sau khi kết thúc bán vé.");
+      setShowtimeError("Suất diễn phải bắt đầu sau khi kết thúc bán vé.");
     } else {
       setShowtimeError("");
     }
@@ -142,7 +142,7 @@ export default function ScheduleSection() {
   const handleAddShowtime = () => {
     // Kiểm tra nếu chưa nhập thời gian
     if (!showtimeStart || !showtimeEnd) {
-      setShowtimeError("Vui lòng chọn thời gian bắt đầu và kết thúc suất chiếu.");
+      setShowtimeError("Vui lòng chọn thời gian bắt đầu và kết thúc suất diễn.");
       return;
     }
     // Gọi lại validate
@@ -381,12 +381,6 @@ export default function ScheduleSection() {
       <Box>
         <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
           <Box display="flex" flexDirection="column" gap={2}>
-            {/* <CustomDateTimePicker
-              label="Thời gian bắt đầu"
-              value={startDateTime}
-              onChange={(newValue) => setStartDateTime(newValue)}
-              name="startTime"
-            /> */}
             <Grid container spacing={3}>
               {/* Tên địa điểm */}
               <Grid item xs={12} sm={6}>
@@ -464,18 +458,18 @@ export default function ScheduleSection() {
                 </Grid>
                 <Box mt={2}>
                   <Typography variant="h5" gutterBottom>
-                    Tạo suất chiếu
+                    Tạo suất diễn
                   </Typography>
                   {showtimeListError && (
                     <Typography variant="body2" color="error" sx={{ mt: 1, ml: 1 }}>
-                      * Vui lòng tạo ít nhất một suất chiếu.
+                      * Vui lòng tạo ít nhất một suất diễn.
                     </Typography>
                   )}
 
                   <Grid container spacing={2} alignItems="center">
                     <Grid item xs={12} md={4}>
                       <CustomTextField
-                        label="Thời gian bắt đầu suất chiếu"
+                        label="Thời gian bắt đầu suất diễn"
                         type="datetime-local"
                         value={showtimeStart}
                         onChange={handleShowtimeStartChange}
@@ -486,7 +480,7 @@ export default function ScheduleSection() {
                     </Grid>
                     <Grid item xs={12} md={4}>
                       <CustomTextField
-                        label="Thời gian kết thúc suất chiếu"
+                        label="Thời gian kết thúc suất diễn"
                         type="datetime-local"
                         value={showtimeEnd}
                         onChange={handleShowtimeEndChange} // <- Đổi từ setShowtimeEnd trực tiếp
@@ -513,7 +507,7 @@ export default function ScheduleSection() {
                           },
                         }}
                       >
-                        Tạo suất chiếu
+                        Tạo suất diễn
                       </Button>
                     </Grid>
                   </Grid>
@@ -521,7 +515,7 @@ export default function ScheduleSection() {
                   {localShowtimes.length > 0 && (
                     <Box mt={3}>
                       <Typography variant="subtitle1" gutterBottom>
-                        Danh sách suất chiếu đã tạo:
+                        Danh sách suất diễn đã tạo:
                       </Typography>
                       <Grid container spacing={2}>
                         {localShowtimes.map((show, index) => (
@@ -549,7 +543,7 @@ export default function ScheduleSection() {
                                 </Typography>
                               </Box>
                               <IconButton
-                                aria-label="Xoá suất chiếu"
+                                aria-label="Xoá suất diễn"
                                 size="small"
                                 color="error"
                                 onClick={() => handleRemoveShowtime(index)}
@@ -694,11 +688,11 @@ export default function ScheduleSection() {
                 {/* Nhập suất chiếu */}
                 <Box>
                   <Typography variant="h5" gutterBottom>
-                    Tạo suất chiếu
+                    Tạo suất diễn
                   </Typography>
                   {showtimeListError && (
                     <Typography variant="body2" color="error" sx={{ mt: 1, ml: 1 }}>
-                      * Vui lòng tạo ít nhất một suất chiếu.
+                      * Vui lòng tạo ít nhất một suất diễn.
                     </Typography>
                   )}
                   <Grid container spacing={2} alignItems="center">
@@ -742,7 +736,7 @@ export default function ScheduleSection() {
                           },
                         }}
                       >
-                        Tạo suất chiếu
+                        Tạo suất diễn
                       </Button>
                     </Grid>
                   </Grid>
@@ -751,7 +745,7 @@ export default function ScheduleSection() {
                   {localShowtimes.length > 0 && (
                     <Box mt={3}>
                       <Typography variant="subtitle1" gutterBottom>
-                        Danh sách suất chiếu đã tạo:
+                        Danh sách suất diễn đã tạo:
                       </Typography>
                       <Grid container spacing={2}>
                         {localShowtimes.map((show, index) => (
@@ -779,7 +773,7 @@ export default function ScheduleSection() {
                                 </Typography>
                               </Box>
                               <IconButton
-                                aria-label="Xoá suất chiếu"
+                                aria-label="Xoá suất diễn"
                                 size="small"
                                 color="error"
                                 onClick={() => handleRemoveShowtime(index)}
@@ -813,11 +807,11 @@ export default function ScheduleSection() {
 
                 {/* Suất chiếu */}
                 <Typography variant="h5" sx={{ mb: -2 }}>
-                  Tạo suất chiếu
+                  Tạo suất diễn
                 </Typography>
                 {showtimeListError && (
                   <Typography variant="body2" color="error" sx={{ mt: -1, ml: 1, mb: -1 }}>
-                    * Vui lòng tạo ít nhất một suất chiếu.
+                    * Vui lòng tạo ít nhất một suất diễn.
                   </Typography>
                 )}
                 <Grid container spacing={2}>
@@ -861,7 +855,7 @@ export default function ScheduleSection() {
                         },
                       }}
                     >
-                      Tạo suất chiếu
+                      Tạo suất diễn
                     </Button>
                   </Grid>
                 </Grid>
@@ -869,7 +863,7 @@ export default function ScheduleSection() {
                 {localShowtimes.length > 0 && (
                   <Box mt={3} sx={{ mt: -1 }}>
                     <Typography variant="subtitle1" gutterBottom>
-                      Danh sách suất chiếu đã tạo:
+                      Danh sách suất diễn đã tạo:
                     </Typography>
                     <Grid container spacing={2}>
                       {localShowtimes.map((show, index) => (
@@ -897,7 +891,7 @@ export default function ScheduleSection() {
                               </Typography>
                             </Box>
                             <IconButton
-                              aria-label="Xoá suất chiếu"
+                              aria-label="Xoá suất diễn"
                               size="small"
                               color="error"
                               onClick={() => handleRemoveShowtime(index)}

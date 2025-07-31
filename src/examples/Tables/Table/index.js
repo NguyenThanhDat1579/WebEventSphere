@@ -20,7 +20,7 @@ function Table({ columns = [], rows = [], sxTable = {} }) {
         <ArgonBox
           key={i}
           component="th"
-          width={width || "auto"}
+          width={'auto'}
           px={3}
           py={1.5}
           textAlign={align}

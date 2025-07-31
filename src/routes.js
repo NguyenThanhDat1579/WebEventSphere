@@ -183,6 +183,7 @@ const routes = [
     icon: <ArgonBox component="i" color="dark" fontSize="14px" className="ni ni-single-02" />,
     component: <ProfileAdmin />,
     allowedRoles: [1],
+     hidden: true,
   },
   {
     type: "route",

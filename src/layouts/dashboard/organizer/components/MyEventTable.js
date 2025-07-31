@@ -195,8 +195,8 @@ function MyEventTable({ events, onViewDetail }) {
                 <TableCell>
                   <Typography sx={{ fontWeight: 500, fontSize: "0.85rem", whiteSpace: "pre-line" }}>
                       {event.location
-    ? event.location.split(", ").join("\n")
-    : "Đang cập nhật"}
+                            ? event.location.split(", ").join("\n")
+                            : "Đang cập nhật"}
                     </Typography>
                 </TableCell>
 

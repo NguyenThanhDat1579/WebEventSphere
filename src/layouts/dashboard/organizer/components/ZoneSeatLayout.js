@@ -12,18 +12,19 @@ import ChevronLeft from "@mui/icons-material/ChevronLeft";
 import ChevronRight from "@mui/icons-material/ChevronRight";
 
 const colorOptions = [
-  { label: "Màu ghế VIP", value: "#7C89FF" },
-  { label: "Màu ghế thường", value: "#c9b6f3" },
+  { label: "Xanh tím", value: "#7C89FF" },
+  { label: "Tím nhạt", value: "#c9b6f3" },
+  { label: "Đỏ", value: "#f44336" },
+  { label: "Xanh biển", value: "#2196f3" },
+  { label: "Xanh lá", value: "#4caf50" },
+  { label: "Cam", value: "#ff9800" },
+  { label: "Tím", value: "#9c27b0" },
 ];
 const seatSize = 30;
 const seatMargin = 0.5 * 2;
 const seatTotal = seatSize + seatMargin;
 
-//  { label: "Đỏ", value: "#f44336" },
-//   { label: "Xanh biển", value: "#2196f3" },
-//   { label: "Xanh lá", value: "#4caf50" },
-//   { label: "Cam", value: "#ff9800" },
-//   { label: "Tím", value: "#9c27b0" },
+
 
 const ZoneSeatLayout = ({ onSubmit }) => {
   const [zones, setZones] = useState([]);

@@ -34,48 +34,93 @@ export default function AdminDashboard() {
   const [kpi,       setKpi]      = useState({ revenue:0, prevRevenue:0, tickets:0, events:0, ended:0 });
   const [chart,     setChart]    = useState(null);
   const [filter,    setFilter]   = useState("month");
-
+  const [loadingDashboard, setLoadingDashboard] = useState(true);
   /* Sự kiện -------------------------------------------------------- */
   const [events,    setEvents]   = useState([]);
   const [detail,    setDetail]   = useState(null);          // object | null
   const [loadingDet,setLoadingDet]=useState(false);
 
   /* ---------------- fetch KPI + LIST ---------------- */
-  useEffect(() => {
-    const fetchAll = async () => {
-      /* KPI & Chart */
-      try {
-        const { data } = await revenueApi.getRevenue();
-        const list = data?.eventsRevenue ?? [];
+/* ---------------- fetch KPI + LIST ---------------- */
+useEffect(() => {
+  const fetchAll = async () => {
+    try {
+      setLoadingDashboard(true);
 
-        const mNow  = dayjs().format("YYYY-MM");
-        const mPrev = dayjs().subtract(1, "month").format("YYYY-MM");
+      const [revRes, evtRes] = await Promise.all([
+        revenueApi.getRevenue(),
+        eventApi.getAllHome(),
+      ]);
 
-        let revNow=0, revPrev=0, tickets=0, ended=0;
-        list.forEach(ev=>{
-          const cur  = ev.revenueByMonth?.[mNow]  ?? randRevenue();
-          const prev = ev.revenueByMonth?.[mPrev] ?? Math.floor(cur*(Math.random()*0.5+0.5));
-          revNow  += cur; revPrev += prev;
-          tickets += Number.isFinite(ev.soldTickets)?ev.soldTickets:randTickets();
-          if(ev.status==="End") ended+=1;
-        });
+      const revenueData = revRes.data?.eventsRevenue ?? [];
+      const eventList   = evtRes.data?.data        ?? [];
 
-        setKpi({ revenue:revNow, prevRevenue:revPrev, tickets, events:list.length, ended });
+      // map revenue theo eventId để dễ tra
+      const revenueMap = new Map();
+      revenueData.forEach(ev => revenueMap.set(ev.eventId, ev));
 
-        setChart({
-          labels:[`Tháng ${dayjs(mPrev).month()+1}`, `Tháng ${dayjs().month()+1}`],
-          datasets:[{ label:"Doanh thu", color:"info", maxBarThickness:60, data:[revPrev, revNow] }],
-        });
-      } catch(e){ console.error("KPI error:", e); }
+      // lọc chỉ các sự kiện có revenue
+      // lọc chỉ các sự kiện có revenue VÀ có avatar + location + timeStart/timeEnd đầy đủ
+    const filteredEvents = eventList.filter(ev =>
+      revenueMap.has(ev._id) &&
+      ev.avatar &&
+      ev.location &&
+      ev.timeStart &&
+      ev.timeEnd
+    );
 
-      /* List sự kiện */
-      try {
-        const res = await eventApi.getAllHome();
-        setEvents(res.data?.data ?? []);
-      } catch(e){ console.error("Events error:", e); }
-    };
-    fetchAll();
-  }, []);
+
+      // Khóa thời gian tháng hiện tại và trước
+      const mNow  = dayjs().format("YYYY-MM");
+      const mPrev = dayjs().subtract(1, "month").format("YYYY-MM");
+
+      let revNow = 0, revPrev = 0, tickets = 0;
+      const now = Date.now();
+      let endedCount = 0;
+
+      filteredEvents.forEach(ev => {
+        const rev = revenueMap.get(ev._id);
+        const cur  = rev.revenueByMonth?.[mNow]  ?? 0;
+const prev = rev.revenueByMonth?.[mPrev] ?? 0;
+
+
+        revNow  += cur;
+        revPrev += prev;
+
+tickets += Number.isFinite(rev.totalSold) ? rev.totalSold : 0;
+
+        if (ev.timeEnd < now) endedCount++;
+      });
+
+      // KPI
+      setKpi({
+        revenue     : revNow,
+        prevRevenue : revPrev,
+        tickets,
+        events      : filteredEvents.length,
+        ended       : endedCount,
+      });
+
+      // Chart
+      setChart({
+        labels: [`Tháng ${dayjs(mPrev).month() + 1}`, `Tháng ${dayjs().month() + 1}`],
+        datasets: [
+          { label: "Doanh thu", color: "info", maxBarThickness: 60, data: [revPrev, revNow] },
+        ],
+      });
+
+      // chỉ render các sự kiện có revenue
+      setEvents(filteredEvents);
+    } catch (err) {
+      console.error("Lỗi lấy dashboard:", err);
+    } finally {
+      setLoadingDashboard(false);
+    }
+  };
+
+  fetchAll();
+}, []);
+
 
   /* ---------------- helper % tăng/giảm --------------- */
   const percent = (() => {
@@ -87,17 +132,26 @@ export default function AdminDashboard() {
 
   /* ================================================================= */
   return (
-    <DashboardLayout>
-      <DashboardNavbar/>
+  <DashboardLayout>
+    <DashboardNavbar />
 
+    {loadingDashboard ? (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="60vh"
+      >
+        <CircularProgress color="info" size={48} />
+      </Box>
+    ) : (
       <ArgonBox py={3}>
         {/* ================= KPI SECTION ================= */}
         <Grid container spacing={3} mb={3}>
           <StatCard
             title="TỔNG DOANH THU THÁNG NÀY"
             main={`${kpi.revenue.toLocaleString("vi-VN")} ₫`}
-            color="#1976d2"
-            sub={`(${percent} so với tháng trước)`}
+            color="#2d48d1ff"
             dark
           />
           <StatCard title="Tổng vé bán"        main={kpi.tickets.toLocaleString("vi-VN")} />
@@ -105,10 +159,11 @@ export default function AdminDashboard() {
           <StatCard title="Sự kiện kết thúc"   main={kpi.ended} />
         </Grid>
 
+      {/* hehehhee */}
         {/* ================= CHART SECTION ============== */}
         <Grid container spacing={3} mb={3}>
           <Grid item xs={12}>
-            <Card sx={{ p:3, borderRadius:3, boxShadow:3 }}>
+            <Card sx={{ p:3, borderRadius:3, boxShadow:3, minHeight: 380 }}>
               <Grid container justifyContent="space-between" alignItems="center" mb={2}>
                 <Grid item>
                   <ArgonTypography variant="h6" fontWeight={700}>
@@ -117,21 +172,14 @@ export default function AdminDashboard() {
                   <ArgonTypography variant="caption" color="text.secondary">
                     Tháng này đạt&nbsp;
                     <strong>{kpi.revenue.toLocaleString("vi-VN")} ₫</strong>&nbsp;
-                    ({percent} so với tháng trước)
                   </ArgonTypography>
                 </Grid>
-                <Grid item>
-                  <FormControl size="small">
-                    <Select value={filter} onChange={e=>setFilter(e.target.value)} sx={{minWidth:140}}>
-                      <MenuItem value="month">Theo tháng</MenuItem>
-                      <MenuItem value="year">Theo năm</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
+               
               </Grid>
 
               {chart && (
-                <VerticalBarChart title="" description="" chart={chart} />
+                <VerticalBarChart title="" description="" chart={chart} height={300} />
+
               )}
             </Card>
           </Grid>
@@ -153,10 +201,11 @@ export default function AdminDashboard() {
           </Grid>
         </Grid>
       </ArgonBox>
+    )}
 
-      <Footer/>
-    </DashboardLayout>
-  );
+    <Footer />
+  </DashboardLayout>
+);
 }
 
 /* ================================================================= */
@@ -191,7 +240,7 @@ function EventListCard({ events, onSelect }) {
                 "&:hover":{
                   transform:"translateY(-4px)",
                   boxShadow:4,
-                  borderColor:"#1976d2"
+                  borderColor:"#5669FF"
                 }
               }}
             >
@@ -224,9 +273,8 @@ function EventDetailCard({ ev, onBack }) {
       <Button
         variant="contained"
         onClick={onBack}
-        startIcon={<ArrowBackIcon />}
         sx={{
-          backgroundColor: "#1976d2",
+          backgroundColor: "#5669FF",
           color: "#fff",
           fontWeight: 600,
           px: 2,
@@ -243,11 +291,15 @@ function EventDetailCard({ ev, onBack }) {
         Quay lại
       </Button>
 
-      <img
-        src={ev.avatar}
-        alt={ev.name}
-        style={{ width: "100%", height: 360, objectFit: "cover", borderRadius: 12, marginBottom: 20 }}
-      />
+     <img
+    src={ev.avatar}
+    alt={ev.name}
+    style={{
+      maxWidth: "100%",
+      height: "auto",
+      borderRadius: 12,
+    }}
+  />
 
       <Typography variant="h4" fontWeight="bold" gutterBottom>
         {ev.name}
@@ -264,15 +316,21 @@ function EventDetailCard({ ev, onBack }) {
         </Grid>
         <Grid item xs={12}>
           <Box
-            sx={{
-              bgcolor: "#f9f9f9",
-              p: 2,
-              borderRadius: 2,
-              border: "1px solid #e0e0e0",
-              mt: 1
-            }}
-            dangerouslySetInnerHTML={{ __html: ev.description }}
-          />
+  sx={{
+    bgcolor: "#f9f9f9",
+    p: 2,
+    borderRadius: 2,
+    border: "1px solid #e0e0e0",
+    mt: 1,
+
+    "& p": { mb: 1.5, lineHeight: 1.6 },
+    "& h1, h2, h3": { mt: 2, mb: 1 },
+    "& ul": { pl: 3, mb: 1.5 },
+    "& li": { mb: 0.5 },
+  }}
+  dangerouslySetInnerHTML={{ __html: ev.description }}
+/>
+
         </Grid>
       </Grid>
     </Card>

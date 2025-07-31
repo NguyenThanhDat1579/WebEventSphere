@@ -10,7 +10,8 @@ import authApi from 'api/utils/authApi';
 import { saveTokens } from 'api/token/authTokens';
 import { setUserData } from '../../../redux/store/slices/authSlice';
 import CoverLayout from '../components/CoverLayout';
-
+import bgImage from '../../../assets/images/imgAuthetication.png'
+import avImage from '../../../assets/images/avImg.jpg'
 function ModernLoginPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -81,9 +82,6 @@ function ModernLoginPage() {
     setIsLoading(false);}
 };
 
-  
-const bgImage =
-  "https://res.cloudinary.com/deoqppiun/image/upload/v1752238173/images_lwwgko.png";
 
   return (
     <CoverLayout
@@ -94,7 +92,7 @@ const bgImage =
       <ArgonBox pt={4} pb={4} px={4}>
         <ArgonBox textAlign="center" mb={3}>
           <img
-            src="https://res.cloudinary.com/deoqppiun/image/upload/v1752066762/Logo_det6xk.jpg" // 👉 thay bằng logo của bạn
+            src={avImage}
             alt="Logo"
             style={{ width: "40%", marginBottom: 8 }}
           />

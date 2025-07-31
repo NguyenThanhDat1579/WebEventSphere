@@ -4,7 +4,8 @@ import {
   Divider,
   CircularProgress,
   Box,
-  useTheme
+  useTheme,
+  TablePagination,
 } from "@mui/material";
 import ArgonBox from "components/ArgonBox";
 import ArgonTypography from "components/ArgonTypography";
@@ -19,6 +20,8 @@ function UserManagement() {
   const [columns, setColumns] = useState([]);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const theme = useTheme();
 
   useEffect(() => {
@@ -26,7 +29,7 @@ function UserManagement() {
       try {
         const res = await userApi.getAll();
         const userList = Array.isArray(res.data?.data) ? res.data.data : [];
-        const filteredUsers = userList.filter(user => user.role === 3);
+        const filteredUsers = userList.filter((user) => user.role === 3);
         const { columns, rows } = userTableData(filteredUsers);
         setColumns(columns);
         setRows(rows);
@@ -39,6 +42,11 @@ function UserManagement() {
 
     fetchUsers();
   }, []);
+
+  const paginatedRows = rows.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   return (
     <DashboardLayout>
@@ -66,12 +74,31 @@ function UserManagement() {
             </ArgonBox>
           ) : (
             <Box sx={{ width: "100%", overflowX: "auto" }}>
-              <Table columns={columns} rows={rows} />
+              <Table columns={columns} rows={paginatedRows} />
             </Box>
           )}
         </Card>
+
+        {/* TablePagination tách ra ngoài Card */}
+        {!loading && (
+          <Box mt={2} display="flex" justifyContent="flex-end">
+            <TablePagination
+              component="div"
+              count={rows.length}
+              page={page}
+              onPageChange={(event, newPage) => setPage(newPage)}
+              rowsPerPage={rowsPerPage}
+              rowsPerPageOptions={[]} // Ẩn dropdown chọn số dòng/trang
+              labelRowsPerPage=""     // Ẩn chữ "Rows per page"v
+              onRowsPerPageChange={(event) => {
+                setRowsPerPage(parseInt(event.target.value, 10));
+                setPage(0);
+              }}
+            />
+          </Box>
+        )}
       </ArgonBox>
-      <Footer />
+
     </DashboardLayout>
   );
 }

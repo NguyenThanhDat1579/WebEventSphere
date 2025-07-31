@@ -378,4 +378,6 @@ const Info = ({ label, value }) => (
 
 Info.propTypes = { label: PropTypes.string, value: PropTypes.node };
 
+
 export default EventManagement;
+

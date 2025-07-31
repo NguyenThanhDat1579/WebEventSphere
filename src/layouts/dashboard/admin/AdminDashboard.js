@@ -61,6 +61,7 @@ useEffect(() => {
 
       // lọc chỉ các sự kiện có revenue
       // lọc chỉ các sự kiện có revenue VÀ có avatar + location + timeStart/timeEnd đầy đủ
+
     const filteredEvents = eventList.filter(ev =>
       revenueMap.has(ev._id) &&
       ev.avatar &&
@@ -68,6 +69,7 @@ useEffect(() => {
       ev.timeStart &&
       ev.timeEnd
     );
+
 
 
       // Khóa thời gian tháng hiện tại và trước

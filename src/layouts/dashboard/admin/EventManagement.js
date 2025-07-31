@@ -1,3 +1,4 @@
+// src/pages/EventManagement.jsx
 import React, { useEffect, useState } from "react";
 import {
   Grid, Card, Typography, Button, CircularProgress, Box, Dialog,
@@ -53,6 +54,7 @@ function EventManagement() {
     { title: "", field: "action", align: "center", width: "100px" },
   ];
 
+  /* ---------- fetch list ---------- */
   useEffect(() => {
     (async () => {
       try {
@@ -189,6 +191,7 @@ function EventManagement() {
     setDlg({ open: false, status: "" });
   };
 
+  /* ===================== RENDER ====================== */
   return (
     <DashboardLayout>
       <DashboardNavbar />
@@ -375,4 +378,6 @@ const Info = ({ label, value }) => (
 
 Info.propTypes = { label: PropTypes.string, value: PropTypes.node };
 
+
 export default EventManagement;
+

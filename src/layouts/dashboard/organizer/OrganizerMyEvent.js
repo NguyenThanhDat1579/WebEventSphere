@@ -21,9 +21,19 @@ const transformEvents = (events) =>
     const timeStart = convertTimestamp(event.timeStart);
     const timeEnd = convertTimestamp(event.timeEnd);
 
-    const ticketPrice = parseInt(event.ticketPrice, 10) || 0;
-    const soldTickets = event.soldTickets || 0;
-    const totalTickets = event.ticketQuantity || 0;
+     const timeStartMs = timeStart.getTime();
+    const timeEndMs = timeEnd.getTime();
+    const now = Date.now();
+
+    // ✅ Đồng bộ trạng thái theo thời gian
+    let status = "Upcoming";
+    if (timeStartMs <= now && now <= timeEndMs) {
+      status = "Ongoing";
+    } else if (timeEndMs < now) {
+      status = "Ended";
+    }
+
+
 
     return {
       id: event._id, // giữ nguyên
@@ -31,7 +41,7 @@ const transformEvents = (events) =>
       avatar: event.avatar,
       timeStart: event.timeStart,
       timeEnd: event.timeEnd,
-      location: "Đang cập nhật", // giả định
+      location: event.location, // giả định
       showtimes: event.showtimes ?? [], // ✅ thêm showtimes đầy đủ
 
       // Tổng số vé và vé đã bán toàn sự kiện
@@ -46,8 +56,7 @@ const transformEvents = (events) =>
         event.soldTickets && event.eventTotalRevenue
           ? event.eventTotalRevenue / event.soldTickets
           : 0,
-
-      status: event.timeEnd < Date.now() ? "Ended" : "Published",
+      status, // Trạng thái sự kiện
     };
   });
 
@@ -59,7 +68,8 @@ function OrganizerMyEvent() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isDetailView, setIsDetailView] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  useEffect(() => {
+
+
     const fetchEvents = async () => {
       try {
         setIsLoading(true); // bắt đầu loading
@@ -78,13 +88,18 @@ function OrganizerMyEvent() {
       }
     };
 
+
+  useEffect(() => {
     fetchEvents();
   }, []);
 
   const transformedEvents = transformEvents(events);
 
   const filteredEvents = transformedEvents.filter((event) => {
-    const nameMatch = event.title.toLowerCase().includes(search.toLowerCase());
+    const keyword = typeof search === "string" ? search.toLowerCase() : "";
+    const title = typeof event.title === "string" ? event.title.toLowerCase() : "";
+
+    const nameMatch = title.includes(keyword);
 
     const now = Date.now(); // dùng timestamp cho khớp với event.timeStart
     let statusMatch = true;
@@ -116,6 +131,7 @@ function OrganizerMyEvent() {
     setIsDetailView(true);
   };
 
+
   return (
     <DashboardLayout>
       <DashboardNavbar />
@@ -130,6 +146,7 @@ function OrganizerMyEvent() {
                   onSearch={handleSearch}
                   onStatusFilter={handleStatusFilter}
                   onDateRange={handleDateRange}
+                  onResetData={fetchEvents}
                 />
               </Grid>
             </Grid>
@@ -152,7 +169,6 @@ function OrganizerMyEvent() {
           </>
         )}
       </ArgonBox>
-      <Footer />
     </DashboardLayout>
   );
 }

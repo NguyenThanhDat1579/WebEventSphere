@@ -84,6 +84,17 @@ function IllustrationLayout({ color, header, title, description, button, illustr
               top={0}
               left={0}
             />
+              <ArgonBox
+            width="100%"
+            height="100%"
+            position="absolute"
+            top={0}
+            left={0}
+            sx={{
+              backgroundColor: "rgba(33, 150, 243, 0.4)", // Xanh lam mờ
+              zIndex: 1,
+            }}
+          />
             <ArgonBox
               bgColor={color}
               variant="gradient"

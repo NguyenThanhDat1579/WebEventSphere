@@ -69,4 +69,4 @@ DonutChartWithCenter.propTypes = {
   isCurrency: PropTypes.bool,
 };
 
-export default DonutChartWithCenter;
+export default React.memo(DonutChartWithCenter);

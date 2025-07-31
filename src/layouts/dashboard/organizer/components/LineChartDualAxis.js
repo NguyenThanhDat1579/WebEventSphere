@@ -1,5 +1,4 @@
-// LineChartDualAxis.js
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useMemo } from "react";
 import PropTypes from "prop-types";
 import { Line } from "react-chartjs-2";
 import {
@@ -13,16 +12,51 @@ import {
   Filler,
 } from "chart.js";
 import zoomPlugin from "chartjs-plugin-zoom";
+import dayjs from "dayjs";
+
 ChartJS.register(zoomPlugin);
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend, Filler);
 
-const LineChartDualAxis = ({ labels, revenueData, ticketData }) => {
+// 🔧 Hàm xử lý dữ liệu từ event
+const buildLineChartDataFromEvent = (event) => {
+  const revenueByDay = event?.revenueByDay || {};
+  const ticketByDay = event?.ticketByDay || {};
+  const timeStart = event?.timeStart;
+  const timeEnd = event?.timeEnd;
+
+  if (!timeStart || !timeEnd) return { labels: [], revenueData: [], ticketData: [] };
+
+  const start = dayjs(timeStart);
+  const end = dayjs(timeEnd);
+
+  const labels = [];
+  const revenueData = [];
+  const ticketData = [];
+
+  for (
+    let current = start;
+    current.isBefore(end) || current.isSame(end, "day");
+    current = current.add(1, "day")
+  ) {
+    const dateKey = current.format("YYYY-MM-DD");
+    labels.push(current.format("DD/MM"));
+    revenueData.push(revenueByDay[dateKey] || 0);
+    ticketData.push(ticketByDay[dateKey] || 0);
+  }
+
+  return { labels, revenueData, ticketData };
+};
+
+const LineChartDualAxis = ({ event }) => {
   const chartRef = useRef(null);
   const [hiddenDatasets, setHiddenDatasets] = useState({});
 
+  // ✅ Memo hóa dữ liệu để không re-calculate mỗi render
+  const { labels, revenueData, ticketData } = useMemo(() => buildLineChartDataFromEvent(event), [event]);
+
   const firstRevenueIndex = revenueData.findIndex((value) => value > 0);
-  const minIndex = Math.max(0, firstRevenueIndex - 1); // 👉 lấy trước 1 nếu có
-  const maxIndex = Math.min(minIndex + 9, labels.length - 1); // giữ 10 điểm
+  const minIndex = Math.max(0, firstRevenueIndex - 1);
+  const maxIndex = Math.min(minIndex + 9, labels.length - 1);
 
   const data = {
     labels,
@@ -39,19 +73,18 @@ const LineChartDualAxis = ({ labels, revenueData, ticketData }) => {
         pointHoverRadius: revenueData.map((value) => (value > 0 ? 6 : 0)),
         hidden: hiddenDatasets[0] || false,
       },
-      {
-        label: "Số vé bán",
-        data: ticketData,
-        yAxisID: "yRight",
-        borderColor: "#17CEF0",
-        backgroundColor: "#17CEF0",
-        fill: false,
-        tension: 0.4,
-        pointRadius: 3,
-        pointHoverRadius: 5,
-
-        hidden: hiddenDatasets[1] || false,
-      },
+      // {
+      //   label: "Số vé bán",
+      //   data: ticketData,
+      //   yAxisID: "yRight",
+      //   borderColor: "#17CEF0",
+      //   backgroundColor: "#17CEF0",
+      //   fill: false,
+      //   tension: 0.4,
+      //   pointRadius: 3,
+      //   pointHoverRadius: 5,
+      //   hidden: hiddenDatasets[1] || false,
+      // },
     ],
   };
 
@@ -81,7 +114,9 @@ const LineChartDualAxis = ({ labels, revenueData, ticketData }) => {
           },
           mode: "x",
           limits: {
-            x: { min: 0, max: labels.length - 1 }, // Giới hạn trục X trong phạm vi dữ liệu
+            x: { min: 0, max: labels.length - 1 },
+            minRange: 3,
+            maxRange: 15,
           },
         },
       },
@@ -132,7 +167,6 @@ const LineChartDualAxis = ({ labels, revenueData, ticketData }) => {
     const chart = chartRef.current;
     if (!chart) return;
 
-    // Toggle trạng thái hidden
     const meta = chart.getDatasetMeta(index);
     const currentlyHidden = !!hiddenDatasets[index];
 
@@ -200,9 +234,12 @@ const LineChartDualAxis = ({ labels, revenueData, ticketData }) => {
 };
 
 LineChartDualAxis.propTypes = {
-  labels: PropTypes.arrayOf(PropTypes.string).isRequired,
-  revenueData: PropTypes.arrayOf(PropTypes.number).isRequired,
-  ticketData: PropTypes.arrayOf(PropTypes.number).isRequired,
+  event: PropTypes.shape({
+    timeStart: PropTypes.string,
+    timeEnd: PropTypes.string,
+    revenueByDay: PropTypes.object,
+    ticketByDay: PropTypes.object,
+  }).isRequired,
 };
 
-export default LineChartDualAxis;
+export default React.memo(LineChartDualAxis);

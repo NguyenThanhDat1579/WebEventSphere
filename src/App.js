@@ -1,79 +1,86 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
-import SignIn from "../src/layouts/authentication/sign-in";
-
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import Icon from "@mui/material/Icon";
+import { CacheProvider } from "@emotion/react";
+import createCache from "@emotion/cache";
+import rtlPlugin from "stylis-plugin-rtl";
 
-import ArgonBox from "components/ArgonBox";
+import SignIn from "layouts/authentication/sign-in";
+import SignUp from "layouts/authentication/sign-up";
+import ForgetPasswordOrganizer from "layouts/authentication/forgotPassword/ForgetPasswordOrganizer";
+import OtpForgetPasswordOrganizer from "layouts/authentication/forgotPassword/OtpForgetPasswordOrganizer";
+import OtpOrganizerVerification from "layouts/authentication/forgotPassword/OtpOrganizerVerification";
+import ResetPasswordOrganizer from "layouts/authentication/forgotPassword/ResetPasswordOrganizer";
+
 import Sidenav from "examples/Sidenav";
 import Configurator from "examples/Configurator";
 
+
 import theme from "assets/theme";
 import themeRTL from "assets/theme/theme-rtl";
-
-import rtlPlugin from "stylis-plugin-rtl";
-import { CacheProvider } from "@emotion/react";
-import createCache from "@emotion/cache";
+import brand from "assets/images/logo-ct.png";
+import globalStyles from "assets/theme/globalStyles";
 
 import routes from "routes";
 import { useSelector, useDispatch } from "react-redux";
-import { setUserData } from "../src/redux/store/slices/authSlice";
+import { setUserData } from "./redux/store/slices/authSlice"
 import { useArgonController, setMiniSidenav, setOpenConfigurator } from "context";
-
-import brand from "assets/images/logo-ct.png";
-import "assets/css/nucleo-icons.css";
-import "assets/css/nucleo-svg.css";
-
+import brandImg from "./assets/images/logo.png";
 export default function App() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const role = useSelector((state) => state.auth?.role);
-  const dispatch1 = useDispatch();
-  console.log("Current user role:", role);
-  const isAuthenticated = role !== null;
+
   const [initializing, setInitializing] = useState(true);
-  const [controller, dispatch] = useArgonController();
-  const { miniSidenav, direction, layout, openConfigurator, sidenavColor, darkSidenav } =
-    controller;
+  const isAuthenticated = role !== null;
+  const redirectedRef = useRef(false);
+
+  const [controller, controllerDispatch] = useArgonController();
+  const { miniSidenav, direction, layout, openConfigurator, sidenavColor } = controller;
 
   const [onMouseEnter, setOnMouseEnter] = useState(false);
   const [rtlCache, setRtlCache] = useState(null);
   const { pathname } = useLocation();
-  const redirectedRef = useRef(false);
-  // Redirect đến sign-in nếu chưa đăng nhập và không ở trang sign-in
+
+  // Khôi phục user từ localStorage nếu chưa có
   useEffect(() => {
     const storedUserData = localStorage.getItem("userData");
     if (storedUserData && !role) {
-      const parsedData = JSON.parse(storedUserData);
-      dispatch1(setUserData(parsedData));
-      console.log("User data restored from localStorage");
+      dispatch(setUserData(JSON.parse(storedUserData)));
     }
-    setInitializing(false); // kết thúc khởi tạo
+    setInitializing(false);
   }, [dispatch, role]);
 
-  // Chặn redirect trong khi đang khởi tạo
+  // Redirect nếu chưa đăng nhập
   useEffect(() => {
-    if (!initializing && !isAuthenticated && pathname !== "/authentication/sign-in") {
+    if (
+      !initializing &&
+      !isAuthenticated &&
+      ![
+        "/authentication/sign-in",
+        "/authentication/sign-up",
+        "/authentication/forget-password",
+        "/authentication/otp-forget-password",
+        "/authentication/reset-password",
+        "/authentication/verify-otp-organizer"
+      ].includes(pathname)
+    ) {
       navigate("/authentication/sign-in");
     }
   }, [initializing, isAuthenticated, pathname, navigate]);
 
-  // Bỏ redirect tới dashboard khi chưa khôi phục xong
+  // Redirect nếu đã đăng nhập
   useEffect(() => {
     if (!initializing && isAuthenticated && !redirectedRef.current) {
       redirectedRef.current = true;
-      if (role === 1) {
-        navigate("/dashboard-admin");
-      } else if (role === 2) {
-        navigate("/dashboard-organizer");
-      } else {
-        navigate("/dashboard");
-      }
+      if (role === 1) navigate("/dashboard-admin");
+      else if (role === 2) navigate("/dashboard-organizer");
+      else navigate("/dashboard");
     }
   }, [initializing, isAuthenticated, role, navigate]);
 
-  // Cache RTL
   useMemo(() => {
     const cacheRtl = createCache({
       key: "rtl",
@@ -82,7 +89,6 @@ export default function App() {
     setRtlCache(cacheRtl);
   }, []);
 
-  // Lọc routes theo role
   const filteredRoutes = useMemo(() => {
     return routes.filter((route) => {
       if (route.hidden) return false;
@@ -93,163 +99,91 @@ export default function App() {
 
   const handleOnMouseEnter = () => {
     if (miniSidenav && !onMouseEnter) {
-      setMiniSidenav(dispatch, false);
+      setMiniSidenav(controllerDispatch, false);
       setOnMouseEnter(true);
     }
   };
 
   const handleOnMouseLeave = () => {
     if (onMouseEnter) {
-      setMiniSidenav(dispatch, true);
+      setMiniSidenav(controllerDispatch, true);
       setOnMouseEnter(false);
     }
   };
 
-  const handleConfiguratorOpen = () => setOpenConfigurator(dispatch, !openConfigurator);
+  const handleConfiguratorOpen = () => setOpenConfigurator(controllerDispatch, !openConfigurator);
 
   useEffect(() => {
     document.body.setAttribute("dir", direction);
-  }, [direction]);
-
-  useEffect(() => {
     document.documentElement.scrollTop = 0;
     document.scrollingElement.scrollTop = 0;
-  }, [pathname]);
+  }, [direction, pathname]);
 
   const getRoutes = (allRoutes) =>
     allRoutes.map((route) => {
-      if (route.collapse) {
-        return getRoutes(route.collapse);
-      }
-
-      if (route.route) {
-        return <Route exact path={route.route} element={route.component} key={route.key} />;
-      }
-
+      if (route.collapse) return getRoutes(route.collapse);
+      if (route.route) return <Route exact path={route.route} element={route.component} key={route.key} />;
       return null;
     });
 
-  // NẾU CHƯA ĐĂNG NHẬP -> CHỈ HIỂN THỊ TRANG SIGN IN
+  // Giao diện khi chưa đăng nhập
   if (!isAuthenticated) {
-    return direction === "rtl" ? (
-      <CacheProvider value={rtlCache}>
-        <ThemeProvider theme={themeRTL}>
-          <CssBaseline />
-          <Routes>
-            <Route path="/authentication/sign-in" element={<SignIn />} />
-            <Route path="*" element={<Navigate to="/authentication/sign-in" replace />} />
-          </Routes>
-        </ThemeProvider>
-      </CacheProvider>
-    ) : (
-      <ThemeProvider theme={theme}>
+    const content = (
+      <>
         <CssBaseline />
+        {globalStyles}
         <Routes>
           <Route path="/authentication/sign-in" element={<SignIn />} />
+          <Route path="/authentication/sign-up" element={<SignUp />} />
+          <Route path="/authentication/forget-password" element={<ForgetPasswordOrganizer />} />
+          <Route path="/authentication/otp-forget-password" element={<OtpForgetPasswordOrganizer />} />
+          <Route path="/authentication/verify-otp-organizer" element={<OtpOrganizerVerification />} />
+          <Route path="/authentication/reset-password" element={<ResetPasswordOrganizer />} />
           <Route path="*" element={<Navigate to="/authentication/sign-in" replace />} />
         </Routes>
-      </ThemeProvider>
+      </>
+    );
+
+    return direction === "rtl" ? (
+      <CacheProvider value={rtlCache}>
+        <ThemeProvider theme={themeRTL}>{content}</ThemeProvider>
+      </CacheProvider>
+    ) : (
+      <ThemeProvider theme={theme}>{content}</ThemeProvider>
     );
   }
 
-  // NẾU ĐÃ ĐĂNG NHẬP -> HIỂN THỊ GIAO DIỆN CHÍNH
+  // Giao diện chính khi đã đăng nhập
+  const mainLayout = (
+    <>
+      <CssBaseline />
+      {globalStyles}
+      {layout === "dashboard" && (
+        <>
+          <Sidenav
+            color={sidenavColor}
+            brand={brand}
+            brandNameImage={brandImg}
+            routes={filteredRoutes}
+            onMouseEnter={handleOnMouseEnter}
+            onMouseLeave={handleOnMouseLeave}
+          />
+          <Configurator />
+        </>
+      )}
+
+      <Routes>
+        {getRoutes(filteredRoutes)}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </>
+  );
+
   return direction === "rtl" ? (
     <CacheProvider value={rtlCache}>
-      <ThemeProvider theme={themeRTL}>
-        <CssBaseline />
-        <>
-          {/* Hiển thị Sidenav và Configurator khi đã đăng nhập */}
-          {layout === "dashboard" && (
-            <>
-              <Sidenav
-                color={sidenavColor}
-                brand={brand}
-                brandName="EventSphere"
-                routes={filteredRoutes}
-                onMouseEnter={handleOnMouseEnter}
-                onMouseLeave={handleOnMouseLeave}
-              />
-              <Configurator />
-              <ArgonBox
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                width="3.5rem"
-                height="3.5rem"
-                bgColor="white"
-                shadow="sm"
-                borderRadius="50%"
-                position="fixed"
-                right="2rem"
-                bottom="2rem"
-                zIndex={99}
-                color="dark"
-                sx={{ cursor: "pointer" }}
-                onClick={handleConfiguratorOpen}
-              >
-                <Icon fontSize="default" color="inherit">
-                  settings
-                </Icon>
-              </ArgonBox>
-            </>
-          )}
-
-          {layout === "vr" && <Configurator />}
-
-          <Routes>
-            {getRoutes(filteredRoutes)}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </>
-      </ThemeProvider>
+      <ThemeProvider theme={themeRTL}>{mainLayout}</ThemeProvider>
     </CacheProvider>
   ) : (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <>
-        {/* Hiển thị Sidenav và Configurator khi đã đăng nhập */}
-        {layout === "dashboard" && (
-          <>
-            <Sidenav
-              color={sidenavColor}
-              brand={brand}
-              brandName="EventSphere"
-              routes={filteredRoutes}
-              onMouseEnter={handleOnMouseEnter}
-              onMouseLeave={handleOnMouseLeave}
-            />
-            <Configurator />
-            <ArgonBox
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              width="3.5rem"
-              height="3.5rem"
-              bgColor="white"
-              shadow="sm"
-              borderRadius="50%"
-              position="fixed"
-              right="2rem"
-              bottom="2rem"
-              zIndex={99}
-              color="dark"
-              sx={{ cursor: "pointer" }}
-              onClick={handleConfiguratorOpen}
-            >
-              <Icon fontSize="default" color="inherit">
-                settings
-              </Icon>
-            </ArgonBox>
-          </>
-        )}
-
-        {layout === "vr" && <Configurator />}
-
-        <Routes>
-          {getRoutes(filteredRoutes)}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </>
-    </ThemeProvider>
+    <ThemeProvider theme={theme}>{mainLayout}</ThemeProvider>
   );
 }

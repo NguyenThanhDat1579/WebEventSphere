@@ -19,8 +19,11 @@ import OrganizerCreateNewEvent from "layouts/dashboard/organizer/OrganizerCreate
 import OrganizerTicketsAndAttendees from "layouts/dashboard/organizer/OrganizerTicketsAndAttendees";
 import UserManagement from "layouts/tables/admin/UserManagement";
 import OrganizerManagement from "layouts/tables/admin/OrganizerManagement";
-// Argon Dashboard 2 MUI components
+import ForgetPasswordOrganizers from "layouts/authentication/forgotPassword/ForgetPasswordOrganizer";
+import OtpForgetPasswordOrganizer from "layouts/authentication/forgotPassword/OtpForgetPasswordOrganizer";
+import ResetPasswordOrganizer from "layouts/authentication/forgotPassword/ResetPasswordOrganizer";
 import ArgonBox from "components/ArgonBox";
+import OtpOrganizerVerification from "layouts/authentication/forgotPassword/OtpOrganizerVerification";
 
 const routes = [
   {
@@ -108,7 +111,7 @@ const routes = [
   },
   {
     type: "route",
-    name: "Vé & người tham dự",
+    name: "Vé & Người tham dự",
     key: "organizer-ticketsandattendees",
     route: "/ticketsandattendees-organizer",
     icon: <ArgonBox component="i" color="primary" fontSize="14px" className="ni ni-tv-2" />,
@@ -180,6 +183,7 @@ const routes = [
     icon: <ArgonBox component="i" color="dark" fontSize="14px" className="ni ni-single-02" />,
     component: <ProfileAdmin />,
     allowedRoles: [1],
+     hidden: true,
   },
   {
     type: "route",
@@ -210,6 +214,53 @@ const routes = [
     component: <SignUp />,
     hidden: true,
   },
+{
+  type: "route",
+  name: "Quên mật khẩu",
+  key: "forget-password-organizer",
+  route: "/authentication/forget-password",
+  icon: <ArgonBox component="i" color="warning" fontSize="14px" className="ni ni-lock-circle-open" />,
+  component: <ForgetPasswordOrganizers />,
+  hidden: true,
+},
+
+{
+  type: "route",
+  name: "OTP Quên mật khẩu",
+  key: "otp-forget-password-organizer",
+  route: "/authentication/otp-forget-password",
+  icon: <ArgonBox component="i" color="info" fontSize="14px" className="ni ni-key-25" />,
+  component: <OtpForgetPasswordOrganizer />,
+  hidden: true,
+},
+{
+  type: "route",
+  name: "Đặt lại mật khẩu",
+  key: "reset-password-organizer",
+  route: "/authentication/reset-password",
+  icon: <ArgonBox component="i" color="success" fontSize="14px" className="ni ni-settings-gear-65" />,
+  component: <ResetPasswordOrganizer />,
+  hidden: true,
+},
+
+{
+  type: "route",
+  name: "Xác thực OTP",
+  key: "otp-forget-password",
+  route: "/authentication/verify-otp-organizer",
+  icon: (
+    <ArgonBox
+      component="i"
+      color="info"
+      fontSize="14px"
+      className="ni ni-check-bold"
+    />
+  ),
+  component: <OtpOrganizerVerification />,
+  hidden: true, // ✅ Ẩn khỏi menu, chỉ điều hướng bằng navigate
+},
+
+
 ];
 
 export default routes;

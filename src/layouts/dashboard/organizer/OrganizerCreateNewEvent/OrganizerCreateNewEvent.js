@@ -37,7 +37,6 @@ export default function OrganizerCreateNewEvent() {
           </Grid>
         </Grid>
       </ArgonBox>
-      <Footer />
     </DashboardLayout>
   );
 }

@@ -19,7 +19,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 import CustomTextField from "./CustomTextField";
-import CustomDateTimePicker from "./CustomDateTimePicker";
+
 
 import DeleteIcon from "@mui/icons-material/Delete";
 import eventApi from "../../../../../api/utils/eventApi";
@@ -45,6 +45,7 @@ import {
 import { resetAddress } from "../../../../../redux/store/slices/eventAddressSlice";
 import { format, parse } from "date-fns";
 import dayjs from "dayjs";
+import ZoneSeatLayout from "../../components/ZoneSeatLayout";
 export default function ScheduleSection() {
   const navigate = useNavigate();
 
@@ -62,13 +63,12 @@ export default function ScheduleSection() {
   const [ticketPriceZoneError, setTicketPriceZoneError] = useState("");
   const [ticketQuantityError, setTicketQuantityError] = useState("");
 
-  const [price, setPrice] = useState("");
   const [localShowtimes, setLocalShowtimes] = useState([]);
   const [showtimeListError, setShowtimeListError] = useState(false);
   const [showtimeStart, setShowtimeStart] = useState("");
   const [showtimeEnd, setShowtimeEnd] = useState("");
   const [showtimeError, setShowtimeError] = useState("");
-  const [seatLayoutError, setSeatLayoutError] = useState("");
+  const [zoneSeat, setZoneSeat] = useState(null);
 
   const dispatch = useDispatch();
   const eventInfo = useSelector((state) => state.eventInfo);
@@ -131,9 +131,9 @@ export default function ScheduleSection() {
     const saleEnd = new Date(endTime);
 
     if (showEnd <= showStart) {
-      setShowtimeError("Kết thúc suất chiếu phải lớn hơn bắt đầu.");
+      setShowtimeError("Kết thúc suất diễn phải lớn hơn bắt đầu.");
     } else if (showStart < saleEnd) {
-      setShowtimeError("Suất chiếu phải bắt đầu sau khi kết thúc bán vé.");
+      setShowtimeError("Suất diễn phải bắt đầu sau khi kết thúc bán vé.");
     } else {
       setShowtimeError("");
     }
@@ -142,7 +142,7 @@ export default function ScheduleSection() {
   const handleAddShowtime = () => {
     // Kiểm tra nếu chưa nhập thời gian
     if (!showtimeStart || !showtimeEnd) {
-      setShowtimeError("Vui lòng chọn thời gian bắt đầu và kết thúc suất chiếu.");
+      setShowtimeError("Vui lòng chọn thời gian bắt đầu và kết thúc suất diễn.");
       return;
     }
     // Gọi lại validate
@@ -226,34 +226,6 @@ export default function ScheduleSection() {
     setZones(updatedZones);
   };
 
-  const [rows, setRows] = useState(0);
-  const [cols, setCols] = useState(0);
-  const [area, setArea] = useState("");
-  const [seatPrice, setSeatPrice] = useState(0);
-  const [selectedSeats, setSelectedSeats] = useState([]);
-  const handleToggleSeat = (row, col) => {
-    const seatId = `${row}-${col}`;
-    setSelectedSeats((prev) =>
-      prev.includes(seatId) ? prev.filter((id) => id !== seatId) : [...prev, seatId]
-    );
-  };
-
-  const handleToggleAllSeats = () => {
-    if (selectedSeats.length === rows * cols) {
-      // Bỏ chọn tất cả
-      setSelectedSeats([]);
-    } else {
-      // Chọn tất cả
-      const allSeats = [];
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          allSeats.push(`${r}-${c}`);
-        }
-      }
-      setSelectedSeats(allSeats);
-    }
-  };
-
   const validateForm = () => {
     let hasError = false;
 
@@ -296,26 +268,6 @@ export default function ScheduleSection() {
     }
 
     if (ticketForm.typeBase === "seat") {
-      if (!ticketPriceZone || Number(ticketPriceZone) <= 0) {
-        setTicketPriceZoneError("Vui lòng nhập giá vé.");
-        hasError = true;
-      } else {
-        setTicketPriceZoneError("");
-      }
-
-      if (!ticketQuantity || Number(ticketQuantity) <= 0) {
-        setTicketQuantityError("Vui lòng nhập số lượng vé.");
-        hasError = true;
-      } else {
-        setTicketQuantityError("");
-      }
-
-      if (!zoneName.trim()) {
-        setZoneNameError("Vui lòng nhập tên khu vực.");
-        hasError = true;
-      } else {
-        setZoneNameError("");
-      }
     }
 
     if (localShowtimes.length === 0) {
@@ -323,15 +275,6 @@ export default function ScheduleSection() {
       hasError = true;
     } else {
       setShowtimeListError(false);
-    }
-
-    if (ticketForm.typeBase === "seat") {
-      if (rows <= 0 || cols <= 0) {
-        setSeatLayoutError("* Vui lòng nhập số hàng và cột hợp lệ.");
-        hasError = true;
-      } else {
-        setSeatLayoutError("");
-      }
     }
 
     return hasError;
@@ -348,6 +291,15 @@ export default function ScheduleSection() {
     dispatch(setTimeStart(startUnix));
     dispatch(setTimeEnd(endUnix));
     dispatch(setTypeBase(ticketForm.typeBase));
+    dispatch(setShowtimes(localShowtimes));
+    const tempPayload = {
+      ...eventInfo, // hoặc clone base info ở đây nếu cần
+      timeStart: startUnix,
+      timeEnd: endUnix,
+      typeBase: ticketForm.typeBase,
+      showtimes: [],
+      zones: [],
+    };
 
     if (ticketForm.typeBase === "none") {
       const mappedShowtimes = localShowtimes.map((item) => ({
@@ -356,98 +308,63 @@ export default function ScheduleSection() {
         ticketPrice: Number(ticketPriceZone),
         ticketQuantity: Number(ticketQuantity),
       }));
-      dispatch(setShowtimes(mappedShowtimes));
       dispatch(resetZones());
-      return true;
+
+      tempPayload.showtimes = mappedShowtimes;
+      return tempPayload;
     }
 
     if (ticketForm.typeBase === "zone") {
       dispatch(resetZones());
-      zones.forEach((zone) => {
-        dispatch(setZonesAction(zone));
-      });
-      dispatch(setShowtimes(localShowtimes));
-      return true;
+      zones.forEach((zone) => dispatch(setZonesAction(zone)));
+      tempPayload.showtimes = localShowtimes;
+      tempPayload.zones = zones;
+      return tempPayload;
     }
 
     if (ticketForm.typeBase === "seat") {
-      return new Promise((resolve) => {
-        const seats = selectedSeats.map((seatId) => {
-          const [row, col] = seatId.split("-").map(Number);
-          const rowLabel = String.fromCharCode(65 + row);
-          return {
-            seatId: `${rowLabel}${col + 1}`,
-            row: row + 1,
-            col: col + 1,
-            label: `${rowLabel}${col + 1}`,
-            price: seatPrice,
-            area: area,
-          };
-        });
-
-        const newZone = {
-          name: area,
-          layout: {
-            rows,
-            cols,
-            seats,
-          },
-          showtimes: [
-            {
-              startTime: startUnix,
-              endTime: endUnix,
-            },
-          ],
-        };
-
-        // cập nhật state trước khi dispatch
-        setZones((prev) => {
-          const filtered = prev.filter((z) => !z.layout?.seats);
-          const updatedZones = [...filtered, newZone];
-
-          dispatch(resetZones());
-          dispatch(setZonesAction(newZone));
-          dispatch(setShowtimes(localShowtimes));
-          resolve(true); // chỉ resolve sau khi setZones và dispatch xong
-
-          return updatedZones;
-        });
-      });
+      dispatch(setZonesAction(zoneSeat));
+      tempPayload.showtimes = localShowtimes;
+      tempPayload.zones = zoneSeat;
+      return tempPayload;
     }
 
-    return true;
+    return tempPayload;
+  };
+
+  const handleLayoutSubmit = (data) => {
+    console.log("Dữ liệu nhận được từ ZoneSeatLayout:", data);
+    // Bạn có thể lưu vào state, hoặc gọi API ở đây
+    setZoneSeat(data);
   };
 
   const handleSubmit = async () => {
-    const isSaved = await handleSaveZoneOrSeat();
-    if (!isSaved) return;
+    const payload = await handleSaveZoneOrSeat();
+    if (!payload) return;
 
-    // Đợi một chút để Redux state cập nhật hoàn tất
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-
-    await submitEvent(); // gọi sau khi chắc chắn dữ liệu đã cập nhật
+    await submitEvent(payload); // Gửi API ngay với dữ liệu đã sẵn sàng
   };
 
-  const submitEvent = async () => {
+  const submitEvent = async (payload) => {
     try {
       setAlertStatus("loading");
       setAlertMessage("Đang tạo sự kiện...");
 
-      console.log("📦 Payload gửi đi:", JSON.stringify(eventInfo, null, 2));
-      // const response = await eventApi.addEvent(eventInfo);
+      console.log("📦 Payload gửi đi:", JSON.stringify(payload, null, 2));
+      const response = await eventApi.addEvent(payload);
       console.log("✅ API Response:", response.data);
 
-      // if (response.data?.status === true) {
-      dispatch(resetEventInfo());
-      dispatch(resetAddress());
+      if (response.data?.status === true) {
+        dispatch(resetEventInfo());
+        dispatch(resetAddress());
 
-      setAlertStatus("success");
-      setAlertMessage("Tạo sự kiện thành công!");
+        setAlertStatus("success");
+        setAlertMessage("Tạo sự kiện thành công!");
 
-      setTimeout(() => {
-        navigate("/dashboard-organizer");
-      }, 1000);
-      // }
+        setTimeout(() => {
+          navigate("/dashboard-organizer");
+        }, 1000);
+      }
     } catch (error) {
       console.error("Lỗi khi tạo sự kiện:", error);
       if (error.response) {
@@ -464,12 +381,6 @@ export default function ScheduleSection() {
       <Box>
         <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
           <Box display="flex" flexDirection="column" gap={2}>
-            {/* <CustomDateTimePicker
-              label="Thời gian bắt đầu"
-              value={startDateTime}
-              onChange={(newValue) => setStartDateTime(newValue)}
-              name="startTime"
-            /> */}
             <Grid container spacing={3}>
               {/* Tên địa điểm */}
               <Grid item xs={12} sm={6}>
@@ -503,7 +414,7 @@ export default function ScheduleSection() {
                 onChange={handleChangeTypeBase}
                 sx={{ p: 2 }}
               >
-                <FormControlLabel value="none" control={<Radio />} label="Thường" />
+                <FormControlLabel value="none" control={<Radio />} label="WorkShop" />
                 <FormControlLabel value="zone" control={<Radio />} label="Khu vực" />
                 <FormControlLabel value="seat" control={<Radio />} label="Ghế" />
               </RadioGroup>
@@ -525,7 +436,8 @@ export default function ScheduleSection() {
                     <CustomTextField
                       label="Giá vé"
                       type="number"
-                      value={ticketPriceZone}
+                      pop="money"
+                      value={ticketPriceZone.toString()}
                       onChange={(e) => setTicketPriceZone(e.target.value)}
                       placeholder="Nhập giá vé"
                       error={Boolean(ticketPriceZoneError)}
@@ -534,7 +446,7 @@ export default function ScheduleSection() {
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <CustomTextField
-                      label="Tổng số lượng vé"
+                      label="Số lượng vé"
                       type="number"
                       value={ticketQuantity}
                       onChange={(e) => setTicketQuantity(e.target.value)}
@@ -546,18 +458,18 @@ export default function ScheduleSection() {
                 </Grid>
                 <Box mt={2}>
                   <Typography variant="h5" gutterBottom>
-                    Tạo suất chiếu
+                    Tạo suất diễn
                   </Typography>
                   {showtimeListError && (
                     <Typography variant="body2" color="error" sx={{ mt: 1, ml: 1 }}>
-                      * Vui lòng tạo ít nhất một suất chiếu.
+                      * Vui lòng tạo ít nhất một suất diễn.
                     </Typography>
                   )}
 
                   <Grid container spacing={2} alignItems="center">
                     <Grid item xs={12} md={4}>
                       <CustomTextField
-                        label="Thời gian bắt đầu suất chiếu"
+                        label="Thời gian bắt đầu suất diễn"
                         type="datetime-local"
                         value={showtimeStart}
                         onChange={handleShowtimeStartChange}
@@ -568,7 +480,7 @@ export default function ScheduleSection() {
                     </Grid>
                     <Grid item xs={12} md={4}>
                       <CustomTextField
-                        label="Thời gian kết thúc suất chiếu"
+                        label="Thời gian kết thúc suất diễn"
                         type="datetime-local"
                         value={showtimeEnd}
                         onChange={handleShowtimeEndChange} // <- Đổi từ setShowtimeEnd trực tiếp
@@ -584,18 +496,18 @@ export default function ScheduleSection() {
                         fullWidth
                         sx={{
                           mt: 4,
-                          backgroundColor: "#1976D2",
+                          backgroundColor: "#5669FF",
                           color: "#fff",
-                          border: "1px solid #1976D2", // ✅ thêm vào trạng thái mặc định
+                          border: "1px solid #5669FF", // ✅ thêm vào trạng thái mặc định
                           boxSizing: "border-box",
                           "&:hover": {
                             backgroundColor: "#fff",
-                            color: "#1976D2",
-                            border: "1px solid #1976D2", // giữ nguyên border khi hover
+                            color: "#5669FF",
+                            border: "1px solid #5669FF", // giữ nguyên border khi hover
                           },
                         }}
                       >
-                        Tạo suất chiếu
+                        Tạo suất diễn
                       </Button>
                     </Grid>
                   </Grid>
@@ -603,7 +515,7 @@ export default function ScheduleSection() {
                   {localShowtimes.length > 0 && (
                     <Box mt={3}>
                       <Typography variant="subtitle1" gutterBottom>
-                        Danh sách suất chiếu đã tạo:
+                        Danh sách suất diễn đã tạo:
                       </Typography>
                       <Grid container spacing={2}>
                         {localShowtimes.map((show, index) => (
@@ -631,7 +543,7 @@ export default function ScheduleSection() {
                                 </Typography>
                               </Box>
                               <IconButton
-                                aria-label="Xoá suất chiếu"
+                                aria-label="Xoá suất diễn"
                                 size="small"
                                 color="error"
                                 onClick={() => handleRemoveShowtime(index)}
@@ -681,6 +593,7 @@ export default function ScheduleSection() {
                       <CustomTextField
                         label="Giá vé"
                         type="number"
+                        pop="money"
                         value={ticketPriceZone}
                         onChange={(e) => setTicketPriceZone(e.target.value)}
                         placeholder="Nhập giá vé"
@@ -704,14 +617,14 @@ export default function ScheduleSection() {
                         variant="contained"
                         onClick={handleAddZone}
                         sx={{
-                          backgroundColor: "#1976D2",
+                          backgroundColor: "#5669FF",
                           color: "#fff",
-                          border: "1px solid #1976D2", // ✅ thêm vào trạng thái mặc định
+                          border: "1px solid #5669FF", // ✅ thêm vào trạng thái mặc định
                           boxSizing: "border-box",
                           "&:hover": {
                             backgroundColor: "#fff",
-                            color: "#1976D2",
-                            border: "1px solid #1976D2", // giữ nguyên border khi hover
+                            color: "#5669FF",
+                            border: "1px solid #5669FF", // giữ nguyên border khi hover
                           },
                         }}
                       >
@@ -775,11 +688,11 @@ export default function ScheduleSection() {
                 {/* Nhập suất chiếu */}
                 <Box>
                   <Typography variant="h5" gutterBottom>
-                    Tạo suất chiếu
+                    Tạo suất diễn
                   </Typography>
                   {showtimeListError && (
                     <Typography variant="body2" color="error" sx={{ mt: 1, ml: 1 }}>
-                      * Vui lòng tạo ít nhất một suất chiếu.
+                      * Vui lòng tạo ít nhất một suất diễn.
                     </Typography>
                   )}
                   <Grid container spacing={2} alignItems="center">
@@ -812,18 +725,18 @@ export default function ScheduleSection() {
                         fullWidth
                         sx={{
                           mt: 4,
-                          backgroundColor: "#1976D2",
+                          backgroundColor: "#5669FF",
                           color: "#fff",
-                          border: "1px solid #1976D2", // ✅ thêm vào trạng thái mặc định
+                          border: "1px solid #5669FF", // ✅ thêm vào trạng thái mặc định
                           boxSizing: "border-box",
                           "&:hover": {
                             backgroundColor: "#fff",
-                            color: "#1976D2",
-                            border: "1px solid #1976D2", // giữ nguyên border khi hover
+                            color: "#5669FF",
+                            border: "1px solid #5669FF", // giữ nguyên border khi hover
                           },
                         }}
                       >
-                        Tạo suất chiếu
+                        Tạo suất diễn
                       </Button>
                     </Grid>
                   </Grid>
@@ -832,7 +745,7 @@ export default function ScheduleSection() {
                   {localShowtimes.length > 0 && (
                     <Box mt={3}>
                       <Typography variant="subtitle1" gutterBottom>
-                        Danh sách suất chiếu đã tạo:
+                        Danh sách suất diễn đã tạo:
                       </Typography>
                       <Grid container spacing={2}>
                         {localShowtimes.map((show, index) => (
@@ -860,7 +773,7 @@ export default function ScheduleSection() {
                                 </Typography>
                               </Box>
                               <IconButton
-                                aria-label="Xoá suất chiếu"
+                                aria-label="Xoá suất diễn"
                                 size="small"
                                 color="error"
                                 onClick={() => handleRemoveShowtime(index)}
@@ -890,50 +803,15 @@ export default function ScheduleSection() {
                 }}
               >
                 {/* Thông tin khu vực */}
+                <ZoneSeatLayout onSubmit={handleLayoutSubmit} />
 
-                <Typography variant="h5">Thông tin khu vực ghế</Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
-                    <CustomTextField
-                      label="Tên khu vực ghế"
-                      value={area}
-                      onChange={(e) => setArea(e.target.value)}
-                      placeholder="Nhập tên khu vực"
-                      maxLength={80}
-                      error={Boolean(zoneNameError)}
-                      helperText={zoneNameError}
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={3}>
-                    <CustomTextField
-                      label="Giá vé"
-                      type="number"
-                      value={ticketPriceZone}
-                      onChange={(e) => setTicketPriceZone(e.target.value)}
-                      placeholder="Nhập giá vé"
-                      error={Boolean(ticketPriceZoneError)}
-                      helperText={ticketPriceZoneError}
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={3}>
-                    <CustomTextField
-                      label="Tổng số lượng vé"
-                      type="number"
-                      value={ticketQuantity}
-                      onChange={(e) => setTicketQuantity(e.target.value)}
-                      placeholder="Nhập số lượng vé"
-                      error={Boolean(ticketQuantityError)}
-                      helperText={ticketQuantityError}
-                    />
-                  </Grid>
-                </Grid>
                 {/* Suất chiếu */}
                 <Typography variant="h5" sx={{ mb: -2 }}>
-                  Tạo suất chiếu
+                  Tạo suất diễn
                 </Typography>
                 {showtimeListError && (
                   <Typography variant="body2" color="error" sx={{ mt: -1, ml: 1, mb: -1 }}>
-                    * Vui lòng tạo ít nhất một suất chiếu.
+                    * Vui lòng tạo ít nhất một suất diễn.
                   </Typography>
                 )}
                 <Grid container spacing={2}>
@@ -966,18 +844,18 @@ export default function ScheduleSection() {
                       fullWidth
                       sx={{
                         mt: 4,
-                        backgroundColor: "#1976D2",
+                        backgroundColor: "#5669FF",
                         color: "#fff",
-                        border: "1px solid #1976D2", // ✅ thêm vào trạng thái mặc định
+                        border: "1px solid #5669FF", // ✅ thêm vào trạng thái mặc định
                         boxSizing: "border-box",
                         "&:hover": {
                           backgroundColor: "#fff",
-                          color: "#1976D2",
-                          border: "1px solid #1976D2", // giữ nguyên border khi hover
+                          color: "#5669FF",
+                          border: "1px solid #5669FF", // giữ nguyên border khi hover
                         },
                       }}
                     >
-                      Tạo suất chiếu
+                      Tạo suất diễn
                     </Button>
                   </Grid>
                 </Grid>
@@ -985,7 +863,7 @@ export default function ScheduleSection() {
                 {localShowtimes.length > 0 && (
                   <Box mt={3} sx={{ mt: -1 }}>
                     <Typography variant="subtitle1" gutterBottom>
-                      Danh sách suất chiếu đã tạo:
+                      Danh sách suất diễn đã tạo:
                     </Typography>
                     <Grid container spacing={2}>
                       {localShowtimes.map((show, index) => (
@@ -1013,7 +891,7 @@ export default function ScheduleSection() {
                               </Typography>
                             </Box>
                             <IconButton
-                              aria-label="Xoá suất chiếu"
+                              aria-label="Xoá suất diễn"
                               size="small"
                               color="error"
                               onClick={() => handleRemoveShowtime(index)}
@@ -1026,109 +904,13 @@ export default function ScheduleSection() {
                     </Grid>
                   </Box>
                 )}
-                {/* Sơ đồ ghế */}
-                <Typography variant="h5" gutterBottom>
-                  Tạo sơ đồ ghế
-                </Typography>
-                <Grid container spacing={2} mb={2}>
-                  <Grid item xs={6} md={3}>
-                    <CustomTextField
-                      label="Số hàng"
-                      type="number"
-                      value={rows}
-                      onChange={(e) => {
-                        const value = Number(e.target.value);
-                        setRows(value);
-                        if (value <= 0) setSeatLayoutError("Số hàng phải lớn hơn 0");
-                        else setSeatLayoutError("");
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={6} md={3}>
-                    <CustomTextField
-                      label="Số cột"
-                      type="number"
-                      value={cols}
-                      onChange={(e) => {
-                        const value = Number(e.target.value);
-                        setCols(value);
-                        if (value <= 0) setSeatLayoutError("Số cột phải lớn hơn 0");
-                        else setSeatLayoutError("");
-                      }}
-                    />
-                  </Grid>
-                </Grid>
-                {seatLayoutError && (
-                  <Typography color="error" variant="body2" sx={{ mt: -4 }}>
-                    {seatLayoutError}
-                  </Typography>
-                )}
-
-                {rows > 0 && cols > 0 ? (
-                  <Box>
-                    <Typography variant="subtitle1" gutterBottom>
-                      Sơ đồ ghế
-                    </Typography>
-                    {Array.from({ length: rows }).map((_, rowIndex) => (
-                      <Box key={rowIndex} sx={{ display: "flex", gap: 1, mb: 1 }}>
-                        {Array.from({ length: cols }).map((_, colIndex) => {
-                          const seatId = `${rowIndex}-${colIndex}`;
-                          const isSelected = selectedSeats.includes(seatId);
-                          return (
-                            <Box
-                              key={colIndex}
-                              onClick={() => handleToggleSeat(rowIndex, colIndex)}
-                              sx={{
-                                width: 30,
-                                height: 30,
-                                backgroundColor: isSelected ? "#428BD9" : "lightgray",
-                                color: isSelected ? "#fff" : "black",
-                                display: "flex",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                borderRadius: 1,
-                                cursor: "pointer",
-                                fontSize: 12,
-                              }}
-                            >
-                              {String.fromCharCode(65 + rowIndex)}
-                              {colIndex + 1}
-                            </Box>
-                          );
-                        })}
-                      </Box>
-                    ))}
-                    <Typography variant="subtitle1" sx={{ mt: 2 }}>
-                      Tổng số ghế đã chọn: <strong>{selectedSeats.length}</strong>
-                    </Typography>
-
-                    <Button
-                      variant="outlined"
-                      onClick={handleToggleAllSeats}
-                      sx={{
-                        mt: 2,
-                        backgroundColor: "#1976D2",
-                        color: "#fff",
-                        border: "1px solid #1976D2",
-                        "&:hover": {
-                          backgroundColor: "#fff",
-                          color: "#1976D2",
-                        },
-                      }}
-                    >
-                      {selectedSeats.length === rows * cols ? "Bỏ chọn tất cả" : "Chọn tất cả"}
-                    </Button>
-                  </Box>
-                ) : (
-                  ""
-                )}
               </Box>
             )}
           </Box>
         </Paper>
       </Box>
       <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3 }}>
-        <Button
+        {/* <Button
           variant="outlined"
           onClick={handleSaveZoneOrSeat}
           sx={{
@@ -1142,24 +924,24 @@ export default function ScheduleSection() {
           }}
         >
           Lưu khu vực
-        </Button>
+        </Button> */}
 
         <Button
           variant="contained"
           onClick={handleSubmit}
           sx={{
-            backgroundColor: "#1976D2",
+            backgroundColor: "#5669FF",
             color: "#fff",
-            border: "1px solid #1976D2",
+            border: "1px solid #5669FF",
             "&:hover": {
               backgroundColor: "#fff",
-              color: "#1976D2",
+              color: "#5669FF",
             },
           }}
         >
           Gửi
         </Button>
-        <Button
+        {/* <Button
           variant="contained"
           onClick={() => {
             dispatch(resetEventInfo());
@@ -1176,7 +958,7 @@ export default function ScheduleSection() {
           }}
         >
           Xoá
-        </Button>
+        </Button> */}
         <Snackbar
           open={Boolean(alertStatus)}
           autoHideDuration={3000}

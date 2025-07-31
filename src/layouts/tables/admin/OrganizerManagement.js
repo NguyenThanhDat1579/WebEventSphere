@@ -4,7 +4,8 @@ import {
   CircularProgress,
   Divider,
   Box,
-  useTheme
+  useTheme,
+  TablePagination,
 } from "@mui/material";
 import ArgonBox from "components/ArgonBox";
 import ArgonTypography from "components/ArgonTypography";
@@ -15,15 +16,14 @@ import Table from "examples/Tables/Table";
 import userApi from "api/userApi";
 import organizerTableData from "layouts/tables/data/organizerTableData";
 
-// ... import giữ nguyên (đã có organizerTableData ở trên)
-
 function OrganizerManagement() {
   const [columns, setColumns] = useState([]);
-  const [rows, setRows]       = useState([]);
+  const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage] = useState(10); // cố định số dòng/trang
   const theme = useTheme();
 
-  /* --- Lấy dữ liệu --- */
   useEffect(() => {
     (async () => {
       try {
@@ -42,14 +42,18 @@ function OrganizerManagement() {
     })();
   }, []);
 
-  /* ----------- RENDER ----------- */
+  const paginatedRows = rows.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
   return (
     <DashboardLayout>
       <DashboardNavbar />
 
       <ArgonBox py={3}>
         <Card sx={{ boxShadow: 4, borderRadius: 3, overflow: "hidden" }}>
-          {/* header */}
+          {/* Header */}
           <ArgonBox px={3} py={2} bgcolor={"#5669FF"} color="white">
             <ArgonTypography variant="h5" fontWeight="bold">
               Danh sách nhà tổ chức
@@ -58,7 +62,7 @@ function OrganizerManagement() {
 
           <Divider />
 
-          {/* body */}
+          {/* Body */}
           {loading ? (
             <ArgonBox display="flex" justifyContent="center" py={10}>
               <CircularProgress />
@@ -67,16 +71,21 @@ function OrganizerManagement() {
             <Box sx={{ width: "100%", overflowX: "auto" }}>
               <Table
                 columns={columns}
-                rows={rows}
+                rows={paginatedRows}
                 sxTable={{
                   minWidth: 820,
                   tableLayout: "fixed",
 
-                  "& thead": { position: "sticky", top: 0, zIndex: 2, bgcolor: theme.palette.grey[100] },
+                  "& thead": {
+                    position: "sticky",
+                    top: 0,
+                    zIndex: 2,
+                    bgcolor: theme.palette.grey[100],
+                  },
                   "& thead th": {
                     fontWeight: 600,
-                    fontSize : 13,
-                    padding  : "12px 16px",
+                    fontSize: 13,
+                    padding: "12px 16px",
                     borderBottom: "1px solid #e0e0e0",
                     whiteSpace: "nowrap",
                   },
@@ -85,27 +94,47 @@ function OrganizerManagement() {
                     padding: "12px 16px",
                     fontSize: 13.5,
                     whiteSpace: "nowrap",
-                    overflow : "hidden",
+                    overflow: "hidden",
                     textOverflow: "ellipsis",
                     borderBottom: "1px solid #e0e0e0",
                   },
 
-                  /* canh giữa 3 cột cuối */
                   "& tbody td:nth-of-type(3), & tbody td:nth-of-type(4), & tbody td:nth-of-type(5)": {
                     textAlign: "center",
                   },
 
-                  /* zebra & hover – phần này Table.jsx đã có nhưng thêm cũng không sao */
                   "& tbody tr:nth-of-type(even)": { backgroundColor: "#f7f7f7" },
-                  "& tbody tr:hover":             { backgroundColor: "#e0e0e0", transition: ".2s" },
+                  "& tbody tr:hover": {
+                    backgroundColor: "#e0e0e0",
+                    transition: ".2s",
+                  },
                 }}
               />
             </Box>
           )}
         </Card>
-      </ArgonBox>
 
-      <Footer />
+        {/* Pagination tách ra ngoài Card */}
+        {!loading && (
+          <Box mt={2} display="flex" justifyContent="flex-end">
+            <TablePagination
+              component="div"
+              count={rows.length}
+              page={page}
+              onPageChange={(e, newPage) => setPage(newPage)}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={() => {}}
+              rowsPerPageOptions={[]} // ẩn dropdown chọn dòng/trang
+              labelRowsPerPage=""     // ẩn nhãn "Rows per page"
+              sx={{
+                ".MuiTablePagination-selectLabel, .MuiTablePagination-select, .MuiTablePagination-input": {
+                  display: "none",
+                },
+              }}
+            />
+          </Box>
+        )}
+      </ArgonBox>
     </DashboardLayout>
   );
 }

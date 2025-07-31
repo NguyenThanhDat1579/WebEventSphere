@@ -1,505 +1,316 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
-  Button,
-  Grid,
   Typography,
-  MenuItem,
-  Select,
-  Table,
-  TableBody,
-  TableCell,
+  Button,
+  TextField,
   TableContainer,
+  Table,
   TableHead,
   TableRow,
-  TextField,
+  TableCell,
+  TableBody,
   Paper,
-  InputLabel,
-  FormControl,
-  Stack,
-  IconButton,
+  Chip,
 } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
-import AddIcon from "@mui/icons-material/Add";
-import SearchIcon from "@mui/icons-material/Search";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
-import DeleteIcon from "@mui/icons-material/Delete";
-const colorOptions = [
-  "#f44336", // Đỏ
-  "#2196f3", // Xanh dương
-  "#4caf50", // Xanh lá
-  "#ff9800", // Cam
-  "#9c27b0", // Tím
-];
+import Footer from "examples/Footer";
+import SelectMenu from "./OrganizerCreateNewEvent/components/SelectMenu";
+import eventApi from "../../../api/utils/eventApi";
+import ArgonBox from "components/ArgonBox";
+import ArgonButton from "components/ArgonButton";
+import CheckIcon from "@mui/icons-material/Check";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import CancelIcon from "@mui/icons-material/Cancel";
+import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 
 function OrganizerTicketsAndAttendees() {
-  const [selectedEvent, setSelectedEvent] = useState("");
-  const [ticketFilter, setTicketFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [organizationEvents, setOrganizationEvents] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [eventDetail, setEventDetail] = useState({});
+  const [selectedShowtime, setSelectedShowtime] = useState("");
+  const [attendees, setAttendees] = useState([]);
 
-  const [rows, setRows] = useState(0);
-  const [cols, setCols] = useState(0);
-  const [matrix, setMatrix] = useState([]);
-  const [submittedMatrix, setSubmittedMatrix] = useState([]);
-  const [zones, setZones] = useState([]);
-  const [selectedZone, setSelectedZone] = useState(null);
-  const [newZone, setNewZone] = useState({
-    name: "",
-    price: "",
-    color: colorOptions[0],
-  });
-  const [isMouseDown, setIsMouseDown] = useState(false);
-  const [dragMode, setDragMode] = useState(null); // "select" | "deselect"
-  // Tạo lại ma trận khi thay đổi số dòng/cột
-  useEffect(() => {
-    if (rows > 0 && cols > 0) {
-      const newMatrix = Array.from({ length: rows }, (_, rowIdx) =>
-        Array.from({ length: cols }, (_, colIdx) => ({
-          selected: false,
-          row: rowIdx + 1,
-          col: colIdx + 1,
-          zone: null,
-        }))
+  const [localAttendees, setLocalAttendees] = useState(attendees);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const filteredAttendees = localAttendees.filter((attendee) => {
+  const matchesSearch =
+    attendee.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    attendee.email?.toLowerCase().includes(searchTerm.toLowerCase());
+
+  const matchesStatus =
+    statusFilter === "all" || attendee.status === statusFilter;
+
+  return matchesSearch && matchesStatus;
+});
+
+
+  const handleLocalCheckIn = (index) => {
+      setLocalAttendees((prev) =>
+        prev.map((attendee, i) =>
+          i === index ? { ...attendee, status: "used" } : attendee
+        )
       );
-      setMatrix(newMatrix);
-      setSubmittedMatrix([]);
-    }
-  }, [rows, cols]);
-
-  useEffect(() => {
-    const handleGlobalMouseUp = () => {
-      setIsMouseDown(false);
-      setDragMode(null);
     };
-    window.addEventListener("mouseup", handleGlobalMouseUp);
-    return () => window.removeEventListener("mouseup", handleGlobalMouseUp);
+
+  const handleLocalCancel = (index) => {
+      setLocalAttendees((prev) => {
+        const updated = [...prev];
+        const current = updated[index];
+
+        if (current.status === "canceled") {
+          current.status = "issued"; // Bỏ hủy
+        } else {
+          current.status = "canceled"; // Hủy
+        }
+
+        return updated;
+      });
+    };
+
+    const formatDate = (dateStr) => {
+        const date = new Date(dateStr);
+        const day = String(date.getDate()).padStart(2, "0");
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const year = date.getFullYear();
+        const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        return `${day}/${month}/${year} - ${time}`;
+      };
+
+
+
+  // Lấy danh sách sự kiện của tổ chức
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const res = await eventApi.getEventOfOrganization();
+        setOrganizationEvents(res.data?.events || []);
+      } catch (error) {
+        console.error("❌ Lỗi lấy danh sách sự kiện của tổ chức:", error);
+      }
+    };
+
+    fetchEvents();
   }, []);
 
-  // Khi bấm Hoàn thành
-  const handleSubmit = () => {
-    const rowCounters = {};
-    const resultMatrix = matrix.map((row, rowIdx) => {
-      const rowLabel = String.fromCharCode(65 + rowIdx);
-      rowCounters[rowLabel] = 1;
+  // Gọi danh sách vé theo sự kiện
+  useEffect(() => {
+    const fetchAttendees = async () => {
+      if (!selectedEvent) {
+        setAttendees([]);
+        return;
+      }
 
-      return row.map((cell) => {
-        if (cell.selected && cell.zone) {
-          const label = `${rowLabel}${rowCounters[rowLabel]++}`;
-          return {
-            seatId: label,
-            label,
-            row: cell.row,
-            col: cell.col,
-            area: cell.zone.name,
-            price: cell.zone.price,
-            // color: cell.zone.color,
-            // selected: true,
-          };
-        } else {
-          return {
-            seatId: "none",
-            label: "none",
-            row: cell.row,
-            col: cell.col,
-            area: "none",
-            price: 0,
-            // color: "#e0e0e0",
-            // selected: false,
-          };
-        }
-      });
-    });
+      try {
+        const res = await eventApi.getAllTicketsByEvent(selectedEvent);
+        console.log("danh sách vé", res.data);
+        setEventDetail(res.data.data)
+      } catch (error) {
+        console.error("❌ Lỗi lấy danh sách vé của sự kiện:", error);
+      }
+    };
 
-    setSubmittedMatrix(resultMatrix);
-    console.log("✅ Dữ liệu ghế đã lưu:\n", JSON.stringify(resultMatrix.flat(), null, 2));
-  };
+    fetchAttendees();
+  }, [selectedEvent]);
 
-  const handleMouseDown = (row, col) => {
-    const cell = matrix[row][col];
-    const newMatrix = [...matrix];
 
-    if (cell.selected) {
-      // Bỏ chọn
-      newMatrix[row][col] = { ...cell, selected: false, zone: null };
-      setDragMode("deselect");
-    } else if (selectedZone) {
-      // Chọn
-      newMatrix[row][col] = { ...cell, selected: true, zone: selectedZone };
-      setDragMode("select");
+   useEffect(() => {
+    if (!eventDetail?.soldTickets) {
+      setAttendees([]);
+      return;
     }
 
-    setMatrix(newMatrix);
-    setIsMouseDown(true);
-  };
-
-  const handleMouseEnter = (row, col) => {
-    if (!isMouseDown) return;
-
-    const newMatrix = [...matrix];
-    const cell = newMatrix[row][col];
-
-    if (dragMode === "select" && !cell.selected && selectedZone) {
-      newMatrix[row][col] = {
-        ...cell,
-        selected: true,
-        zone: selectedZone,
-      };
+    if (selectedShowtime) {
+      const filtered = eventDetail.soldTickets.filter(
+        (ticket) => ticket.showtimeId === selectedShowtime
+      );
+      setAttendees(filtered);
+    } else {
+      // Không có selectedShowtime → hiện toàn bộ
+      setAttendees(eventDetail.soldTickets);
     }
+  }, [selectedShowtime, eventDetail]);
 
-    if (dragMode === "deselect" && cell.selected) {
-      newMatrix[row][col] = {
-        ...cell,
-        selected: false,
-        zone: null,
-      };
-    }
+  useEffect(() => {
+  setLocalAttendees(attendees);
+}, [attendees]);
 
-    setMatrix(newMatrix);
-  };
 
-  const handleMouseUp = () => {
-    setIsMouseDown(false);
-    setDragMode(null);
-  };
-
-  const handleAddZone = () => {
-    if (!newZone.name || !newZone.price) return;
-    setZones([...zones, newZone]);
-    setNewZone({ name: "", price: "", color: colorOptions[0] });
-  };
-
-  const handleDeleteZone = (zoneName) => {
-    setZones(zones.filter((z) => z.name !== zoneName));
-    if (selectedZone?.name === zoneName) setSelectedZone(null);
-  };
 
   return (
     <DashboardLayout>
-      {/* <Box p={3} sx={{ position: "relative" }}>
-        <Typography variant="h4" gutterBottom>
-          🎫 Quản lý vé
-        </Typography>
+      <DashboardNavbar />
+      <Box sx={{ position: "relative"}}>
+    
+        {/* Chọn sự kiện và suất diễn */}
+        <Paper elevation={2} sx={{ mb: 4, p: 2 }}>
+      <Typography variant="h6" gutterBottom>
+        Chọn sự kiện & suất diễn
+      </Typography>
 
-
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Select
+      <Box display="flex" flexWrap="wrap" gap={2}>
+        <Box sx={{ minWidth: 1000 }}>
+          <SelectMenu
+            label="Chọn sự kiện"
             value={selectedEvent}
-            onChange={(e) => setSelectedEvent(e.target.value)}
-            displayEmpty
-          >
-            <MenuItem value="">🗂️ Chọn sự kiện</MenuItem>
-            <MenuItem value="event1">GAMA Music Festival</MenuItem>
-            <MenuItem value="event2">Workshop Canva</MenuItem>
-          </Select>
-          <Button variant="contained" startIcon={<AddIcon />}>
-            Thêm loại vé
-          </Button>
-        </Box>
+            searchable
+            onChange={(val) => {
+              setSelectedEvent(val);
+              setSelectedShowtime("");
+              setAttendees([]);
+            }}
+            options={organizationEvents.map((event) => ({
+          label: event.name,
+          value: event._id,
+        }))}
+           />
+        </Box>     
+      </Box>
+    </Paper>
 
-     
-        <TableContainer component={Paper} sx={{ mb: 3 }}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Loại vé</TableCell>
-                <TableCell>Giá vé</TableCell>
-                <TableCell>Tổng vé</TableCell>
-                <TableCell>Đã bán</TableCell>
-                <TableCell>Còn lại</TableCell>
-                <TableCell>Trạng thái</TableCell>
-                <TableCell>Hành động</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow>
-                <TableCell>Vé thường</TableCell>
-                <TableCell>200.000 ₫</TableCell>
-                <TableCell>100</TableCell>
-                <TableCell>80</TableCell>
-                <TableCell>20</TableCell>
-                <TableCell sx={{ color: "green" }}>🟢 Còn bán</TableCell>
-                <TableCell>
-                  <Button size="small">✏️ Sửa</Button>
-                  <Button size="small" color="error">
-                    🗑️ Xóa
-                  </Button>
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Vé VIP</TableCell>
-                <TableCell>500.000 ₫</TableCell>
-                <TableCell>50</TableCell>
-                <TableCell>50</TableCell>
-                <TableCell>0</TableCell>
-                <TableCell sx={{ color: "red" }}>🔴 Hết vé</TableCell>
-                <TableCell>
-                  <Button size="small">✏️ Sửa</Button>
-                  <Button size="small" color="error">
-                    🗑️ Xóa
-                  </Button>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </TableContainer>
+        {/* Bộ lọc tìm kiếm và làm mới */}
+        <Paper elevation={2} sx={{ mb: 5, p: 2 }}>
+          <Typography variant="h6" mb={2}>
+             Danh sách người tham dự
+          </Typography>
 
-        <Button variant="outlined" startIcon={<DownloadIcon />} sx={{ mb: 5 }}>
-          Xuất dữ liệu vé (.xlsx)
-        </Button>
-
-
-        <Typography variant="h5" gutterBottom>
-          👥 Danh sách người tham dự
-        </Typography>
-
-        <Box display="flex" alignItems="center" gap={2} mb={2}>
-          <TextField fullWidth placeholder="🔍 Tìm kiếm tên/email/số điện thoại" />
-          <Select
-            value={ticketFilter}
-            onChange={(e) => setTicketFilter(e.target.value)}
-            displayEmpty
-          >
-            <MenuItem value="">Loại vé</MenuItem>
-            <MenuItem value="normal">Vé thường</MenuItem>
-            <MenuItem value="vip">Vé VIP</MenuItem>
-          </Select>
-          <Select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            displayEmpty
-          >
-            <MenuItem value="">Trạng thái</MenuItem>
-            <MenuItem value="checked-in">✅ Đã check-in</MenuItem>
-            <MenuItem value="not-used">❌ Chưa sử dụng</MenuItem>
-            <MenuItem value="cancelled">🚫 Hủy</MenuItem>
-          </Select>
-        </Box>
-
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Tên khách</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Loại vé</TableCell>
-                <TableCell>Trạng thái</TableCell>
-                <TableCell>Check-in</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow>
-                <TableCell>Nguyễn Văn A</TableCell>
-                <TableCell>a.nguyen@email.com</TableCell>
-                <TableCell>Vé thường</TableCell>
-                <TableCell>✅ Đã check-in</TableCell>
-                <TableCell>
-                  <Button size="small" color="error">
-                    🗑️ Hủy
-                  </Button>
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Trần Thị B</TableCell>
-                <TableCell>b.tran@email.com</TableCell>
-                <TableCell>Vé VIP</TableCell>
-                <TableCell>❌ Chưa sử dụng</TableCell>
-                <TableCell>
-                  <Button size="small" color="success">
-                    ✔️ Check-in
-                  </Button>
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Lê Văn C</TableCell>
-                <TableCell>c.le@email.com</TableCell>
-                <TableCell>Vé thường</TableCell>
-                <TableCell>🚫 Hủy</TableCell>
-                <TableCell>-</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </TableContainer>
-
-        <Button variant="outlined" startIcon={<DownloadIcon />} sx={{ mt: 3 }}>
-          Xuất danh sách người tham dự (.xlsx)
-        </Button>
-      </Box> */}
-
-      <Box sx={{ position: "relative" }}>
-        <Typography variant="h5" gutterBottom>
-          Tạo sơ đồ ghế
-        </Typography>
-
-        {/* Nhập dòng và cột */}
-        <Box display="flex" gap={2} mb={2}>
-          <TextField
-            label="Số dòng"
-            type="number"
-            size="small"
-            value={rows}
-            onChange={(e) => setRows(Number(e.target.value))}
-          />
-          <TextField
-            label="Số cột"
-            type="number"
-            size="small"
-            value={cols}
-            onChange={(e) => setCols(Number(e.target.value))}
-          />
-          <Button variant="contained" color="success" onClick={handleSubmit}>
-            Hoàn thành
-          </Button>
-        </Box>
-
-        {/* Thêm khu vực mới */}
-        <Box mb={3}>
-          <Typography variant="h6">Thêm khu vực:</Typography>
-          <Box display="flex" gap={2} mt={1} flexWrap="wrap">
+          <Box display="flex" flexWrap="wrap" gap={2} mb={2}>
             <TextField
-              label="Tên khu vực"
-              size="small"
-              value={newZone.name}
-              onChange={(e) => setNewZone({ ...newZone, name: e.target.value })}
+              placeholder="Tìm kiếm tên / email"
+              value={searchTerm}
+               onChange={(e) => setSearchTerm(e.target.value)}
+
+              sx={{ minWidth: 300 }}
             />
-            <TextField
-              label="Giá vé"
-              type="number"
-              size="small"
-              value={newZone.price}
-              onChange={(e) => setNewZone({ ...newZone, price: e.target.value })}
+              {/* <Box sx={{ minWidth: 300 }}>
+            <SelectMenu
+              label="Chọn suất diễn"
+              value={selectedShowtime}
+              onChange={(val) => setSelectedShowtime(val)}
+              options={ eventDetail?.tickets?.map((ticket) => ({
+                label: ticket.name,
+                value: ticket.showtimeId,
+              }))}
             />
-            <TextField
-              select
-              label="Màu"
-              size="small"
-              value={newZone.color}
-              onChange={(e) => setNewZone({ ...newZone, color: e.target.value })}
-              style={{ minWidth: 120 }}
-            >
-              {colorOptions.map((color) => (
-                <MenuItem key={color} value={color}>
-                  <Box
-                    sx={{
-                      width: 20,
-                      height: 20,
-                      backgroundColor: color,
-                      display: "inline-block",
-                      marginRight: 1,
-                      borderRadius: 1,
-                    }}
-                  />
-                  {color}
-                </MenuItem>
-              ))}
-            </TextField>
-            <Button variant="contained" onClick={handleAddZone}>
-              Thêm khu vực
-            </Button>
-          </Box>
-        </Box>
-
-        {/* Chọn khu vực */}
-        {zones.length > 0 && (
-          <Box mb={3}>
-            <Typography variant="h6">Chọn khu vực để vẽ:</Typography>
-            <Box display="flex" gap={1} flexWrap="wrap" mt={1}>
-              {zones.map((zone) => (
-                <Box
-                  key={zone.name}
-                  display="flex"
-                  alignItems="center"
-                  onClick={() => setSelectedZone(zone)}
-                  sx={{
-                    px: 2,
-                    py: 1,
-                    borderRadius: 2,
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                    backgroundColor: zone.color,
-                    color: selectedZone?.name === zone.name ? "#fff" : "#000",
-                    border:
-                      selectedZone?.name === zone.name ? "2px solid #000" : "2px solid transparent",
-                    boxShadow:
-                      selectedZone?.name === zone.name ? "0 0 4px rgba(0,0,0,0.3)" : "none",
-                    transition: "all 0.2s ease",
+            </Box> */}
+            <Box sx={{ minWidth: 180 }}>
+              <SelectMenu
+                label="Trạng thái"
+                value={statusFilter}
+                onChange={(val) => setStatusFilter(val)}
+                options={[
+                  { label: "Tất cả", value: "all" },
+                  { label: "Đã check-in", value: "used" },
+                  { label: "Chưa sử dụng", value: "issued" },
+                  { label: "Đã huỷ", value: "canceled" },
+                ]}
+              />
+            </Box>
+             <ArgonBox mb={1}>
+               <ArgonButton
+                  color="info"
+                  size="small"
+                  variant="contained"
+                   onClick={() => {
+                    setSearchTerm("");
+                    setStatusFilter("all");
+                    setSelectedShowtime("")
                   }}
                 >
-                  {zone.name} ({parseInt(zone.price).toLocaleString()}đ)
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteZone(zone.name);
-                    }}
-                    sx={{ ml: 1, color: selectedZone?.name === zone.name ? "#fff" : "#000" }}
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                </Box>
-              ))}
-            </Box>
+                   Làm mới
+                </ArgonButton>
+             </ArgonBox>
+               
           </Box>
-        )}
 
-        {/* Ma trận chọn ghế */}
-        {matrix.length > 0 && (
-          <Box mb={4} sx={{ userSelect: "none" }}>
-            <Typography variant="h6">Vẽ sơ đồ ghế:</Typography>
-            {matrix.map((row, rowIdx) => (
-              <Box key={rowIdx} display="flex">
-                {row.map((cell, colIdx) => (
-                  <Paper
-                    key={colIdx}
-                    onMouseDown={() => handleMouseDown(rowIdx, colIdx)}
-                    onMouseEnter={() => handleMouseEnter(rowIdx, colIdx)}
-                    onMouseUp={() => setIsMouseDown(false)}
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      m: 0.5,
-                      backgroundColor: cell.selected ? cell.zone?.color || "#ccc" : "#ccc",
-                      cursor: "pointer",
-                      borderRadius: 1,
-                    }}
-                  />
+          {/* Bảng danh sách người tham dự */}
+           <TableContainer>
+            <Table>
+              <TableRow>
+                 <TableCell sx={{ width: "5%", fontWeight: 600 }}>STT</TableCell>
+                  <TableCell sx={{ width: "15%", fontWeight: 600 }}>
+                  Mã vé
+                </TableCell>
+                <TableCell sx={{ width: "25%", fontWeight: 600 }}>
+                  Email
+                </TableCell>
+                <TableCell sx={{ width: "15%", fontWeight: 600 }}>
+                  Trạng thái
+                </TableCell>
+                {/* <TableCell sx={{ width: "20%", fontWeight: 600 }}>
+                  Hành động
+                </TableCell> */}
+                <TableCell sx={{ width: "20%", fontWeight: 600 }}>
+                  Ngày phát hành
+                </TableCell>
+              </TableRow>
+              <TableBody>
+               {filteredAttendees.map((attendee, index) => (
+                  <TableRow key={attendee.id}>
+                    <TableCell>{index + 1}</TableCell>
+                      <TableCell>{attendee.ticketId}</TableCell>
+                    <TableCell>{attendee.userName}</TableCell>
+                    <TableCell>
+                     {attendee.status === "used" ? (
+                        <Chip
+                          label="Đã check-in"
+                          color="success"
+                          icon={<CheckIcon />}
+                          sx={{ color: '#fff' , p: 1}}
+                        />
+                      ) : attendee.status === "issued" ? (
+                        <Chip
+                          label="Chưa sử dụng"
+                          color="warning"
+                          icon={<AccessTimeIcon />}
+                          sx={{ color: '#fff', p: 1 }}
+                        />
+                      ) : (
+                        <Chip
+                          label="Đã hủy"
+                          color="error"
+                          icon={<CancelIcon />}
+                           sx={{ color: '#fff', p: 1 }}
+                        />
+                      )}
+                    </TableCell>
+                    {/* <TableCell>
+                      {attendee.status === "issued" && (
+                        <Button
+                          size="small"
+                          color="success"
+                          onClick={() => handleLocalCheckIn(index)}
+                        >
+                          Check-in
+                        </Button>
+                      )}
+                      {attendee.status !== "used" && (
+                        <Button
+                          size="small"
+                          color="error"
+                          onClick={() => handleLocalCancel(index)}
+                          sx={{ ml: 1 }}
+                        >
+                           {attendee.status === "canceled" ? "Bỏ hủy" : "Hủy"}
+                        </Button>
+                      )}
+                    </TableCell> */}
+                    <TableCell>{formatDate(attendee.issuedAt)}</TableCell>
+                  </TableRow>
                 ))}
-              </Box>
-            ))}
-          </Box>
-        )}
 
-        {/* Kết quả sau khi hoàn thành */}
-        {submittedMatrix.length > 0 && (
-          <Box>
-            <Typography variant="h6">Sơ đồ đã lưu:</Typography>
-            {submittedMatrix.map((row, rowIdx) => (
-              <Box key={rowIdx} display="flex">
-                {row.map((cell, colIdx) => (
-                  <Paper
-                    key={colIdx}
-                    sx={{
-                      width: 50,
-                      height: 40,
-                      m: 0.5,
-                      backgroundColor: cell.color,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: cell.label !== "none" ? "#fff" : "#777",
-                      fontWeight: "bold",
-                      fontSize: 14,
-                      borderRadius: 1,
-                    }}
-                  >
-                    {cell.label !== "none" ? cell.label : ""}
-                  </Paper>
-                ))}
-              </Box>
-            ))}
-          </Box>
-        )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
       </Box>
     </DashboardLayout>
   );
 }
+
 export default OrganizerTicketsAndAttendees;

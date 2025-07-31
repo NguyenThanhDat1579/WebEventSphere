@@ -1,39 +1,45 @@
-import { useState } from "react";
-import authApi from "../../../api/utils/authApi";
-import { saveTokens } from "../../../api/token/authTokens.js";
-import { useDispatch } from "react-redux";
-import { setUserData } from "../../../redux/store/slices/authSlice";
-import { useNavigate } from "react-router-dom";
-// react-router-dom components
-import { Link } from "react-router-dom";
-
-// @mui material components
-import Switch from "@mui/material/Switch";
-
-// Argon Dashboard 2 MUI components
-import ArgonBox from "components/ArgonBox";
-import ArgonTypography from "components/ArgonTypography";
-import ArgonInput from "components/ArgonInput";
-import ArgonButton from "components/ArgonButton";
-
-// Authentication layout components
-import IllustrationLayout from "layouts/authentication/components/IllustrationLayout";
-
-// Image
-const bgImage =
-  "https://raw.githubusercontent.com/creativetimofficial/public-assets/master/argon-dashboard-pro/assets/img/signin-ill.jpg";
-
-function Illustration() {
-  const navigate = useNavigate();
+import React, { useState } from 'react';
+import { Box, Paper, Typography, Switch, Card } from '@mui/material';
+import ArgonBox from 'components/ArgonBox';
+import ArgonInput from 'components/ArgonInput';
+import ArgonButton from 'components/ArgonButton';
+import ArgonTypography from 'components/ArgonTypography';
+import { useDispatch } from 'react-redux';
+import { useNavigate, Link } from 'react-router-dom';
+import authApi from 'api/utils/authApi';
+import { saveTokens } from 'api/token/authTokens';
+import { setUserData } from '../../../redux/store/slices/authSlice';
+import CoverLayout from '../components/CoverLayout';
+import bgImage from '../../../assets/images/imgAuthetication.png'
+import avImage from '../../../assets/images/avImg.jpg'
+function ModernLoginPage() {
   const dispatch = useDispatch();
-  const [rememberMe, setRememberMe] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const handleSetRememberMe = () => setRememberMe(!rememberMe);
-  const handleSignIn = async (e) => {
-    e.preventDefault();
+  const navigate = useNavigate();
 
-    if (email === "admin" && password === "admin") {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const handleSignIn = async (e) => {
+  e.preventDefault();
+  setErrors({});
+  setErrorMessage('');
+  setIsLoading(true);
+
+  const newErrors = {};
+  if (!email) newErrors.email = 'Vui lòng nhập Email';
+  if (!password) newErrors.password = 'Vui lòng nhập Mật khẩu';
+
+  if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    setIsLoading(false);
+    return;
+  }
+
+   if (email === "admin" && password === "admin") {
       console.log("Admin đăng nhập");
       dispatch(setUserData({ role: 1 })); // Lưu role = 1
       navigate("/dashboard-admin");
@@ -59,78 +65,135 @@ function Illustration() {
         navigate("/dashboard-organizer");
       } else {
         console.log("Đăng nhập không phải organizer", userData);
+        setErrors({
+        email: ' ',
+        password: 'Tài khoản không có quyền truy cập.',
+      });
       }
     } catch (error) {
       console.error("Lỗi đăng nhập:", error);
-    }
-  };
+      setErrors({
+        email: ' ',
+        password: 'Email hoặc mật khẩu không chính xác.',
+      });
+
+
+    } finally {
+    setIsLoading(false);}
+};
+
+
   return (
-    <IllustrationLayout
-      title="Đăng nhập"
-      description=""
-      illustration={{
-        image: bgImage,
-        // title: '"Attention is the new currency"',
-        // description:
-        //   "The more effortless the writing looks, the more effort the writer actually put into the process.",
-      }}
-    >
-      <ArgonBox component="form" role="form">
-        <ArgonBox mb={2}>
-          <ArgonInput
-            type="email"
-            placeholder="Nhập Email"
-            size="large"
-            onChange={(e) => setEmail(e.target.value)}
+    <CoverLayout
+    image={bgImage}
+    imgPosition="top"
+  >
+    <Card>
+      <ArgonBox pt={4} pb={4} px={4}>
+        <ArgonBox textAlign="center" mb={3}>
+          <img
+            src={avImage}
+            alt="Logo"
+            style={{ width: "40%", marginBottom: 8 }}
           />
-        </ArgonBox>
-        <ArgonBox mb={2}>
-          <ArgonInput
-            type="password"
-            placeholder="Nhập mật khẩu"
-            size="large"
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </ArgonBox>
-        {/* <ArgonBox display="flex" alignItems="center">
-          <Switch checked={rememberMe} onChange={handleSetRememberMe} />
-          <ArgonTypography
-            variant="button"
-            fontWeight="regular"
-            onClick={handleSetRememberMe}
-            sx={{ cursor: "pointer", userSelect: "none" }}
-          >
-            &nbsp;&nbsp;Ghi nhớ tài khoản
-          </ArgonTypography>
-        </ArgonBox> */}
-        <ArgonBox mt={4} mb={1}>
-          <ArgonButton
-            color="info"
-            size="large"
-            variant="gradient"
-            fullWidth
-            onClick={handleSignIn}
-          >
+          <ArgonTypography variant="h4" fontWeight="bold" style={{ color: "#5669FF" }}>
             Đăng nhập
-          </ArgonButton>
+          </ArgonTypography>
+          <Typography variant="body2" color="textSecondary">
+            Chào mừng bạn trở lại!
+          </Typography>
         </ArgonBox>
-        <ArgonBox mt={3} textAlign="center">
-          {/* <ArgonTypography variant="button" color="text" fontWeight="regular">
-            Bạn có tài khoản chưa?{" "}
-            <ArgonTypography
-              component={Link}
-              to="/authentication/sign-up"
-              variant="button"
+        
+        <ArgonBox component="form" role="form">
+          <ArgonBox mb={2}>
+            <ArgonInput
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              error={!!errors.email}
+            />
+            {errors.email && (
+              <ArgonTypography color="error" fontSize="13px">
+                {errors.email}
+              </ArgonTypography>
+            )}
+            
+          </ArgonBox>
+
+          <ArgonBox mb={2}>
+            <ArgonInput
+              type="password"
+              placeholder="Mật khẩu"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              error={!!errors.password}
+            />
+            {errors.password && (
+              <ArgonTypography color="error" fontSize="13px">
+                {errors.password}
+              </ArgonTypography>
+            )}
+          </ArgonBox>
+        </ArgonBox>
+            <ArgonBox display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+            <Box display="flex" alignItems="center">
+               {/* <Switch
+                 checked={rememberMe}
+                 onChange={(e) => setRememberMe(e.target.checked)}
+                 sx={{
+                   '& .MuiSwitch-switchBase.Mui-checked': { color: '#5669FF' },
+                   '& .MuiSwitch-track': { backgroundColor: rememberMe ? '#5669FF' : '#ccc' },
+                 }}
+               />
+               <ArgonTypography variant="button" sx={{ userSelect: 'none', ml: 1 }}>
+                 Ghi nhớ tài khoản
+               </ArgonTypography> */}
+             </Box>         
+             <ArgonTypography
+                component={Link}
+                to="/authentication/forget-password"
+                variant="button"
+                color="dark"
+                fontWeight="bold"
+                style={{ color: "#5669FF", textTransform: "none" }}
+              >
+                Quên mật khẩu?
+              </ArgonTypography>
+        </ArgonBox>
+          <ArgonBox mt={3} mb={1}>
+            <ArgonButton
               color="info"
-              fontWeight="medium"
+                size="large"
+              variant="gradient"
+              fullWidth
+              disabled={isLoading}
+               onClick={handleSignIn}
             >
-              Sign up
+              {isLoading ? 'Đang xử lý...' : 'Đăng nhập'}
+            </ArgonButton>
+          </ArgonBox>
+
+          <ArgonBox mt={2} textAlign="center">
+            <ArgonTypography variant="button" color="text" fontWeight="regular"  style={{ textTransform: "none" }}>
+             Chưa có tài khoản?{' '}
+              <ArgonTypography
+                component={Link}
+                to="/authentication/sign-up"
+                variant="button"
+                color="dark"
+                fontWeight="bold"
+                style={{ color: "#5669FF", textTransform: "none" }}
+              >
+                Đăng ký
+              </ArgonTypography>
             </ArgonTypography>
-          </ArgonTypography> */}
-        </ArgonBox>
+          </ArgonBox>
+
       </ArgonBox>
-    </IllustrationLayout>
+    </Card>
+    </CoverLayout>
   );
 }
 
-export default Illustration;
+export default ModernLoginPage;

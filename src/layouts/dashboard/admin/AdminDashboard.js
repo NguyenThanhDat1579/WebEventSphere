@@ -1,3 +1,10 @@
+/* ==================================================================
+   AdminDashboard.jsx
+   • KPI tổng quan + biểu đồ cột 2 tháng
+   • Danh sách CARD sự kiện (hover, click → load chi tiết)
+   • Chi tiết có nút “Quay lại”, loading spinner trong khi fetch
+=================================================================== */
+
 import { useEffect, useState } from "react";
 import {
   Grid, Card, CardContent, CardMedia, Typography, Box, Chip,
@@ -54,13 +61,15 @@ useEffect(() => {
 
       // lọc chỉ các sự kiện có revenue
       // lọc chỉ các sự kiện có revenue VÀ có avatar + location + timeStart/timeEnd đầy đủ
-const filteredEvents = eventList.filter(ev =>
-  revenueMap.has(ev._id) &&
-  ev.avatar &&
-  ev.location &&
-  ev.timeStart &&
-  ev.timeEnd
-);
+
+    const filteredEvents = eventList.filter(ev =>
+      revenueMap.has(ev._id) &&
+      ev.avatar &&
+      ev.location &&
+      ev.timeStart &&
+      ev.timeEnd
+    );
+
 
 
       // Khóa thời gian tháng hiện tại và trước
@@ -144,7 +153,7 @@ tickets += Number.isFinite(rev.totalSold) ? rev.totalSold : 0;
           <StatCard
             title="TỔNG DOANH THU THÁNG NÀY"
             main={`${kpi.revenue.toLocaleString("vi-VN")} ₫`}
-            color="#5669FF"
+            color="#2d48d1ff"
             dark
           />
           <StatCard title="Tổng vé bán"        main={kpi.tickets.toLocaleString("vi-VN")} />

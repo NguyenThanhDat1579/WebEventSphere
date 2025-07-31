@@ -1,197 +1,264 @@
-/**
-=========================================================
-* Argon Dashboard 2 MUI - v3.0.1
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/argon-dashboard-material-ui
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
+import React, { useEffect, useState } from "react";
 
 // @mui material components
-import Grid from "@mui/material/Grid";
-import Card from "@mui/material/Card";
+import {
+  Grid,
+  Card,
+  Avatar,
+  Button,
+  Typography,
+  Dialog,
+  DialogContent,
+  IconButton,
+} from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
+import SaveIcon from "@mui/icons-material/Save";
+import CancelIcon from "@mui/icons-material/Cancel";
+import CloseIcon from "@mui/icons-material/Close";
 
-// @mui icons
-import FacebookIcon from "@mui/icons-material/Facebook";
-import TwitterIcon from "@mui/icons-material/Twitter";
-import InstagramIcon from "@mui/icons-material/Instagram";
-
-// Argon Dashboard 2 MUI components
-import ArgonBox from "components/ArgonBox";
-import ArgonTypography from "components/ArgonTypography";
-
-// Argon Dashboard 2 MUI example components
+// Layout & Components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
-import Footer from "examples/Footer";
-import ProfileInfoCard from "examples/Cards/InfoCards/ProfileInfoCard";
-import ProfilesList from "examples/Lists/ProfilesList";
-import DefaultProjectCard from "examples/Cards/ProjectCards/DefaultProjectCard";
-import PlaceholderCard from "examples/Cards/PlaceholderCard";
+import ArgonBox from "components/ArgonBox";
+import DashboardNavbar from "examples/Navbars/DashboardNavbar";
+import CustomTextField from "layouts/dashboard/organizer/OrganizerCreateNewEvent/components/CustomTextField";
 
-// Overview page components
-import Header from "layouts/profile/components/Header";
-import PlatformSettings from "layouts/profile/components/PlatformSettings";
+// API & Redux
+import { useSelector } from "react-redux";
+import userApi from "api/userApi";
 
-// Data
-import profilesListData from "layouts/profile/data/profilesListData";
+// Upload avatar function
+const uploadImageToCloudinary = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", "event_upload");
+  formData.append("cloud_name", "deoqppiun");
 
-// Images
-import homeDecor1 from "assets/images/home-decor-1.jpg";
-import homeDecor2 from "assets/images/home-decor-2.jpg";
-import homeDecor3 from "assets/images/home-decor-3.jpg";
-import team1 from "assets/images/team-1.jpg";
-import team2 from "assets/images/team-2.jpg";
-import team3 from "assets/images/team-3.jpg";
-import team4 from "assets/images/team-4.jpg";
-const bgImage =
-  "https://raw.githubusercontent.com/creativetimofficial/public-assets/master/argon-dashboard-pro/assets/img/profile-layout-header.jpg";
+  const res = await fetch("https://api.cloudinary.com/v1_1/deoqppiun/image/upload", {
+    method: "POST",
+    body: formData,
+  });
 
-function ProfileOrganizer() {
+  const data = await res.json();
+  return data.secure_url;
+};
+
+const ProfileOrganizer = () => {
+  const userId = useSelector((state) => state.auth.id);
+  const [profile, setProfile] = useState({});
+  const [editMode, setEditMode] = useState(false);
+  const [editedName, setEditedName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false); // dialog preview ảnh
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await userApi.getUserById(userId);
+        const user = response.data.data;
+        setProfile(user);
+        setEditedName(user.username || "");
+        setPreviewUrl(user.picUrl);
+      } catch (error) {
+        console.error("Lỗi khi tải thông tin người dùng:", error);
+      }
+    };
+
+    if (userId) fetchProfile();
+  }, [userId]);
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setSelectedImage(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+
+      let uploadedImageUrl = null;
+      if (selectedImage) {
+        uploadedImageUrl = await uploadImageToCloudinary(selectedImage);
+      }
+
+      const body = { id: userId };
+      if (editedName !== profile.username) body.username = editedName;
+      if (uploadedImageUrl) body.picUrl = uploadedImageUrl;
+
+      if (body.username || body.picUrl) {
+
+        console.log("dữ liệu gửi đi: ",body)
+        const response = await userApi.editUser(body);
+        console.log("Phản hồi từ server khi cập nhật người dùng:", response);
+        setProfile((prev) => ({
+          ...prev,
+          ...(body.username && { username: body.username }),
+          ...(body.picUrl && { picUrl: body.picUrl }),
+        }));
+        setSelectedImage(null);
+      }
+
+      setEditMode(false);
+    } catch (error) {
+      console.error("Lỗi khi lưu thông tin:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!profile) return null;
+
   return (
-    <DashboardLayout
-      sx={{
-        backgroundImage: ({ functions: { rgba, linearGradient }, palette: { gradients } }) =>
-          `${linearGradient(
-            rgba(gradients.info.main, 0.6),
-            rgba(gradients.info.state, 0.6)
-          )}, url(${bgImage})`,
-        backgroundPositionY: "50%",
-      }}
-    >
-      <Header />
-      <ArgonBox mt={5} mb={3}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6} xl={4}>
-            <PlatformSettings />
-          </Grid>
-          <Grid item xs={12} md={6} xl={4}>
-            <ProfileInfoCard
-              title="profile information"
-              description="Hi, I'm Alec Thompson, Decisions: If you can't decide, the answer is no. If two equally difficult paths, choose the one more painful in the short term (pain avoidance is creating an illusion of equality)."
-              info={{
-                fullName: "Alec M. Thompson",
-                mobile: "(44) 123 1234 123",
-                email: "alecthompson@mail.com",
-                location: "USA",
-              }}
-              social={[
-                {
-                  link: "https://www.facebook.com/CreativeTim/",
-                  icon: <FacebookIcon />,
-                  color: "facebook",
-                },
-                {
-                  link: "https://twitter.com/creativetim",
-                  icon: <TwitterIcon />,
-                  color: "twitter",
-                },
-                {
-                  link: "https://www.instagram.com/creativetimofficial/",
-                  icon: <InstagramIcon />,
-                  color: "instagram",
-                },
-              ]}
-              action={{ route: "", tooltip: "Edit Profile" }}
-            />
-          </Grid>
-          <Grid item xs={12} xl={4}>
-            <ProfilesList title="conversations" profiles={profilesListData} />
-          </Grid>
-        </Grid>
-      </ArgonBox>
-      <ArgonBox mb={3}>
-        <Card>
-          <ArgonBox pt={2} px={2}>
-            <ArgonBox mb={0.5}>
-              <ArgonTypography variant="h6" fontWeight="medium">
-                Projects
-              </ArgonTypography>
-            </ArgonBox>
-            <ArgonBox mb={1}>
-              <ArgonTypography variant="button" fontWeight="regular" color="text">
-                Architects design houses
-              </ArgonTypography>
-            </ArgonBox>
-          </ArgonBox>
-          <ArgonBox p={2}>
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6} xl={3}>
-                <DefaultProjectCard
-                  image={homeDecor1}
-                  label="project #2"
-                  title="modern"
-                  description="As Uber works through a huge amount of internal management turmoil."
-                  action={{
-                    type: "internal",
-                    route: "/pages/profile/profile-overview",
-                    color: "info",
-                    label: "View Project",
-                  }}
-                  authors={[
-                    { image: team1, name: "Elena Morison" },
-                    { image: team2, name: "Ryan Milly" },
-                    { image: team3, name: "Nick Daniel" },
-                    { image: team4, name: "Peterson" },
-                  ]}
-                />
-              </Grid>
-              <Grid item xs={12} md={6} xl={3}>
-                <DefaultProjectCard
-                  image={homeDecor2}
-                  label="project #1"
-                  title="scandinavian"
-                  description="Music is something that every person has his or her own specific opinion about."
-                  action={{
-                    type: "internal",
-                    route: "/pages/profile/profile-overview",
-                    color: "info",
-                    label: "View Project",
-                  }}
-                  authors={[
-                    { image: team3, name: "Nick Daniel" },
-                    { image: team4, name: "Peterson" },
-                    { image: team1, name: "Elena Morison" },
-                    { image: team2, name: "Ryan Milly" },
-                  ]}
-                />
-              </Grid>
-              <Grid item xs={12} md={6} xl={3}>
-                <DefaultProjectCard
-                  image={homeDecor3}
-                  label="project #3"
-                  title="minimalist"
-                  description="Different people have different taste, and various types of music."
-                  action={{
-                    type: "internal",
-                    route: "/pages/profile/profile-overview",
-                    color: "info",
-                    label: "View Project",
-                  }}
-                  authors={[
-                    { image: team4, name: "Peterson" },
-                    { image: team3, name: "Nick Daniel" },
-                    { image: team2, name: "Ryan Milly" },
-                    { image: team1, name: "Elena Morison" },
-                  ]}
-                />
-              </Grid>
-              <Grid item xs={12} md={6} xl={3}>
-                <PlaceholderCard title={{ variant: "h5", text: "New project" }} outlined />
-              </Grid>
-            </Grid>
-          </ArgonBox>
-        </Card>
-      </ArgonBox>
-
-      <Footer />
+  
+    <DashboardLayout>
+      <DashboardNavbar />
+      <ArgonBox mt={3}>
+        <Card sx={{ p: 4 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={3} textAlign="center">
+              <Avatar
+                src={previewUrl || profile.picUrl}
+                alt="Avatar"
+                sx={{ width: 120, height: 120, mx: "auto", mb: 1,border: "2px solid",  borderColor: "primary.main", borderRadius: "50%",  }}
+                  onClick={() => !editMode && setDialogOpen(true)}
+              />
+              {editMode && (
+                <ArgonBox mt={2}>
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    sx={{
+                      backgroundColor: "#5669FF",
+                      color: "#fff",
+                      "&:hover": {
+                        backgroundColor: "#fff",
+                        color: "#5669FF",
+                      },
+                    }}
+                  >
+                    Thay đổi ảnh đại diện
+                    <input
+                      hidden
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                    />
+                  </Button>
+                </ArgonBox>
+              )}
+             
+              </Grid>  
+               <Grid item xs={12} sm={9}>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <Typography variant="h6">THÔNG TIN NHÀ TỔ CHỨC</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <CustomTextField
+                    label="Email liên hệ"
+                    name="email"
+                    value={profile.email}
+                    fullWidth
+                    disabled
+                  />
+                </Grid>
+                  </Grid>
+                   <Grid container spacing={2} mt={1.5}>
+                    <Grid item xs={12} sm={6}>
+                    <CustomTextField
+                      label="Tên nhà tổ chức"
+                      name="username"
+                      value={editedName}
+                      onChange={(e) => setEditedName(e.target.value)}
+                      fullWidth
+                      disabled={!editMode}
+                    />
+                  </Grid>
+                  </Grid>
+                  <Grid item xs={12} mt={1.2}>
+                          {editMode ? (
+                          <>
+                        <Button
+                          variant="contained"
+                          sx={{
+                          backgroundColor: "#5669FF",
+                          color: "#fff",
+                          border: "1px solid #5669FF",
+                          "&:hover": {
+                            backgroundColor: "#fff",
+                            color: "#5669FF",
+                          },
+                          mr: 3
+                        }}
+                          onClick={handleSave}
+                          disabled={loading}
+                        >
+                          Thay đổi
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          sx={{
+                          backgroundColor: "#fff",
+                          color: "#5669FF",
+                          border: "1px solid #5669FF",
+                          "&:hover": {
+                            backgroundColor: "#5669FF",
+                            color: "#fff",
+                          },
+                        }}
+                          onClick={() => {
+                            setEditedName(profile.username);
+                            setPreviewUrl(profile.picUrl);
+                            setSelectedImage(null);
+                            setEditMode(false);
+                          }}
+                              >
+                            Hủy
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        variant="contained"
+                        sx={{
+                          backgroundColor: "#5669FF",
+                          color: "#fff",
+                          border: "1px solid #5669FF",
+                          "&:hover": {
+                            backgroundColor: "#fff",
+                            color: "#5669FF",
+                          },
+                        }}
+                        startIcon={<EditIcon />}
+                        onClick={() => setEditMode(true)}
+                      >
+                        Chỉnh sửa
+                      </Button>
+                    )}
+                </Grid>
+                </Grid>
+            </Grid>      
+        </Card>      
+      </ArgonBox>   
+       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm">
+            <DialogContent sx={{ position: "relative", p: 2 }}>
+            <IconButton
+                onClick={() => setDialogOpen(false)}
+              sx={{ position: "absolute", top: 8, right: 8 }}
+              >
+                <CloseIcon />
+              </IconButton>
+              <img
+                src={previewUrl || profile.picUrl}
+                alt="preview"
+                style={{ width: "100%", borderRadius: 8 }}
+              />
+            </DialogContent>
+          </Dialog>
     </DashboardLayout>
   );
-}
+};
 
 export default ProfileOrganizer;

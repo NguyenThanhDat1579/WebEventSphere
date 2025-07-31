@@ -1,352 +1,381 @@
-import { useEffect, useState } from "react";
+// src/pages/EventManagement.jsx
+import React, { useEffect, useState } from "react";
 import {
-  Card,
-  Button,
-  Grid,
-  Box,
-  Typography,
+  Grid, Card, Typography, Button, CircularProgress, Box, Dialog,
+  DialogTitle, DialogContent, DialogActions, Divider, Chip, useTheme
 } from "@mui/material";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import CancelIcon from "@mui/icons-material/Cancel";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import PropTypes from "prop-types";
+
+import ArgonBox from "components/ArgonBox";
+import ArgonTypography from "components/ArgonTypography";
 
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import Table from "examples/Tables/Table";
-import revenueApi from "api/revenue";
-import eventApi from "../../../api/eventApi"
-function RevenueAndReporting() {
+import eventApi from "api/eventApi";
+
+const chipStatus = st => (
+  <Chip
+    label={st}
+    size="small"
+    color={st === "Đã duyệt" ? "success" : st === "Từ chối" ? "error" : "warning"}
+  />
+);
+
+const chipTimeline = (s, e) => {
+  const now = Date.now(), st = new Date(s).getTime(), ed = new Date(e).getTime();
+  let lbl = "Đang diễn ra", col = "success";
+  if (now < st) { lbl = "Sắp diễn ra"; col = "warning"; }
+  else if (now > ed) { lbl = "Đã diễn ra"; col = "default"; }
+  return <Chip label={lbl} size="small" color={col} />;
+};
+
+function EventManagement() {
+  const [rows, setRows] = useState([]);
+  const [loadingTbl, setLoadingTbl] = useState(true);
+
+  const [detail, setDetail] = useState(null);
+  const [loadingDet, setLoadingDet] = useState(false);
+
+  const [dlg, setDlg] = useState({ open: false, status: "" });
+  const theme = useTheme();
+
   const columns = [
-    {
-      field: "avatar",
-      title: "Hình ảnh",
-      align: "center",
-    },
-    {
-      field: "eventName",
-      title: "Tên sự kiện",
-      align: "left",
-    },
-    {
-      field: "sold",
-      title: "Số vé bán",
-      align: "center",
-    },
-    {
-      field: "revenue",
-      title: "Doanh thu",
-      align: "center",
-    },
-    {
-      field: "timelineStatus",
-      title: "Trạng thái diễn ra",
-      align: "center",
-    },
-    {
-      field: "action",
-      title: "Hành động",
-      align: "center",
-    },
+    { title: "Ảnh", field: "thumb", align: "center", width: "80px" },
+    { title: "Tên sự kiện", field: "name", align: "left", width: "30%" },
+    { title: "Ngày bắt đầu", field: "start", align: "center", width: "120px" },
+    { title: "Giá vé", field: "price", align: "center", width: "150px" },
+    { title: "Diễn ra", field: "timeline", align: "center", width: "120px" },
+    { title: "Trạng thái", field: "status", align: "center", width: "110px" },
+    { title: "", field: "action", align: "center", width: "100px" },
   ];
 
-  const [rows, setRows] = useState([]);
-  const [totalRevenue, setTotalRevenue] = useState(0);
-  const [detailMode, setDetailMode] = useState(false);
-  const [selected, setSelected] = useState(null);
+  /* ---------- fetch list ---------- */
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await eventApi.getAllHome();
+        const raw = data?.data || [];
 
-useEffect(() => {
-  (async () => {
+        const filtered = raw.filter(ev => {
+          const hasImage = ev.avatar && ev.avatar.trim() !== "";
+          
+          // Kiểm tra giá vé - hỗ trợ cả 2 cấu trúc dữ liệu
+          let hasValidPrice = false;
+          
+          // Kiểm tra minTicketPrice và maxTicketPrice
+          if (ev.minTicketPrice !== null && ev.minTicketPrice !== undefined && 
+              ev.maxTicketPrice !== null && ev.maxTicketPrice !== undefined) {
+            hasValidPrice = true;
+          }
+          // Nếu không có, kiểm tra ticketInfo (fallback)
+          else if (ev.ticketInfo?.length > 0) {
+            const validTickets = ev.ticketInfo.filter(t => t?.price != null);
+            hasValidPrice = validTickets.length > 0;
+          }
+          
+          return hasImage && hasValidPrice;
+        });
+
+        const mapped = filtered.map(ev => {
+          let min, max;
+          
+          // Ưu tiên sử dụng minTicketPrice và maxTicketPrice
+          if (ev.minTicketPrice !== null && ev.minTicketPrice !== undefined && 
+              ev.maxTicketPrice !== null && ev.maxTicketPrice !== undefined) {
+            min = ev.minTicketPrice;
+            max = ev.maxTicketPrice;
+          }
+          // Fallback sử dụng ticketInfo nếu không có
+          else if (ev.ticketInfo?.length > 0) {
+            const prices = ev.ticketInfo.map(ticket => ticket.price).filter(price => price != null);
+            if (prices.length > 0) {
+              min = Math.min(...prices);
+              max = Math.max(...prices);
+            }
+          }
+
+          return {
+            id: ev._id,
+            thumb: (
+              <img
+                src={ev.avatar}
+                alt={ev.name}
+                onError={(e) => { e.target.style.display = "none"; }}
+                style={{ width: 52, height: 52, borderRadius: 8, objectFit: "cover" }}
+              />
+            ),
+            name: (
+              <Typography variant="body2" sx={{
+                fontSize: 14, fontWeight: 500,
+                lineHeight: 1.4,
+                wordBreak: "break-word",
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden"
+              }}>
+                {ev.name}
+              </Typography>
+            ),
+            start: (
+              <Typography variant="body2" sx={{ fontSize: 13, fontWeight: 500 }}>
+                {new Date(ev.timeStart).toLocaleDateString("vi-VN")}
+              </Typography>
+            ),
+            price: (
+              <Typography variant="body2" sx={{ 
+                fontSize: 13, 
+                fontWeight: 600, 
+                color: "#1976d2",
+                whiteSpace: "nowrap" 
+              }}>
+                {min === max
+                  ? `${min.toLocaleString("vi-VN")}`
+                  : `${min.toLocaleString("vi-VN")} - ${max.toLocaleString("vi-VN")}`}
+              </Typography>
+            ),
+            timeline: chipTimeline(ev.timeStart, ev.timeEnd),
+            status: chipStatus(ev.status || "Chưa duyệt"),
+            action: (
+              <Button
+                size="small"
+                variant="contained"
+                color="info"
+                startIcon={<InfoOutlinedIcon sx={{ fontSize: 14 }} />}
+                onClick={() => openDetail(ev._id)}
+                sx={{ 
+                  textTransform: "none", 
+                  fontSize: 11, 
+                  px: 1.5, 
+                  py: 0.5,
+                  minWidth: "auto",
+                  borderRadius: 1.5,
+                  fontWeight: 500
+                }}
+              >
+                Chi tiết
+              </Button>
+            ),
+          };
+        });
+
+        setRows(mapped);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingTbl(false);
+      }
+    })();
+  }, []);
+
+  const openDetail = async id => {
+    setLoadingDet(true);
     try {
-      // Gọi 2 API song song
-      const [revenueRes, eventRes] = await Promise.all([
-        revenueApi.getRevenue(),
-        eventApi.getAllHome()
-      ]);
-
-      let list = revenueRes.data.eventsRevenue || [];
-      const allEvents = eventRes.data.data || [];
-
-      console.log("Sự kiện doanh thu:", list);
-      console.log("Tất cả sự kiện (avatar):", allEvents);
-
-      // Lọc những sự kiện có doanh thu thực sự
-      list = list.filter(ev => {
-        const hasYearRevenue = ev.revenueByYear && Object.keys(ev.revenueByYear).length > 0;
-        const hasDayRevenue = ev.revenueByDay && Object.keys(ev.revenueByDay).length > 0;
-        return hasYearRevenue || hasDayRevenue;
-      });
-
-      // Kết hợp avatar từ danh sách allEvents vào list
-      const listWithAvatars = list.map((ev) => {
-        const matched = allEvents.find(e => e._id === ev.eventId);
-        return {
-          ...ev,
-          avatar: matched?.avatar || null,
-          name: matched?.name || ev.name,
-        };
-      });
-
-      const randInt = (min, max) =>
-        Math.floor(Math.random() * (max - min + 1)) + min;
-
-      const rowsMapped = listWithAvatars.map((ev) => {
-        const realRevenue = Object.values(ev.revenueByYear || {}).reduce((a, b) => a + b, 0);
-        const totalRevenue = realRevenue || randInt(500_000, 4_500_000);
-        const sold = Object.values(ev.soldByDay || {}).reduce((a, b) => a + b, 0);
-
-        return {
-          __total: totalRevenue,
-          avatar: ev.avatar ? (
-            <Box
-              component="img"
-              src={ev.avatar}
-              alt=""
-              sx={{
-                width: 64,
-                height: 64,
-                borderRadius: 2,
-                objectFit: "cover",
-                boxShadow: 1,
-              }}
-            />
-          ) : (
-            <Typography variant="body2" align="center" color="textSecondary">
-              Không có ảnh
-            </Typography>
-          ),
-          eventName: (
-            <Typography variant="body2" fontWeight={500}>
-              {ev.name}
-            </Typography>
-          ),
-          sold: (
-            <Typography variant="body2" align="center">
-              {sold.toLocaleString()}
-            </Typography>
-          ),
-          revenue: (
-            <Typography variant="body2" align="center">
-              {totalRevenue.toLocaleString()} ₫
-            </Typography>
-          ),
-          timelineStatus: (
-            <Typography
-              variant="body2"
-              align="center"
-              color={totalRevenue ? "green" : "textSecondary"}
-            >
-              {totalRevenue ? "Đã diễn ra" : "Chưa có"}
-            </Typography>
-          ),
-          action: (
-            <Button
-              size="small"
-              variant="contained"
-              color="info"
-              onClick={() => {
-                setSelected(ev);
-                setDetailMode(true);
-              }}
-              sx={{
-                textTransform: "none",
-                fontSize: 12,
-                fontWeight: 500,
-                px: 2,
-                borderRadius: 2,
-              }}
-            >
-              Chi tiết
-            </Button>
-          ),
-        };
-      });
-
-      setTotalRevenue(rowsMapped.reduce((s, r) => s + r.__total, 0));
-      setRows(rowsMapped);
-    } catch (e) {
-      console.error("Lỗi gọi API:", e);
+      const { data } = await eventApi.getDetail(id);
+      if (data?.status) setDetail(data.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingDet(false);
     }
-  })();
-}, []);
+  };
 
-  const revenueByDay = selected?.revenueByDay || {};
-  const soldByDay = selected?.soldByDay || {};
-  const detailTotalRevenue = Object.values(revenueByDay).reduce((a, b) => a + b, 0);
-  const totalTickets = Object.values(soldByDay).reduce((a, b) => a + b, 0);
-  const ticketDays = Object.keys(soldByDay).length;
-  const revenueDays = Object.keys(revenueByDay).length;
+  const applyStatus = st => {
+    setRows(prev => prev.map(r => r.id === detail._id ? { ...r, status: chipStatus(st) } : r));
+    setDetail(null);
+    setDlg({ open: false, status: "" });
+  };
 
+  /* ===================== RENDER ====================== */
   return (
     <DashboardLayout>
       <DashboardNavbar />
 
-      {!detailMode ? (
-        <Box py={2}>
-          <Card sx={{ borderRadius: 3, boxShadow: 4, p: 3 }}>
-            <Box
-              sx={{
-                background: "#5669FF",
-                borderRadius: 2,
-                px: 3,
-                py: 2,
-                mb: 3,
-                display: "inline-block",
-                boxShadow: 2,
-              }}
-            >
-              <Typography
-                variant="h4"
-                fontWeight="bold"
-                sx={{
-                  color: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                }}
-              >
-                Tổng doanh thu:&nbsp;
-                <span style={{ fontSize: 28 }}>
-                  {totalRevenue.toLocaleString()} ₫
-                </span>
-              </Typography>
-            </Box>
-
-       
-
-            <Table columns={columns} rows={rows} />
+      <Box py={2}>
+        {/* Danh sách hoặc chi tiết */}
+        {!detail ? (
+          <Card sx={{ borderRadius: 3, boxShadow: 4 }}>
+            <ArgonBox px={3} py={2} sx={{ bgcolor: "#5669FF", color: theme.palette.primary.contrastText }}>
+              <ArgonTypography variant="h5" fontWeight="bold">
+                Danh sách sự kiện
+              </ArgonTypography>
+            </ArgonBox>
+            <Divider />
+            {loadingTbl ? (
+              <Box py={8} display="flex" justifyContent="center"><CircularProgress /></Box>
+            ) : (
+              <Box sx={{ overflowX: "auto", minHeight: 400 }}>
+                <Table
+                  columns={columns}
+                  rows={rows}
+                  sxTable={{
+                    minWidth: 800,
+                    tableLayout: "fixed",
+                    "& th": { 
+                      py: 2, 
+                      px: 1.5, 
+                      fontSize: 13, 
+                      fontWeight: 600,
+                      backgroundColor: "#f5f5f5",
+                      borderBottom: "2px solid #e0e0e0",
+                      whiteSpace: "nowrap"
+                    },
+                    "& td": { 
+                      py: 1.5, 
+                      px: 1.5, 
+                      fontSize: 13,
+                      borderBottom: "1px solid #f0f0f0",
+                      verticalAlign: "center"
+                    },
+                    "& tbody tr:hover": { 
+                      backgroundColor: "#f8f9ff",
+                      cursor: "pointer"
+                    },
+                    "& tbody tr": {
+                      transition: "background-color 0.2s ease"
+                    }
+                  }}
+                />
+              </Box>
+            )}
           </Card>
-        </Box>
-      ) : (
-        selected && (
-          <Box py={2}>
-            <Card sx={{ borderRadius: 3, boxShadow: 4, p: 3 }}>
-              <Button
-                size="small"
-                variant="contained"
-                onClick={() => {
-                  setDetailMode(false);
-                  setSelected(null);
-                }}
-                sx={{
-                  textTransform: "none",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  px: 2,
-                  borderRadius: 2,
-                  mb: 2,
-                  backgroundColor: "#5669FF",
-                  color: "#fff",
-                  width: "fit-content",
-                  "&:hover": { backgroundColor: "#115293" },
-                }}
-              >
-                Quay lại danh sách
-              </Button>
+        ) : (
+          <Card sx={{ p: 3 }}>
+            {loadingDet ? (
+              <Box py={5} display="flex" justifyContent="center"><CircularProgress /></Box>
+            ) : (
+              <>
+                <Box mb={2}>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => setDetail(null)}
+                    sx={{
+                      textTransform: "none",
+                      fontWeight: 600,
+                      px: 2,
+                      fontSize: 13,
+                      borderRadius: 2,
+                      backgroundColor: "#5669FF",
+                      color: "#fff",
+                      "&:hover": { backgroundColor: "#115293" },
+                    }}
+                  >
+                    Quay lại danh sách
+                  </Button>
+                </Box>
 
-             <Box
-  display="flex"
-  flexDirection="column"
-  alignItems="center"
-  justifyContent="center"
-  mb={3}
->
-  <Box
-    component="img"
-    src={selected.avatar}
-    alt={selected.name}
-    sx={{
-      width: "100%", // hoặc dùng "100%", "auto", v.v.
-      height: "auto",
-      borderRadius: 2,
-      objectFit: "cover",
-      boxShadow: 2,
-      mb: 1.5,
-    }}
-  />
-  <Typography variant="h5" fontWeight="bold" textAlign="center">
-    {selected.name}
-  </Typography>
-</Box>
-{/* akjdawd */}
+                <Box sx={{ width: "100%", height: 340, borderRadius: 2, overflow: "hidden", mb: 3 }}>
+                  <img src={detail.avatar} alt={detail.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </Box>
 
-              {/* Thống kê tổng quan */}
-              <Grid container spacing={2} mb={3}>
-                {[{
-                  label: "Tổng doanh thu",
-                  value: `${detailTotalRevenue.toLocaleString()} ₫`
-                }, {
-                  label: "Tổng vé đã bán",
-                  value: `${totalTickets.toLocaleString()} vé`
-                }, {
-                  label: "Ngày có doanh thu",
-                  value: `${revenueDays} ngày`
-                }, {
-                  label: "Ngày bán vé",
-                  value: `${ticketDays} ngày`
-                }].map((item, idx) => (
-                  <Grid item xs={12} md={3} key={idx}>
-                    <Box sx={{ p: 2, background: "#f1f1f1", borderRadius: 2 }}>
-                      <Typography variant="subtitle2" color="textSecondary">
-                        {item.label}
-                      </Typography>
-                      <Typography variant="h6" fontWeight="bold">
-                        {item.value}
-                      </Typography>
-                    </Box>
+                <Typography variant="h5" fontWeight={700} mb={2}>{detail.name}</Typography>
+
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <Info label="Địa điểm" value={detail.location} />
+                    {/* Hiển thị giá vé từ minTicketPrice và maxTicketPrice hoặc ticketInfo */}
+                    {(() => {
+                      // Kiểm tra minTicketPrice và maxTicketPrice trước
+                      if (detail.minTicketPrice !== null && detail.minTicketPrice !== undefined && 
+                          detail.maxTicketPrice !== null && detail.maxTicketPrice !== undefined) {
+                        return (
+                          <Info
+                            label="Giá vé"
+                            value={detail.minTicketPrice === detail.maxTicketPrice
+                              ? `${detail.minTicketPrice.toLocaleString("vi-VN")} ₫`
+                              : `${detail.minTicketPrice.toLocaleString("vi-VN")} ₫ - ${detail.maxTicketPrice.toLocaleString("vi-VN")} ₫`}
+                          />
+                        );
+                      }
+                      
+                      // Nếu không có, kiểm tra ticketInfo (fallback cho cấu trúc cũ)
+                      if (detail.ticketInfo?.length > 0) {
+                        const prices = detail.ticketInfo.map(ticket => ticket.price).filter(price => price != null);
+                        if (prices.length > 0) {
+                          const min = Math.min(...prices);
+                          const max = Math.max(...prices);
+                          return (
+                            <Info
+                              label="Giá vé"
+                              value={min === max
+                                ? `${min.toLocaleString("vi-VN")} ₫`
+                                : `${min.toLocaleString("vi-VN")} ₫ - ${max.toLocaleString("vi-VN")} ₫`}
+                            />
+                          );
+                        }
+                      }
+                      
+                      return null;
+                    })()}
                   </Grid>
-                ))}
-              </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Info label="Bắt đầu" value={new Date(detail.timeStart).toLocaleString()} />
+                    <Info label="Kết thúc" value={new Date(detail.timeEnd).toLocaleString()} />
+                  </Grid>
 
-              {/* Chi tiết từng ngày */}
-              <Grid container spacing={4}>
-                {[
-                  {
-                    title: "Ngày bán & số vé",
-                    data: soldByDay,
-                    emptyText: "Không có",
-                    suffix: " vé",
-                  },
-                  {
-                    title: "Ngày có doanh thu",
-                    data: revenueByDay,
-                    emptyText: "Không có",
-                    suffix: " ₫",
-                  },
-                ].map((section, i) => (
-                  <Grid item xs={12} md={6} key={i}>
-                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                      {section.title}
-                    </Typography>
+                  <Grid item xs={12}>
+                    <Typography variant="h6" fontWeight="bold" mt={3} mb={1}>Mô tả chi tiết</Typography>
                     <Box
-                      sx={{
-                        background: "#fafafa",
-                        border: "1px solid #eee",
-                        borderRadius: 2,
-                        p: 2,
-                        maxHeight: 300,
-                        overflow: "auto",
-                      }}
-                    >
-                      {Object.keys(section.data).length > 0 ? (
-                        Object.entries(section.data).map(([date, val]) => (
-                          <Typography key={date} variant="body2" sx={{ mb: 0.5 }}>
-                            {date}: {val.toLocaleString()} {section.suffix}
-                          </Typography>
-                        ))
-                      ) : (
-                        <Typography variant="body2">{section.emptyText}</Typography>
-                      )}
-                    </Box>
+                      sx={{ background: "#f9f9f9", border: "1px solid #e0e0e0", borderRadius: 2, p: 3, lineHeight: 1.75, fontSize: 15 }}
+                      dangerouslySetInnerHTML={{ __html: detail.description }}
+                    />
                   </Grid>
-                ))}
-              </Grid>
-            </Card>
-          </Box>
-        )
-      )}
+
+                  <Grid item xs={12} mt={2} display="flex" justifyContent="flex-end" gap={2}>
+                    <Button
+                      variant="contained"
+                      onClick={() => setDlg({ open: true, status: "Từ chối" })}
+                      sx={{ textTransform: "none", fontWeight: 600, backgroundColor: "#e53935", color: "#fff", "&:hover": { backgroundColor: "#c62828" } }}
+                    >Từ chối</Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => setDlg({ open: true, status: "Đã duyệt" })}
+                      sx={{ textTransform: "none", fontWeight: 600, backgroundColor: "#43a047", color: "#fff", "&:hover": { backgroundColor: "#388e3c" } }}
+                    >Duyệt</Button>
+                  </Grid>
+                </Grid>
+              </>
+            )}
+          </Card>
+        )}
+      </Box>
+
+      <Dialog open={dlg.open} onClose={() => setDlg({ open: false, status: "" })}>
+        <DialogTitle>Xác nhận</DialogTitle>
+        <DialogContent>
+          Bạn chắc chắn muốn <strong>{dlg.status.toLowerCase()}</strong> sự kiện này?
+        </DialogContent>
+        <DialogActions sx={{ pb: 2, px: 3 }}>
+          <Button
+            variant="contained"
+            sx={{ textTransform: "none", fontWeight: 600, backgroundColor: "#e53935", color: "#fff", "&:hover": { backgroundColor: "#c62828" } }}
+            onClick={() => setDlg({ open: false, status: "" })}
+          >Hủy</Button>
+          <Button
+            variant="contained"
+            sx={{ textTransform: "none", fontWeight: 600, backgroundColor: "#43a047", color: "#fff", "&:hover": { backgroundColor: "#388e3c" } }}
+            onClick={() => applyStatus(dlg.status)}
+          >Xác nhận</Button>
+        </DialogActions>
+      </Dialog>
 
       <Footer />
     </DashboardLayout>
   );
 }
 
-export default RevenueAndReporting;
-// 
+const Info = ({ label, value }) => (
+  <Typography variant="body2" sx={{ fontSize: 14, mb: 1.2 }}>
+    <strong>{label}:</strong> {value}
+  </Typography>
+);
+
+Info.propTypes = { label: PropTypes.string, value: PropTypes.node };
+
+export default EventManagement;

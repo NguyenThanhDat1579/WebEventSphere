@@ -20,7 +20,7 @@ function OtpOrganizerVerification() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [timer, setTimer] = useState(60);
+  const [timer, setTimer] = useState(30);
 
   const inputsRef = useRef([]);
 

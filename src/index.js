@@ -22,7 +22,7 @@ const root = createRoot(container);
 root.render(
   <ThemeProvider theme={theme}>
     <Provider store={store}>
-      <BrowserRouter basename="/argon-dashboard-material-ui">
+      <BrowserRouter>
         <ArgonControllerProvider>
           <PerfectScrollbar>
             <App />

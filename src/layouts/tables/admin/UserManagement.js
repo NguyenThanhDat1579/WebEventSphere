@@ -6,6 +6,7 @@ import {
   Box,
   useTheme,
   TablePagination,
+  Pagination,
 } from "@mui/material";
 import ArgonBox from "components/ArgonBox";
 import ArgonTypography from "components/ArgonTypography";
@@ -20,8 +21,9 @@ function UserManagement() {
   const [columns, setColumns] = useState([]);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [page, setPage] = useState(1);
+const rowsPerPage = 10;
+
   const theme = useTheme();
 
   useEffect(() => {
@@ -43,10 +45,6 @@ function UserManagement() {
     fetchUsers();
   }, []);
 
-  const paginatedRows = rows.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
 
   return (
     <DashboardLayout>
@@ -74,7 +72,7 @@ function UserManagement() {
             </ArgonBox>
           ) : (
             <Box sx={{ width: "100%", overflowX: "auto" }}>
-              <Table columns={columns} rows={paginatedRows} />
+              <Table columns={columns} rows={rows.slice((page - 1) * rowsPerPage, page * rowsPerPage)} />
             </Box>
           )}
         </Card>
@@ -82,18 +80,13 @@ function UserManagement() {
         {/* TablePagination tách ra ngoài Card */}
         {!loading && (
           <Box mt={2} display="flex" justifyContent="flex-end">
-            <TablePagination
-              component="div"
-              count={rows.length}
+            <Pagination
+              count={Math.ceil(rows.length / rowsPerPage)}
               page={page}
-              onPageChange={(event, newPage) => setPage(newPage)}
-              rowsPerPage={rowsPerPage}
-              rowsPerPageOptions={[]} // Ẩn dropdown chọn số dòng/trang
-              labelRowsPerPage=""     // Ẩn chữ "Rows per page"v
-              onRowsPerPageChange={(event) => {
-                setRowsPerPage(parseInt(event.target.value, 10));
-                setPage(0);
-              }}
+              onChange={(event, value) => setPage(value)}
+              color="primary"
+              shape="rounded"
+              size="medium"
             />
           </Box>
         )}

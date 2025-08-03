@@ -142,7 +142,7 @@ const TinyMCEEditor = ({ value = "", onChange, ready }) => {
 
       if (!scriptAppendedRef.current) {
         const script = document.createElement("script");
-        script.src = "/argon-dashboard-material-ui/tinymce/tinymce.min.js";
+        script.src = "/tinymce/tinymce.min.js";
         script.referrerPolicy = "origin";
         script.onload = () => {
           console.log("✅ tinymce.min.js đã load");

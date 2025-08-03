@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from "react";
 import {
   Grid, Card, Typography, Button, CircularProgress, Box, Dialog,
-  DialogTitle, DialogContent, DialogActions, Divider, Chip, useTheme
+  DialogTitle, DialogContent, DialogActions, Divider, Chip, useTheme,
+  Pagination
 } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import CancelIcon from "@mui/icons-material/Cancel";
@@ -53,6 +54,9 @@ function EventManagement() {
     { title: "Trạng thái", field: "status", align: "center", width: "110px" },
     { title: "", field: "action", align: "center", width: "100px" },
   ];
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const eventsPerPage = 10;
 
   /* ---------- fetch list ---------- */
   useEffect(() => {
@@ -212,7 +216,7 @@ function EventManagement() {
               <Box sx={{ overflowX: "auto", minHeight: 400 }}>
                 <Table
                   columns={columns}
-                  rows={rows}
+                  rows={rows.slice((currentPage - 1) * eventsPerPage, currentPage * eventsPerPage)}
                   sxTable={{
                     minWidth: 800,
                     tableLayout: "fixed",
@@ -241,6 +245,15 @@ function EventManagement() {
                     }
                   }}
                 />
+                <Box display="flex" justifyContent="flex-end" py={2}>
+                <Pagination
+                  count={Math.ceil(rows.length / eventsPerPage)}
+                  page={currentPage}
+                  onChange={(e, page) => setCurrentPage(page)}
+                  color="primary"
+                  shape="rounded"
+                />
+              </Box>
               </Box>
             )}
           </Card>

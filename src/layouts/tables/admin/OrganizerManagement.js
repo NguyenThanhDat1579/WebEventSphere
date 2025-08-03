@@ -6,6 +6,7 @@ import {
   Box,
   useTheme,
   TablePagination,
+  Pagination,
 } from "@mui/material";
 import ArgonBox from "components/ArgonBox";
 import ArgonTypography from "components/ArgonTypography";
@@ -20,8 +21,8 @@ function OrganizerManagement() {
   const [columns, setColumns] = useState([]);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage] = useState(10); // cố định số dòng/trang
+  const [page, setPage] = useState(1);
+  const rowsPerPage = 10;
   const theme = useTheme();
 
   useEffect(() => {
@@ -71,7 +72,7 @@ function OrganizerManagement() {
             <Box sx={{ width: "100%", overflowX: "auto" }}>
               <Table
                 columns={columns}
-                rows={paginatedRows}
+               rows={rows.slice((page - 1) * rowsPerPage, page * rowsPerPage)}
                 sxTable={{
                   minWidth: 820,
                   tableLayout: "fixed",
@@ -117,22 +118,15 @@ function OrganizerManagement() {
         {/* Pagination tách ra ngoài Card */}
         {!loading && (
           <Box mt={2} display="flex" justifyContent="flex-end">
-            <TablePagination
-              component="div"
-              count={rows.length}
-              page={page}
-              onPageChange={(e, newPage) => setPage(newPage)}
-              rowsPerPage={rowsPerPage}
-              onRowsPerPageChange={() => {}}
-              rowsPerPageOptions={[]} // ẩn dropdown chọn dòng/trang
-              labelRowsPerPage=""     // ẩn nhãn "Rows per page"
-              sx={{
-                ".MuiTablePagination-selectLabel, .MuiTablePagination-select, .MuiTablePagination-input": {
-                  display: "none",
-                },
-              }}
-            />
-          </Box>
+          <Pagination
+            count={Math.ceil(rows.length / rowsPerPage)}
+            page={page}
+            onChange={(event, value) => setPage(value)}
+            color="primary"
+            shape="rounded"
+            size="medium"
+          />
+        </Box>
         )}
       </ArgonBox>
     </DashboardLayout>

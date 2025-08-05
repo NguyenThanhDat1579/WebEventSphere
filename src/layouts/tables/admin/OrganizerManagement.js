@@ -5,14 +5,15 @@ import {
   Divider,
   Box,
   useTheme,
-  TablePagination,
   Pagination,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
 import ArgonBox from "components/ArgonBox";
 import ArgonTypography from "components/ArgonTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import Footer from "examples/Footer";
 import Table from "examples/Tables/Table";
 import userApi from "api/userApi";
 import organizerTableData from "layouts/tables/data/organizerTableData";
@@ -22,6 +23,7 @@ function OrganizerManagement() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
   const rowsPerPage = 10;
   const theme = useTheme();
 
@@ -43,9 +45,25 @@ function OrganizerManagement() {
     })();
   }, []);
 
-  const paginatedRows = rows.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
+  // 🔍 Lọc theo từ khóa
+  const filteredRows = rows.filter((row) => {
+    const name = row.name?.props?.children?.toLowerCase() || "";
+    const email = row.email?.props?.children?.toLowerCase() || "";
+    const phone = row.phone?.props?.children?.toLowerCase() || "";
+    const address = row.address?.props?.children?.toLowerCase() || "";
+
+    const search = searchTerm.toLowerCase();
+    return (
+      name.includes(search) ||
+      email.includes(search) ||
+      phone.includes(search) ||
+      address.includes(search)
+    );
+  });
+
+  const paginatedRows = filteredRows.slice(
+    (page - 1) * rowsPerPage,
+    page * rowsPerPage
   );
 
   return (
@@ -61,6 +79,29 @@ function OrganizerManagement() {
             </ArgonTypography>
           </ArgonBox>
 
+          {/* Search */}
+          <ArgonBox px={3} py={2}>
+              <Box sx={{width: "30%"}}>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Tìm kiếm"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1); // reset về trang đầu khi tìm kiếm
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ fontSize: 20, color: "text.secondary" }} />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            </Box>
+          </ArgonBox>
+
           <Divider />
 
           {/* Body */}
@@ -69,10 +110,10 @@ function OrganizerManagement() {
               <CircularProgress />
             </ArgonBox>
           ) : (
-            <Box sx={{ width: "100%", overflowX: "auto" }}>
+            <Box sx={{ width: "100%", overflowX: "auto" }} mt={-3}>
               <Table
                 columns={columns}
-                 rows={rows.slice((page - 1) * rowsPerPage, page * rowsPerPage)}
+                rows={paginatedRows}
                 sxTable={{
                   minWidth: 820,
                   tableLayout: "fixed",
@@ -115,18 +156,18 @@ function OrganizerManagement() {
           )}
         </Card>
 
-        {/* Pagination tách ra ngoài Card */}
+        {/* Pagination */}
         {!loading && (
           <Box mt={2} display="flex" justifyContent="flex-end">
-          <Pagination
-            count={Math.ceil(rows.length / rowsPerPage)}
-            page={page}
-            onChange={(event, value) => setPage(value)}
-            color="primary"
-            shape="rounded"
-            size="medium"
-          />
-        </Box>
+            <Pagination
+              count={Math.ceil(filteredRows.length / rowsPerPage)}
+              page={page}
+              onChange={(event, value) => setPage(value)}
+              color="primary"
+              shape="rounded"
+              size="medium"
+            />
+          </Box>
         )}
       </ArgonBox>
     </DashboardLayout>

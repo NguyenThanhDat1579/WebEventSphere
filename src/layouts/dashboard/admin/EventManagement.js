@@ -3,21 +3,23 @@ import React, { useEffect, useState } from "react";
 import {
   Grid, Card, Typography, Button, CircularProgress, Box, Dialog,
   DialogTitle, DialogContent, DialogActions, Divider, Chip, useTheme,
-  Pagination
+  Pagination,
+  TextField,
+  InputAdornment
 } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import CancelIcon from "@mui/icons-material/Cancel";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PropTypes from "prop-types";
-
+import SearchIcon from "@mui/icons-material/Search";
 import ArgonBox from "components/ArgonBox";
 import ArgonTypography from "components/ArgonTypography";
 
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import Footer from "examples/Footer";
 import Table from "examples/Tables/Table";
 import eventApi from "api/eventApi";
+
 
 const chipStatus = st => (
   <Chip
@@ -29,11 +31,40 @@ const chipStatus = st => (
 
 const chipTimeline = (s, e) => {
   const now = Date.now(), st = new Date(s).getTime(), ed = new Date(e).getTime();
-  let lbl = "Đang diễn ra", col = "success";
-  if (now < st) { lbl = "Sắp diễn ra"; col = "warning"; }
-  else if (now > ed) { lbl = "Đã diễn ra"; col = "default"; }
-  return <Chip label={lbl} size="small" color={col} />;
+  let lbl = "Đang diễn ra", col = "success", textColor = undefined;
+
+  if (now < st) {
+    lbl = "Sắp diễn ra";
+    col = "warning";
+  } else if (now > ed) {
+    lbl = "Đã diễn ra";
+    col = "default";
+  } else {
+    // Đang diễn ra
+    textColor = "#ffffff";
+  }
+
+  return (
+    <Chip
+      label={lbl}
+      size="small"
+      color={col}
+      sx={textColor ? { color: textColor } : undefined}
+    />
+  );
 };
+
+const getTimelineCategory = (start, end) => {
+  const now = Date.now();
+  const st = new Date(start).getTime();
+  const ed = new Date(end).getTime();
+
+  if (now < st) return 1;         // Sắp diễn ra
+  if (now > ed) return 2;         // Đã diễn ra
+  return 0;                       // Đang diễn ra
+};
+
+
 
 function EventManagement() {
   const [rows, setRows] = useState([]);
@@ -57,6 +88,15 @@ function EventManagement() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const eventsPerPage = 10;
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredRows = rows.filter(r => {
+  const nameText = typeof r.name === "string"
+    ? r.name
+    : r.name?.props?.children?.toLowerCase?.() || "";
+
+  return nameText.includes(searchTerm.toLowerCase());
+});
 
   /* ---------- fetch list ---------- */
   useEffect(() => {
@@ -168,7 +208,19 @@ function EventManagement() {
           };
         });
 
-        setRows(mapped);
+        const sorted = mapped.sort((a, b) => {
+          const aCategory = getTimelineCategory(
+            filtered.find(ev => ev._id === a.id)?.timeStart,
+            filtered.find(ev => ev._id === a.id)?.timeEnd
+          );
+          const bCategory = getTimelineCategory(
+            filtered.find(ev => ev._id === b.id)?.timeStart,
+            filtered.find(ev => ev._id === b.id)?.timeEnd
+          );
+          return aCategory - bCategory;
+        });
+
+        setRows(sorted);
       } catch (err) {
         console.error(err);
       } finally {
@@ -210,13 +262,35 @@ function EventManagement() {
               </ArgonTypography>
             </ArgonBox>
             <Divider />
+                 <ArgonBox px={3} py={2} mt={-3} >
+                  <Box sx={{width: "30%"}}>
+                      <TextField
+                        fullWidth
+                        padding="10"
+                        size="small"
+                        placeholder="Tìm kiếm"
+                        value={searchTerm}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <SearchIcon sx={{ fontSize: 20, color: "text.secondary" }} />
+                            </InputAdornment>
+                          ),
+                        }}
+                        onChange={(e) => {
+                          setSearchTerm(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                      />
+                  </Box>
+                </ArgonBox>
             {loadingTbl ? (
               <Box py={8} display="flex" justifyContent="center"><CircularProgress /></Box>
             ) : (
               <Box sx={{ overflowX: "auto", minHeight: 400 }}>
                 <Table
                   columns={columns}
-                  rows={rows.slice((currentPage - 1) * eventsPerPage, currentPage * eventsPerPage)}
+                  rows={filteredRows.slice((currentPage - 1) * eventsPerPage, currentPage * eventsPerPage)}
                   sxTable={{
                     minWidth: 800,
                     tableLayout: "fixed",
@@ -247,7 +321,7 @@ function EventManagement() {
                 />
                 <Box display="flex" justifyContent="flex-end" py={2}>
                 <Pagination
-                  count={Math.ceil(rows.length / eventsPerPage)}
+                  count={Math.ceil(filteredRows.length / eventsPerPage)}
                   page={currentPage}
                   onChange={(e, page) => setCurrentPage(page)}
                   color="primary"
@@ -378,7 +452,6 @@ function EventManagement() {
         </DialogActions>
       </Dialog>
 
-      <Footer />
     </DashboardLayout>
   );
 }

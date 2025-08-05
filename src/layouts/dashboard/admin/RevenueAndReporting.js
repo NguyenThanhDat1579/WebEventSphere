@@ -69,6 +69,7 @@ function RevenueAndReporting() {
   const [detailMode, setDetailMode] = useState(false);
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState("");
+  const [searchOrganizer, setSearchOrganizer] = useState("");
   const [organizers, setOrganizers] = useState([]);
   const [allEvents, setAllEvents] = useState([]);
   const [EventsRevenue, setEventsRevenue] = useState([]);
@@ -242,6 +243,20 @@ useEffect(() => {
   // "Lấy sự kiện: ",
   // JSON.stringify(organizersWithEvents, null, 2));
 
+    const filteredOrganizers = organizersWithEvents.filter((org) => {
+    const name = org.username?.toLowerCase?.() || "";
+    const email = org.email?.toLowerCase?.() || "";
+    return (
+      name.includes(searchOrganizer.toLowerCase()) ||
+      email.includes(searchOrganizer.toLowerCase())
+    );
+  });
+
+  const handleOrganizerSearchChange = (e) => {
+  setSearchOrganizer(e.target.value);
+};
+
+
 
   const revenueByDay = selected?.revenueByDay || {};
   const soldByDay = selected?.soldByDay || {};
@@ -323,7 +338,6 @@ useEffect(() => {
           <Card sx={{ borderRadius: 3, boxShadow: 4, p: 3 }}>
 
            <Box sx={{ width: 300, mb: 3 }}>
-        <Typography variant="body2">Tìm kiếm:</Typography>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <TextField  
             placeholder="Nhập tên sự kiện"
@@ -472,6 +486,22 @@ useEffect(() => {
 
       {tabIndex === 1 && (
        <Box sx={{ position: 'relative', boxShadow: 4, borderRadius: 3}}>
+        <Box m={3} sx={{width: "30%"}}>
+          <TextField
+            placeholder="Nhập tên hoặc email"
+            size="small"
+            value={searchOrganizer}
+            onChange={handleOrganizerSearchChange}
+            fullWidth
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ fontSize: 20, color: "text.secondary" }} />
+                </InputAdornment>
+              ),
+            }}
+          />
+          </Box>
         <TableContainer component={Paper} elevation={3} sx={{ borderRadius: 3, p: 2 }}>
 
           <Table>
@@ -485,7 +515,7 @@ useEffect(() => {
             </TableRow>
 
             <TableBody>
-              {organizersWithEvents.map((org) => {
+              {filteredOrganizers.map((org) => {
               const totalRevenue = org.events.reduce((sum, event) => {
               if (event.revenueByYear) {
                 const yearTotal = Object.values(event.revenueByYear).reduce(

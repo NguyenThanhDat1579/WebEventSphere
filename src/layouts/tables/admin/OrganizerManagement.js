@@ -72,7 +72,7 @@ function OrganizerManagement() {
             <Box sx={{ width: "100%", overflowX: "auto" }}>
               <Table
                 columns={columns}
-               rows={rows.slice((page - 1) * rowsPerPage, page * rowsPerPage)}
+                 rows={rows.slice((page - 1) * rowsPerPage, page * rowsPerPage)}
                 sxTable={{
                   minWidth: 820,
                   tableLayout: "fixed",

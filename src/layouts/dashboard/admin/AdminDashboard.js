@@ -124,6 +124,7 @@ tickets += Number.isFinite(rev.totalSold) ? rev.totalSold : 0;
 }, []);
 
 
+
   /* ---------------- helper % tăng/giảm --------------- */
   const percent = (() => {
     const { revenue, prevRevenue } = kpi;

@@ -141,12 +141,18 @@ const ZoneSeatLayout = ({ onSubmit }) => {
   };
 
   const handleAddZone = () => {
+     if (!validateZoneForm()) return;
+
     if (!zoneName || !price || !color) return;
     const newZone = { name: zoneName, price: parseInt(price), color };
     setZones([...zones, newZone]);
+
+
     setZoneName("");
     setPrice(0);
     setColor(colorOptions[0].value);
+    setZoneNameError("");
+    setPriceError("");
   };
 
   useEffect(() => {
@@ -313,6 +319,32 @@ const ZoneSeatLayout = ({ onSubmit }) => {
       setSelectedZone(zone);
     }
   };
+
+  const [zoneNameError, setZoneNameError] = useState("");
+  const [priceError, setPriceError] = useState("");
+
+
+  const validateZoneForm = () => {
+    let hasError = false;
+
+    if (!zoneName.trim()) {
+      setZoneNameError("Vui lòng nhập tên khu vực.");
+      hasError = true;
+    } else {
+      setZoneNameError("");
+    }
+
+    if (!price || Number(price) <= 0) {
+      setPriceError("Vui lòng nhập giá vé hợp lệ.");
+      hasError = true;
+    } else {
+      setPriceError("");
+    }
+
+
+    return !hasError;
+  };
+
   return (
     <Box onMouseUp={handleMouseUp}>
       {/* 1. Tiêu đề */}
@@ -325,8 +357,11 @@ const ZoneSeatLayout = ({ onSubmit }) => {
         <Grid item xs={12} sm={3}>
           <CustomTextField
             label="Tên khu vực"
+            placeholder="Nhập tên khu vực"
             value={zoneName}
             onChange={(e) => setZoneName(e.target.value)}
+            error={Boolean(zoneNameError)}
+            helperText={zoneNameError}
           />
         </Grid>
 
@@ -337,6 +372,8 @@ const ZoneSeatLayout = ({ onSubmit }) => {
             pop="money"
             value={price.toString()}
             onChange={(e) => setPrice(e.target.value)}
+            error={Boolean(priceError)}
+            helperText={priceError}
           />
         </Grid>
 

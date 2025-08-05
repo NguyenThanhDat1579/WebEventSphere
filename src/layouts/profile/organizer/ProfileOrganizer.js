@@ -51,6 +51,21 @@ const ProfileOrganizer = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false); // dialog preview ảnh
+  const [nameError, setNameError] = useState("");
+
+
+  const validateForm = () => {
+  let isValid = true;
+
+  if (!editedName.trim()) {
+    setNameError("Tên nhà tổ chức không được để trống.");
+    isValid = false;
+  } else {
+    setNameError("");
+  }
+
+  return isValid;
+};
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -76,6 +91,7 @@ const ProfileOrganizer = () => {
   };
 
   const handleSave = async () => {
+     if (!validateForm()) return;
     try {
       setLoading(true);
 
@@ -175,6 +191,8 @@ const ProfileOrganizer = () => {
                       onChange={(e) => setEditedName(e.target.value)}
                       fullWidth
                       disabled={!editMode}
+                      error={Boolean(nameError)}
+                      helperText={nameError}
                     />
                   </Grid>
                   </Grid>
@@ -214,6 +232,7 @@ const ProfileOrganizer = () => {
                             setPreviewUrl(profile.picUrl);
                             setSelectedImage(null);
                             setEditMode(false);
+                            setNameError("");
                           }}
                               >
                             Hủy

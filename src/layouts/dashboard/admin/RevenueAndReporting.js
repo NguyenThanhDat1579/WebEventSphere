@@ -473,9 +473,6 @@ useEffect(() => {
       {tabIndex === 1 && (
        <Box sx={{ position: 'relative', boxShadow: 4, borderRadius: 3}}>
         <TableContainer component={Paper} elevation={3} sx={{ borderRadius: 3, p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Danh sách nhà tổ chức và sự kiện
-          </Typography>
 
           <Table>
             <TableRow>

@@ -38,15 +38,19 @@ function OrganizerTicketsAndAttendees() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   const filteredAttendees = localAttendees.filter((attendee) => {
+  const lowerSearch = searchTerm.toLowerCase();
   const matchesSearch =
-    attendee.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    attendee.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    (attendee.userName ?? "").toLowerCase().includes(lowerSearch) ||
+    (attendee.ticketId ?? "").toLowerCase().includes(lowerSearch);
 
   const matchesStatus =
     statusFilter === "all" || attendee.status === statusFilter;
 
   return matchesSearch && matchesStatus;
 });
+
+
+console.log("✅ Danh sách đã lọc:", filteredAttendees);
 
 
   const handleLocalCheckIn = (index) => {
@@ -150,7 +154,7 @@ function OrganizerTicketsAndAttendees() {
         {/* Chọn sự kiện và suất diễn */}
         <Paper elevation={2} sx={{ mb: 4, p: 2 }}>
       <Typography variant="h6" gutterBottom>
-        Chọn sự kiện & suất diễn
+        Chọn sự kiện
       </Typography>
 
       <Box display="flex" flexWrap="wrap" gap={2}>
@@ -181,9 +185,9 @@ function OrganizerTicketsAndAttendees() {
 
           <Box display="flex" flexWrap="wrap" gap={2} mb={2}>
             <TextField
-              placeholder="Tìm kiếm tên / email"
+              placeholder="Tìm kiếm email / mã vé"
               value={searchTerm}
-               onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
 
               sx={{ minWidth: 300 }}
             />

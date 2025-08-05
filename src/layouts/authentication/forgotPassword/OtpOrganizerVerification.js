@@ -14,6 +14,11 @@ function OtpOrganizerVerification() {
   const location = useLocation();
   const email = location?.state?.email || '';
 
+    useEffect(() => {
+    if (location.state?.fromVerifyOtp !== true) {
+    }
+  }, []);
+
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
   const [errorIndices, setErrorIndices] = useState([]);
@@ -79,6 +84,10 @@ function OtpOrganizerVerification() {
 
       if (res?.status) {
         setSuccess(true);
+        sessionStorage.removeItem("register_username");
+        sessionStorage.removeItem("register_email");
+        sessionStorage.removeItem("register_password");
+        sessionStorage.removeItem("register_confirmPassword");
         setTimeout(() => {
           navigate('/authentication/sign-in');
         }, 2000);
@@ -127,7 +136,9 @@ const bgImage =
        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
            <ArrowBackIosNewIcon
                 sx={{ cursor: 'pointer', mr: 1, }}
-                onClick={() => navigate(-1)}
+                onClick={() =>
+                  navigate('/authentication/sign-up', { state: { fromVerifyOtp: true } })
+                }
             />
             <Typography variant="h5" fontWeight="bold" sx={{ color: "#5669FF" }}>
                 Xác thực OTP

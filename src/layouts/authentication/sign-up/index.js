@@ -20,7 +20,7 @@ import Separator from "layouts/authentication/components/Separator";
 import authApi from "api/utils/authApi";
 
 // React
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Typography } from "@mui/material";
 import bgImage from '../../../assets/images/imgAuthetication.png'
 import avImage from '../../../assets/images/avImg.jpg'
@@ -33,6 +33,13 @@ function Cover() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+  setUsername(sessionStorage.getItem("register_username") || "");
+  setEmail(sessionStorage.getItem("register_email") || "");
+  setPassword(sessionStorage.getItem("register_password") || "");
+  setConfirmPassword(sessionStorage.getItem("register_confirmPassword") || "");
+  }, []);
 
   const validateForm = () => {
     let tempErrors = {};
@@ -89,16 +96,19 @@ function Cover() {
       const res = await authApi.register(body);
       
       if (res.status) {
-           navigate("/authentication/verify-otp-organizer", { state: { email } });
+         navigate("/authentication/verify-otp-organizer", {
+          state: { email, fromRegister: true }
+        });
       } else {
         setErrors(prev => ({ ...prev, email: res.message || "Email đã tồn tại" }));
       }
     } catch (err) {
-      setErrors(prev => ({ ...prev, email: "Lỗi hệ thống. Vui lòng thử lại." }));
+      setErrors(prev => ({ ...prev, email: "Email đã tồn tại." }));
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
   <CoverLayout
@@ -127,7 +137,10 @@ function Cover() {
             <ArgonInput
               placeholder="Tên người dùng"
               value={username}
-              onChange={e => setUsername(e.target.value)}
+              onChange={e => {
+              setUsername(e.target.value);
+              sessionStorage.setItem("register_username", e.target.value);
+              }}
               error={!!errors.username}
             />
             {errors.username && (
@@ -142,7 +155,10 @@ function Cover() {
               type="email"
               placeholder="Email"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={e => {
+                setEmail(e.target.value);
+                sessionStorage.setItem("register_email", e.target.value);
+              }}
               error={!!errors.email}
             />
             {errors.email && (
@@ -157,7 +173,10 @@ function Cover() {
               type="password"
               placeholder="Mật khẩu"
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={e => {
+                setPassword(e.target.value);
+                sessionStorage.setItem("register_password", e.target.value);
+              }}
               error={!!errors.password}
             />
             {errors.password && (
@@ -172,7 +191,10 @@ function Cover() {
               type="password"
               placeholder="Nhập lại mật khẩu"
               value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
+             onChange={e => {
+              setConfirmPassword(e.target.value);
+              sessionStorage.setItem("register_confirmPassword", e.target.value);
+            }}
               error={!!errors.confirmPassword}
             />
             {errors.confirmPassword && (

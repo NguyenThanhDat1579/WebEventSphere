@@ -111,7 +111,7 @@ const ResetPasswordOrganizer = () => {
           }}
         />
         {error && (
-          <ArgonTypography color="error" mt={2}>
+          <ArgonTypography color="error" fontSize="13px" mt={1}>
             {error}
           </ArgonTypography>
         )}

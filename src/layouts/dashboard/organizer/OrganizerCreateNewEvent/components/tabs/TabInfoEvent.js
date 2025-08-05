@@ -399,6 +399,7 @@ export default function TabInfoEvent({ onNext }) {
 
       setAlertStatus("success");
       setAlertMessage("Đã lưu dữ liệu!");
+       setAlertDuration(3000);
       return true;
     } catch (err) {
       console.error("Lỗi trong quá trình lưu:", err);

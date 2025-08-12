@@ -18,7 +18,6 @@ import ArgonBox           from "components/ArgonBox";
 import ArgonTypography    from "components/ArgonTypography";
 import DashboardLayout    from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar    from "examples/Navbars/DashboardNavbar";
-import Footer             from "examples/Footer";
 import VerticalBarChart   from "examples/Charts/BarCharts/VerticalBarChart";
 
 import revenueApi         from "api/revenue";
@@ -83,7 +82,7 @@ useEffect(() => {
       filteredEvents.forEach(ev => {
         const rev = revenueMap.get(ev._id);
         const cur  = rev.revenueByMonth?.[mNow]  ?? 0;
-const prev = rev.revenueByMonth?.[mPrev] ?? 0;
+    const prev = rev.revenueByMonth?.[mPrev] ?? 0;
 
 
         revNow  += cur;
@@ -206,7 +205,6 @@ tickets += Number.isFinite(rev.totalSold) ? rev.totalSold : 0;
       </ArgonBox>
     )}
 
-    <Footer />
   </DashboardLayout>
 );
 }

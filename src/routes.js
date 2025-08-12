@@ -24,8 +24,17 @@ import OtpForgetPasswordOrganizer from "layouts/authentication/forgotPassword/Ot
 import ResetPasswordOrganizer from "layouts/authentication/forgotPassword/ResetPasswordOrganizer";
 import ArgonBox from "components/ArgonBox";
 import OtpOrganizerVerification from "layouts/authentication/forgotPassword/OtpOrganizerVerification";
-
+import WelcomePage from "layouts/welcome/WelcomePage";
 const routes = [
+    {
+    type: "route",
+    name: "Welcome",
+    key: "welcome",
+    route: "/welcome",
+    icon: <ArgonBox component="i" color="primary" fontSize="14px" className="ni ni-world" />,
+    component: <WelcomePage />,
+    hidden: true, // Ẩn khỏi menu
+  },
   {
     type: "route",
     name: "Dashboard",

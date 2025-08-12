@@ -1,26 +1,20 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import PropTypes from "prop-types";
 import {
   Box,
   Typography,
-  ToggleButton,
-  ToggleButtonGroup,
   TextField,
-  IconButton,
-  Button,
-  Stack,
   Grid,
-  InputAdornment,
+  Icon,
 } from "@mui/material";
-import Icon from "@mui/material/Icon";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import viLocale from "date-fns/locale/vi";
 import ArgonBox from "components/ArgonBox";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import { useNavigate } from "react-router-dom";
 import ArgonButton from "components/ArgonButton";
+import SelectMenu from "../OrganizerCreateNewEvent/components/SelectMenu";
+import { useNavigate } from "react-router-dom";
 
 const labelTextFieldWrapper = {
   display: "flex",
@@ -29,16 +23,19 @@ const labelTextFieldWrapper = {
   width: "100%",
 };
 
-const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, onResetData, isMini = false }) => {
+const SearchFilterBar = ({
+  onSearch,
+  onDateRange,
+  onResetData,
+  onApprovalStatusFilter,
+  onTimeStatusFilter,
+  isMini = false,
+}) => {
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
-  const [fromOpen, setFromOpen] = useState(false);
-  const [toOpen, setToOpen] = useState(false);
-
-  const fromInputRef = useRef(null);
-  const toInputRef = useRef(null);
+  const [approvalStatus, setApprovalStatus] = useState("");
+  const [timeStatus, setTimeStatus] = useState("");
 
   const navigate = useNavigate();
 
@@ -46,13 +43,6 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, onResetData, i
     const value = e.target.value;
     setSearch(value);
     onSearch?.(value);
-  };
-
-  const handleStatusChange = (event, newStatus) => {
-    if (newStatus !== null) {
-      setStatus(newStatus);
-      onStatusFilter?.(newStatus);
-    }
   };
 
   const handleDateChange = (type, value) => {
@@ -65,24 +55,16 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, onResetData, i
     }
   };
 
-  const handleOpenFromDate = () => {
-    setFromOpen(true);
-    if (fromInputRef.current) fromInputRef.current.focus();
-  };
-
-  const handleOpenToDate = () => {
-    setToOpen(true);
-    if (toInputRef.current) toInputRef.current.focus();
-  };
-
   const handleReset = () => {
     setSearch("");
-    setStatus("all");
     setFromDate(null);
     setToDate(null);
+    setApprovalStatus("");
+    setTimeStatus("");
     onSearch?.("");
-    onStatusFilter?.("all");
     onDateRange?.({ from: null, to: null });
+    onApprovalStatusFilter?.("");
+    onTimeStatusFilter?.("");
     onResetData?.();
   };
 
@@ -96,18 +78,9 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, onResetData, i
         <Grid item xs={12}>
           <Box p={2} borderRadius={2} bgcolor="#fff">
             <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={viLocale}>
-              <Box
-                mb={1}
-                p={1}
-                borderRadius={2}
-                bgcolor="#fff"
-                display="flex"
-                gap={2}
-                alignItems="flex-start"
-                height={100}
-              >
-                {/* Search box */}
-                <Box sx={{ width: 250 }}>
+              <Grid container spacing={2} mb={2}>
+                {/* Tìm kiếm */}
+                <Grid item xs={12} md={4}>
                   <Box sx={labelTextFieldWrapper}>
                     <Typography variant="body2">Tìm kiếm:</Typography>
                     <TextField
@@ -125,146 +98,78 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, onResetData, i
                       }}
                     />
                   </Box>
-                </Box>
+                </Grid>
 
-                {/* Status filter */}
-                <Box sx={{ width: 350 }}>
+                {/* Trạng thái duyệt */}
+                <Grid item xs={12} md={4}>
                   <Box sx={labelTextFieldWrapper}>
-                    <Typography variant="body2">Trạng thái:</Typography>
-                    <ToggleButtonGroup
-                      exclusive
-                      value={status}
-                      onChange={handleStatusChange}
-                      sx={{
-                        width: "fit-content",
-                        mx: "auto",
-                        "& .MuiToggleButton-root": {
-                          borderRadius: 2,
-                          border: "1px solid #ccc",
-                          color: "#555",
-                          fontWeight: 500,
-                          textTransform: "none",
-                          fontSize: "0.8rem",
-                          px: 1.5,
-                          py: 0.5,
-                          minHeight: 30,
-                        },
-                        "& .Mui-selected": {
-                          bgcolor: "#1976d2",
-                          color: "#fff",
-                          "&:hover": {
-                            bgcolor: "#1565c0",
-                          },
-                        },
+                    <Typography variant="body2">Trạng thái duyệt:</Typography>
+                    <SelectMenu
+                      label="Trạng thái duyệt"
+                      value={approvalStatus}
+                      onChange={(val) => {
+                        setApprovalStatus(val);
+                        onApprovalStatusFilter?.(val);
                       }}
-                    >
-                      <ToggleButton value="all">Tất cả</ToggleButton>
-                      <ToggleButton value="ongoing">Đang diễn ra</ToggleButton>
-                      <ToggleButton value="upcoming">Sắp diễn ra</ToggleButton>
-                      <ToggleButton value="ended">Đã kết thúc</ToggleButton>
-                    </ToggleButtonGroup>
-                  </Box>
-                </Box>
-
-                {/* Date filter */}
-                <Box sx={{ width: 175, display: "flex", gap: 4 }}>
-                  <Box sx={{ ...labelTextFieldWrapper, flex: 1 }}>
-                    <Typography variant="body2">Từ ngày:</Typography>
-                    <DatePicker
-                      open={fromOpen}
-                      onOpen={() => setFromOpen(true)}
-                      onClose={() => setFromOpen(false)}
-                      value={fromDate}
-                      onChange={(value) => handleDateChange("from", value)}
-                      renderInput={(params) => (
-                        <TextField
-                          size="small"
-                          fullWidth
-                          {...params}
-                          placeholder="dd/mm/yyyy"
-                          inputRef={params.inputRef}
-                          InputProps={{
-                            ...params.InputProps,
-                            endAdornment: (
-                              <InputAdornment position="end">
-                                <IconButton
-                                  onClick={handleOpenFromDate}
-                                  edge="end"
-                                  size="small"
-                                  aria-label="open calendar"
-                                >
-                                  <CalendarTodayIcon fontSize="small" sx={{ color: "gray" }} />
-                                </IconButton>
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                      )}
+                      options={[
+                        { label: "Tất cả", value: "" },
+                        { label: "Đã duyệt", value: "approved" },
+                        { label: "Chờ duyệt", value: "pending" },
+                        { label: "Từ chối", value: "rejected" },
+                      ]}
                     />
                   </Box>
+                </Grid>
 
-                  <Box sx={{ ...labelTextFieldWrapper, flex: 1 }}>
-                    <Typography variant="body2">Đến ngày:</Typography>
-                    <DatePicker
-                      open={toOpen}
-                      onOpen={() => setToOpen(true)}
-                      onClose={() => setToOpen(false)}
-                      value={toDate}
-                      onChange={(value) => handleDateChange("to", value)}
-                      renderInput={(params) => (
-                        <TextField
-                          size="small"
-                          fullWidth
-                          {...params}
-                          placeholder="dd/mm/yyyy"
-                          inputRef={params.inputRef}
-                          InputProps={{
-                            ...params.InputProps,
-                            endAdornment: (
-                              <InputAdornment position="end">
-                                <IconButton
-                                  onClick={handleOpenToDate}
-                                  edge="end"
-                                  size="small"
-                                  aria-label="open calendar"
-                                >
-                                  <CalendarTodayIcon fontSize="small" sx={{ color: "gray" }} />
-                                </IconButton>
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                      )}
+                {/* Trạng thái thời gian */}
+                <Grid item xs={12} md={4}>
+                  <Box sx={labelTextFieldWrapper}>
+                    <Typography variant="body2">Trạng thái thời gian:</Typography>
+                    <SelectMenu
+                      label="Trạng thái thời gian"
+                      value={timeStatus}
+                      onChange={(val) => {
+                        setTimeStatus(val);
+                        onTimeStatusFilter?.(val);
+                      }}
+                      options={[
+                        { label: "Tất cả", value: "all" },
+                        { label: "Đang diễn ra", value: "ongoing" },
+                        { label: "Sắp diễn ra", value: "upcoming" },
+                        { label: "Đã kết thúc", value: "ended" },
+                      ]}
                     />
                   </Box>
-                </Box>
-              </Box>
+                </Grid>
+              </Grid>
 
-              {/* Button group */}
-              <Box display="flex" justifyContent="flex-end" mt={-4} mb={1} pr={2}>
-                <Stack direction="row" spacing={2}>               
-                    <ArgonBox mt={3} mb={1}>
-                      <ArgonButton
-                        color="info"
-                        size="small"
-                        onClick={handleReset}
-                        variant="contained"
-                      >
-                        Làm mới
-                      </ArgonButton>
-                    </ArgonBox>
-                      <ArgonBox mt={3} mb={1}>
-                      <ArgonButton
-                        color="info"
-                        size="small"
-                        variant="contained"
-                        onClick={handleCreateEvent}
-                      >
-                        Tạo sự kiện
-                      </ArgonButton>
-                    </ArgonBox>
-                </Stack>
-              </Box>
+              {/* Buttons */}
+              <Grid container spacing={2} alignItems="flex-end">
+                 <Grid item xs={12} md={9}></Grid>
+                <Grid item>
+                  <ArgonButton
+                    color="info"
+                    size="small"
+                    onClick={handleReset}
+                    variant="contained"
+                    sx={{ py: 1.4 }}
+                  >
+                    Làm mới
+                  </ArgonButton>
+                </Grid>
+
+                <Grid item>
+                  <ArgonButton
+                    color="info"
+                    size="small"
+                    variant="contained"
+                    onClick={handleCreateEvent}
+                    sx={{ py: 1.4 }}
+                  >
+                    Tạo sự kiện
+                  </ArgonButton>
+                </Grid>
+              </Grid>
             </LocalizationProvider>
           </Box>
         </Grid>
@@ -275,9 +180,10 @@ const SearchFilterBar = ({ onSearch, onStatusFilter, onDateRange, onResetData, i
 
 SearchFilterBar.propTypes = {
   onSearch: PropTypes.func,
-  onStatusFilter: PropTypes.func,
   onDateRange: PropTypes.func,
   onResetData: PropTypes.func,
+  onApprovalStatusFilter: PropTypes.func,
+  onTimeStatusFilter: PropTypes.func,
   isMini: PropTypes.bool,
 };
 

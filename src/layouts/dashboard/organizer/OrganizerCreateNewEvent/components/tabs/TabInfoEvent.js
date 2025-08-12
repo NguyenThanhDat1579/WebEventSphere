@@ -17,6 +17,7 @@ import {
   CircularProgress,
   Autocomplete,
 } from "@mui/material";
+
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
@@ -67,15 +68,17 @@ export default function TabInfoEvent({ onNext }) {
   const { province, ward, address } = useSelector((state) => state.eventAddress);
   // 2. State
   const [formData, setFormData] = useState({
-    eventName: "",
-    addressName: "",
-    address: "",
+    eventName: eventInfo.name || "",
+    addressName: eventInfo.addressName || "",
+    address: address || "",
   });
   const [errors, setErrors] = useState({
+    eventLogo: "",
     eventBanner: "",
     eventName: "",
     addressName: "",
     province: "",
+    ward: "",   
     address: "",
     category: "",
   });
@@ -84,11 +87,12 @@ export default function TabInfoEvent({ onNext }) {
   const [alertMessage, setAlertMessage] = useState("");
   const [alertDuration, setAlertDuration] = useState(5000);
 
-  const [eventLogo, setEventLogo] = useState(null); // ảnh logo đã lưu
+  const [eventLogo, setEventLogo] = useState(eventInfo.avatar || null); // ảnh logo đã lưu
   const [tempLogoFile, setTempLogoFile] = useState(null); // file tạm
   const [previewLogo, setPreviewLogo] = useState(null); // URL preview
 
-  const [eventBanner, setEventBanner] = useState(null);
+
+  const [eventBanner, setEventBanner] = useState(eventInfo.banner || null);
   const [tempBannerFile, setTempBannerFile] = useState(null); // File tạm
   const [previewBanner, setPreviewBanner] = useState(null); // Preview ảnh mới
 
@@ -130,12 +134,12 @@ export default function TabInfoEvent({ onNext }) {
     }
   }, [selectedProvince, selectedWard]);
 
-  const [latitude, setLatitude] = useState(null);
-  const [longitude, setLongitude] = useState(null);
+  const [latitude, setLatitude] = useState(eventInfo.latitude || null);
+  const [longitude, setLongitude] = useState(eventInfo.longitude || null);
 
   const [tagInput, setTagInput] = useState("");
   const [suggestions, setSuggestions] = useState([]);
-  const [tags, setTags] = useState([]);
+  const [tags, setTags] = useState(eventInfo.tags || []);
   const [tagError, setTagError] = useState("");
 
   useEffect(() => {
@@ -164,48 +168,31 @@ export default function TabInfoEvent({ onNext }) {
     setTags((prev) => [...prev, trimmedTag]);
   };
 
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(eventInfo.description || "");
   const [readyToInitTiny, setReadyToInitTiny] = useState(false);
   // 3. useEffect – Theo dõi và load dữ liệu
   useEffect(() => {
-    console.log("eventInfo đã cập nhật:", eventInfo);
-    if (eventInfo?.avatar) {
-      setEventLogo(eventInfo.avatar);
-    }
-    if (eventInfo?.banner) {
-      setEventBanner(eventInfo.banner);
-    }
-    if (eventInfo?.images) {
-      setImages([...eventInfo.images]);
-    }
+  setFormData({
+    eventName: eventInfo.name || "",
+    addressName: eventInfo.addressName || "",
+    address: address || "",
+  });
+  setEventLogo(eventInfo.avatar || null);
+  setEventBanner(eventInfo.banner || null);
+  setImages(eventInfo.images || []);
+  setTags(eventInfo.tags || []);
+  setSelectedProvince(province || "");
+  setSelectedWard(ward || "");
+  setLatitude(eventInfo.latitude || null);
+  setLongitude(eventInfo.longitude || null);
+  if(eventInfo.description){
+      setDescription(eventInfo.description || "");
+  } else{
+       setDescription(initialContent);
+  }
 
-    if (eventInfo?.name) {
-      setFormData((prev) => ({
-        ...prev,
-        eventName: eventInfo.name || "",
-      }));
-    }
-    if (eventInfo?.tags) {
-      setTags(eventInfo.tags);
-    }
-
-    if (address) {
-      setFormData((prev) => ({
-        ...prev,
-        address: address || "",
-      }));
-    }
-  }, [eventInfo]);
-  useEffect(() => {
-    const desc = eventInfo?.description?.trim();
-    if (desc && desc !== "") {
-      setDescription(desc);
-    } else {
-      setDescription(initialContent);
-    }
-
-    setReadyToInitTiny(true); // ✅ đảm bảo Tiny chỉ init khi đã có mô tả
-  }, [eventInfo?.description]);
+  setReadyToInitTiny(true);
+}, [eventInfo, province, ward, address]);
 
   const handleSelectImage = (e, type) => {
     const file = e.target.files?.[0];
@@ -307,21 +294,39 @@ export default function TabInfoEvent({ onNext }) {
     const newErrors = {};
     let hasError = false;
 
+    
+    if (!eventLogo && !tempLogoFile) {
+      newErrors.eventLogo = "Vui lòng thêm ảnh nền sự kiện";
+      hasError = true;
+    }
+
+    if (!eventBanner && !tempBannerFile) {
+      newErrors.eventBanner = "Vui lòng thêm ảnh nền sự kiện";
+      hasError = true;
+    }
+
     // ✅ Kiểm tra lỗi form
     if (!formData.eventName.trim()) {
       newErrors.eventName = "Vui lòng nhập tên sự kiện";
       hasError = true;
     }
 
-    if (!selectedProvince) {
-      newErrors.selectedProvince = "Vui lòng chọn tỉnh/thành";
+     if (!selectedProvince) {
+      newErrors.province = "Vui lòng chọn tỉnh/thành";  
       hasError = true;
     }
+
+     if (!selectedWard) {
+    newErrors.ward = "Vui lòng chọn phường/xã";
+    hasError = true;
+    }
+
 
     if (!formData.address.trim()) {
       newErrors.address = "Vui lòng nhập số nhà, đường";
       hasError = true;
     }
+
 
     if (tags.length === 0) {
       setTagError("Vui lòng nhập ít nhất 1 tag");
@@ -387,7 +392,7 @@ export default function TabInfoEvent({ onNext }) {
 
         dispatch(setEventNameAction(formData.eventName));
         dispatch(setFullAddressAction(fullAddress));
-        dispatch(setCategoryAction("")); // TODO: set đúng category
+        dispatch(setCategoryAction("")); 
         dispatch(setTagsAction(tags));
         dispatch(setLatitudeAction(coords.latitude));
         dispatch(setLongitudeAction(coords.longitude));
@@ -485,6 +490,12 @@ export default function TabInfoEvent({ onNext }) {
                 onChange={(e) => handleSelectImage(e, "logo")}
               />
             </Button>
+
+            {errors.eventLogo && (
+              <Typography fontSize={12} color="red" sx={{ mt: 0.5, ml: 1 }}>
+                {errors.eventLogo}
+              </Typography>
+            )}
           </Grid>
           <Grid item xs={12} sm={12}>
             <Button
@@ -545,7 +556,7 @@ export default function TabInfoEvent({ onNext }) {
             </Button>
 
             {errors.eventBanner && (
-              <Typography variant="body2" color="red" sx={{ mt: 0.5, ml: 1 }}>
+              <Typography fontSize={12} color="red" sx={{ mt: 0.5, ml: 1 }}>
                 {errors.eventBanner}
               </Typography>
             )}
@@ -706,29 +717,37 @@ export default function TabInfoEvent({ onNext }) {
             <Typography variant="h6" gutterBottom>
               <span style={{ color: "red" }}>*</span> Tỉnh/Thành
             </Typography>
-            <SelectMenu
-              label="Chọn tỉnh / thành phố"
-              value={selectedProvince}
-              onChange={(val) => {
-                setSelectedProvince(val);
-                setSelectedWard(""); // reset xã
-              }}
-              options={provinceOptions}
-              searchable
-            />
+           <SelectMenu
+            label="Chọn tỉnh / thành phố"
+            value={selectedProvince}
+            onChange={(val) => {
+              setSelectedProvince(val);
+              setSelectedWard(""); 
+              setErrors(prev => ({ ...prev, province: "" }));
+            }}
+            options={provinceOptions}
+            searchable
+            error={!!errors.province}           
+            helperText={errors.province}       
+          />
           </Grid>
 
           {/* Phường / Xã */}
           <Grid item xs={12} sm={6}>
             <Typography variant="h6" gutterBottom>
-              Phường/Xã
+              <span style={{ color: "red" }}>*</span> Phường/Xã
             </Typography>
             <SelectMenu
               label="Chọn phường / xã"
               value={selectedWard}
-              onChange={(val) => setSelectedWard(val)}
+              onChange={(val) => {
+                setSelectedWard(val);
+                setErrors(prev => ({ ...prev, ward: "" }));
+              }}
               options={wards}
               searchable
+              error={!!errors.ward}              
+              helperText={errors.ward}            
             />
           </Grid>
 
@@ -779,7 +798,7 @@ export default function TabInfoEvent({ onNext }) {
               />
             </Box>
             {tagError && (
-              <Typography color="error" fontSize={13} mt={0.5}>
+              <Typography sx={{color: "red"}} variant="caption"fontSize={12} mt={0.5} >
                 {tagError}
               </Typography>
             )}

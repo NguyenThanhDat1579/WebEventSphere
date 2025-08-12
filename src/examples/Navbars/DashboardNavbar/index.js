@@ -181,16 +181,12 @@ function DashboardNavbar({ absolute, light, isMini }) {
                   >
                     Đăng xuất
                   </ArgonTypography>
+                    <IconButton>
+                   <Icon sx={{color: "#fff"}}>settings</Icon>
+                   </IconButton>
                 </IconButton>
               </Link>
-              <IconButton
-                size="small"
-                sx={{...navbarIconButton, color: "#fff"}}
-                onClick={handleConfiguratorOpen}
-              >
-                <Icon>settings</Icon>
-              </IconButton>
-              <IconButton
+              {/* <IconButton
                 size="small"
                 sx={{...navbarIconButton, color: "#fff"}}
                 aria-controls="notification-menu"
@@ -200,7 +196,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
               >
                 <Icon>notifications</Icon>
               </IconButton>
-              {renderMenu()}
+              {renderMenu()} */}
             </ArgonBox>
           </ArgonBox>
         )}

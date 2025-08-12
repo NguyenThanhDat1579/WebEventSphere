@@ -13,6 +13,7 @@ import ForgetPasswordOrganizer from "layouts/authentication/forgotPassword/Forge
 import OtpForgetPasswordOrganizer from "layouts/authentication/forgotPassword/OtpForgetPasswordOrganizer";
 import OtpOrganizerVerification from "layouts/authentication/forgotPassword/OtpOrganizerVerification";
 import ResetPasswordOrganizer from "layouts/authentication/forgotPassword/ResetPasswordOrganizer";
+import WelcomePage from "layouts/welcome/WelcomePage";
 
 import Sidenav from "examples/Sidenav";
 import Configurator from "examples/Configurator";
@@ -55,21 +56,23 @@ export default function App() {
 
   // Redirect nếu chưa đăng nhập
   useEffect(() => {
-    if (
-      !initializing &&
-      !isAuthenticated &&
-      ![
-        "/authentication/sign-in",
-        "/authentication/sign-up",
-        "/authentication/forget-password",
-        "/authentication/otp-forget-password",
-        "/authentication/reset-password",
-        "/authentication/verify-otp-organizer"
-      ].includes(pathname)
-    ) {
-      navigate("/authentication/sign-in");
-    }
-  }, [initializing, isAuthenticated, pathname, navigate]);
+  if (
+    !initializing &&
+    !isAuthenticated &&
+    ![
+      "/welcome",
+      "/authentication/sign-in",
+      "/authentication/sign-up",
+      "/authentication/forget-password",
+      "/authentication/otp-forget-password",
+      "/authentication/reset-password",
+      "/authentication/verify-otp-organizer"
+    ].includes(pathname)
+  ) {
+    navigate("/welcome");
+  }
+}, [initializing, isAuthenticated, pathname, navigate]);
+
 
   // Redirect nếu đã đăng nhập
   useEffect(() => {
@@ -139,7 +142,7 @@ export default function App() {
           <Route path="/authentication/otp-forget-password" element={<OtpForgetPasswordOrganizer />} />
           <Route path="/authentication/verify-otp-organizer" element={<OtpOrganizerVerification />} />
           <Route path="/authentication/reset-password" element={<ResetPasswordOrganizer />} />
-          <Route path="*" element={<Navigate to="/authentication/sign-in" replace />} />
+          <Route path="*" element={<WelcomePage />} />
         </Routes>
       </>
     );

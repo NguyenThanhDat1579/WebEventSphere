@@ -81,7 +81,7 @@ function OrganizerManagement() {
 
           {/* Search */}
           <ArgonBox px={3} py={2}>
-              <Box sx={{width: "30%"}}>
+            <Box sx={{width: "30%"}}>
             <TextField
               fullWidth
               size="small"

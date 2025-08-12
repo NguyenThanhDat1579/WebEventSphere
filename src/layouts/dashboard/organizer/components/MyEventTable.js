@@ -85,21 +85,46 @@ function MyEventTable({ events, onViewDetail }) {
     return "Chưa có suất phù hợp";
   };
 
- const getStatusChip = (event) => {
-  const now = Date.now();
+  const getStatusChip = (event) => {
+    const now = Date.now();
 
-  const start = toDate(event.timeStart).getTime();
-  const end = toDate(event.timeEnd).getTime();
+    // Chip trạng thái duyệt sự kiện
+    let approvalStatusChip;
+    switch (event.approvalStatus) {
+      case "approved":
+        approvalStatusChip = <Chip label="Đã duyệt" color="primary" size="small" sx={{ color: "#fff", mr: 1 }} />;
+        break;
+      case null:
+        approvalStatusChip = <Chip label="Đã duyệt" color="primary" size="small" sx={{ color: "#fff", mr: 1 }} />;
+      break;
+      case "pending":
+        return <Chip label="Chờ duyệt" color="warning" size="small" sx={{ color: "#fff" }} />;
+      case "rejected":
+        return <Chip label="Từ chối" color="error" size="small" sx={{ color: "#fff" }} />;
+      default:
+        return null;
+    }
 
-  if (now < start) {
-    return <Chip label="Sắp mở bán" color="warning" size="small" sx={{ color: "#fff" }} />;
-  } else if (now >= start && now <= end) {
-    return <Chip label="Đang mở bán vé" color="success" size="small" sx={{ color: "#fff" }} />;
-  } else {
-    return <Chip label="Đã kết thúc bán" color="default" size="small" sx={{ color: "#fff" }} />;
-  }
-};
+    // Nếu đã duyệt, mới hiển thị chip trạng thái mở bán vé
+    const start = toDate(event.timeStart).getTime();
+    const end = toDate(event.timeEnd).getTime();
 
+    let saleStatusChip;
+    if (now < start) {
+      saleStatusChip = <Chip label="Sắp mở bán" color="warning" size="small" sx={{ color: "#fff" }} />;
+    } else if (now >= start && now <= end) {
+      saleStatusChip = <Chip label="Đang mở bán vé" color="success" size="small" sx={{ color: "#fff" }} />;
+    } else {
+      saleStatusChip = <Chip label="Đã kết thúc bán" color="default" size="small" sx={{ color: "#fff" }} />;
+    }
+
+    return (
+      <>
+        {approvalStatusChip}
+        {saleStatusChip}
+      </>
+    );
+  };
 
   const handleViewRevenue = (eventId, eventTitle) => {
     const encodedTitle = encodeURIComponent(eventTitle);
@@ -130,10 +155,7 @@ function MyEventTable({ events, onViewDetail }) {
                 Trạng thái
               </TableCell>
               <TableCell sx={{ width: "10%", fontWeight: 600, fontSize: "0.95rem" }}>
-                Vé đã bán
-              </TableCell>
-              <TableCell sx={{ width: "15%", fontWeight: 600, fontSize: "0.95rem" }}>
-                Địa điểm
+                Vé
               </TableCell>
               <TableCell
                 sx={{ width: "15%", fontWeight: 600, fontSize: "0.95rem", textAlign: "center" }}
@@ -192,13 +214,6 @@ function MyEventTable({ events, onViewDetail }) {
                   </Typography>
                 </TableCell>
 
-                <TableCell>
-                  <Typography sx={{ fontWeight: 500, fontSize: "0.85rem", whiteSpace: "pre-line" }}>
-                      {event.location
-                            ? event.location.split(", ").join("\n")
-                            : "Đang cập nhật"}
-                    </Typography>
-                </TableCell>
 
                 <TableCell sx={{ textAlign: "center" }}>
                   <Stack spacing={1} alignItems="center">

@@ -77,7 +77,7 @@ const TagSelector = ({
 
       {/* Lỗi */}
       {error && helperText && (
-        <Typography variant="caption" color="error" sx={{ mt: "4px", ml: "4px", display: "block" }}>
+       <Typography fontSize={13} sx={{ color: "red", mt: 0.5, ml: "4px", display: "block" }}>
           {helperText}
         </Typography>
       )}

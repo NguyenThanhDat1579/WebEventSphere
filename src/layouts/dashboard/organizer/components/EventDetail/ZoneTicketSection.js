@@ -17,15 +17,33 @@ import CustomTextField from "../../OrganizerCreateNewEvent/components/CustomText
 
 const ZoneTicketSection = ({ formData, setFormData, isEditing }) => {
   const [originalZones, setOriginalZones] = useState({});
+  const [zoneErrors, setZoneErrors] = useState({});
 
-  const handleZoneChange = (index, field, value) => {
-    const updatedZoneTickets = [...formData.zoneTickets];
-    updatedZoneTickets[index][field] = value;
-    setFormData((prevData) => ({
-      ...prevData,
-      zoneTickets: updatedZoneTickets,
-    }));
-  };
+  const validateZone = (index, zone) => {
+  let errors = {};
+  if (!zone.name || zone.name.trim() === "") {
+    errors.nameError = "Vui lòng nhập tên khu vực.";
+  }
+  if (!zone.price || Number(zone.price) <= 0) {
+    errors.priceError = "Vui lòng nhập giá vé lớn hơn 0.";
+  }
+  if (!zone.totalTicketCount || Number(zone.totalTicketCount) <= 0) {
+    errors.totalTicketCountError = "Vui lòng nhập số lượng vé lớn hơn 0.";
+  }
+  setZoneErrors((prev) => ({ ...prev, [index]: errors }));
+  return Object.keys(errors).length === 0; // true nếu không lỗi
+};
+
+ const handleZoneChange = (index, field, value) => {
+  const updatedZoneTickets = [...formData.zoneTickets];
+  updatedZoneTickets[index][field] = value;
+  setFormData((prevData) => ({
+    ...prevData,
+    zoneTickets: updatedZoneTickets,
+  }));
+  // Validate zone sau khi thay đổi field
+  validateZone(index, updatedZoneTickets[index]);
+};
 
   const startZoneEdit = (index) => {
     const updatedZoneTickets = [...formData.zoneTickets];
@@ -81,150 +99,161 @@ const ZoneTicketSection = ({ formData, setFormData, isEditing }) => {
         </Typography>
       </Box>
 
-      <Divider sx={{ my: 2 }} />
-
-     <Grid container spacing={2}>
-        {uniqueZones.map((zone, index) => (
-          <Grid item xs={12} sm={6} key={index}>
-            <Paper sx={{ p: 2, mb: 2, border: '1px solid #ccc', }}>
-              <Grid container spacing={2} alignItems="center">
-                {isEditing && zone.isEditing ? (
-                  <>                 
-                    <Grid item xs={12}>
-                      <CustomTextField
-                        label="Tên khu vực"
-                        fullWidth
-                        value={zone.name}
-                        onChange={(e) =>
-                          handleZoneChange(index, "name", e.target.value)
-                        }
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <CustomTextField
-                        label="Giá vé (₫)"
-                        type="number"
-                        pop="money"
-                        fullWidth
-                        value={zone.price}
-                        onChange={(e) =>
-                          handleZoneChange(index, "price", e.target.value)
-                        }
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <CustomTextField
-                        label="Số lượng vé"
-                        type="number"
-                        fullWidth
-                        value={zone.totalTicketCount}
-                        onChange={(e) =>
-                          handleZoneChange(index, "totalTicketCount", e.target.value)
-                        }
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <Box display="flex" justifyContent="flex-end">
-                        <IconButton
+    <Grid container spacing={2}>
+        {formData.zoneTickets.length === 0 ? (
+          <Grid item xs={12}>
+            <Typography ml={1} fontSize={15} fontWeight={500} sx={{color: "red"}}>
+                * Vui lòng thêm ít nhất một khu vực.
+            </Typography>
+          </Grid>
+        ) : (
+          uniqueZones.map((zone, index) => (
+            <Grid item xs={12} sm={6} key={index}>
+              <Paper sx={{ p: 2, mb: 2, border: "1px solid #ccc" }}>
+                <Grid container spacing={2} alignItems="center">
+                  {isEditing && zone.isEditing ? (
+                    <>
+                      <Grid item xs={12}>
+                       <CustomTextField
+                          label="Tên khu vực"
+                          fullWidth
+                          value={zone.name}
+                          onChange={(e) => handleZoneChange(index, "name", e.target.value)}
+                          error={Boolean(zoneErrors[index]?.nameError)}
+                          helperText={zoneErrors[index]?.nameError}
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <CustomTextField
+                          label="Giá vé (₫)"
+                          type="number"
+                          pop="money"
+                          fullWidth
+                          value={zone.price}
+                          onChange={(e) => handleZoneChange(index, "price", e.target.value)}
+                          error={Boolean(zoneErrors[index]?.priceError)}
+                          helperText={zoneErrors[index]?.priceError}
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <CustomTextField
+                          label="Số lượng vé"
+                          type="number"
+                          fullWidth
+                          value={zone.totalTicketCount}
+                          onChange={(e) => handleZoneChange(index, "totalTicketCount", e.target.value)}
+                          error={Boolean(zoneErrors[index]?.totalTicketCountError)}
+                          helperText={zoneErrors[index]?.totalTicketCountError}
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Box display="flex" justifyContent="flex-end">
+                       <IconButton
                           onClick={() => {
-                            toggleZoneEdit(index);
-                            setOriginalZones((prev) => {
-                              const copy = { ...prev };
-                              delete copy[index];
-                              return copy;
-                            });
+                            const isValid = validateZone(index, formData.zoneTickets[index]);
+                            if (isValid) {
+                              toggleZoneEdit(index);
+                              setOriginalZones((prev) => {
+                                const copy = { ...prev };
+                                delete copy[index];
+                                return copy;
+                              });
+                            }
                           }}
                           size="small"
                         >
                           <CheckIcon fontSize="small" color="success" />
                         </IconButton>
-                        <IconButton
-                          onClick={() => {
-                            const original = originalZones[index];
-                            if (original) {
-                              const updatedZones = [...formData.zoneTickets];
-                              updatedZones[index] = {
-                                ...original,
-                                isEditing: false,
-                              };
-                              setFormData((prev) => ({
-                                ...prev,
-                                zoneTickets: updatedZones,
-                              }));
-                            } else {
-                              removeZone(index); // nếu là zone mới tạo thì hủy sẽ xóa
-                            }
-                          }}
-                          size="small"
-                        >
-                          <CloseIcon fontSize="small" color="error" />
-                        </IconButton>
-                      </Box>
-                    </Grid>
-                  </>
-                ) : (
-                  <>
-                    <Grid item xs={12} >
-                      <Grid container alignItems="center" justifyContent="space-between" >
-                        <Grid item>
-                          <Typography fontSize="16px" fontWeight={600}>
-                            Tên khu vực:{" "}
-                            <span style={{ fontWeight: 400 }}>{zone.name}</span>
-                          </Typography>
-                        </Grid>
 
-                        {isEditing && (
-                          <Grid item>
-                            <Box display="flex" alignItems="center">
-                              <IconButton
-                                onClick={() => {
-                                  setOriginalZones((prev) => ({
-                                    ...prev,
-                                    [index]: { ...zone },
-                                  }));
-                                  startZoneEdit(index);
-                                }}
-                                size="small"
-                              >
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton
-                                onClick={() => removeZone(index)}
-                                size="small"
-                              >
-                                <DeleteIcon fontSize="small" color="error" />
-                              </IconButton>
-                            </Box>
-                          </Grid>
-                        )}
+                          <IconButton
+                            onClick={() => {
+                              const original = originalZones[index];
+                              if (original) {
+                                const updatedZones = [...formData.zoneTickets];
+                                updatedZones[index] = {
+                                  ...original,
+                                  isEditing: false,
+                                };
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  zoneTickets: updatedZones,
+                                }));
+                              } else {
+                                removeZone(index);
+                              }
+                            }}
+                            size="small"
+                          >
+                            <CloseIcon fontSize="small" color="error" />
+                          </IconButton>
+                        </Box>
                       </Grid>
-                    </Grid>
-
-
-                    <Grid item xs={12}>
-                      <Typography fontSize="16px" fontWeight={600}>
-                        Giá vé:{" "}
-                        <span style={{ fontWeight: 400 }}>
-                          {zone.price.toLocaleString()} ₫
-                        </span>
-                      </Typography>
-                    </Grid>
-
-                    <Grid item xs={12}>
-                      <Typography fontSize="16px" fontWeight={600}>
-                        Số lượng vé:{" "}
-                        <span style={{ fontWeight: 400 }}>
-                          {zone.totalTicketCount}
-                        </span>
-                      </Typography>
-                    </Grid>
-                  </>
-                )}
-              </Grid>
-            </Paper>
-          </Grid>
-        ))}
+                    </>
+                  ) : (
+                    <>
+                      <Grid item xs={12}>
+                        <Grid
+                          container
+                          alignItems="center"
+                          justifyContent="space-between"
+                        >
+                          <Grid item>
+                            <Typography fontSize="16px" fontWeight={600}>
+                              Tên khu vực:{" "}
+                              <span style={{ fontWeight: 400 }}>{zone.name}</span>
+                            </Typography>
+                          </Grid>
+                          {isEditing && (
+                            <Grid item>
+                              <Box display="flex" alignItems="center">
+                                <IconButton
+                                  onClick={() => {
+                                    setOriginalZones((prev) => ({
+                                      ...prev,
+                                      [index]: { ...zone },
+                                    }));
+                                    startZoneEdit(index);
+                                  }}
+                                  size="small"
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                  onClick={() => removeZone(index)}
+                                  size="small"
+                                >
+                                  <DeleteIcon fontSize="small" color="error" />
+                                </IconButton>
+                              </Box>
+                            </Grid>
+                          )}
+                        </Grid>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Typography fontSize="16px" fontWeight={600}>
+                          Giá vé:{" "}
+                          <span style={{ fontWeight: 400 }}>
+                            {zone.price.toLocaleString()} ₫
+                          </span>
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Typography fontSize="16px" fontWeight={600}>
+                          Số lượng vé:{" "}
+                          <span style={{ fontWeight: 400 }}>
+                            {zone.totalTicketCount}
+                          </span>
+                        </Typography>
+                      </Grid>
+                    </>
+                  )}
+                </Grid>
+              </Paper>
+            </Grid>
+          ))
+        )}
       </Grid>
+
 
       {isEditing && (
           <Button onClick={addZone} 

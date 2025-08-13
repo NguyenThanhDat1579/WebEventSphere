@@ -208,7 +208,7 @@ const EventDetail = ({ eventId, onClose }) => {
 
           console.log("🟡 Dữ liệu thay đổi cần gửi:\n", JSON.stringify(changedData, null, 2));
 
-          const response = await axiosInstance.put(`/events/edit`, changedData);
+          // const response = await axiosInstance.put(`/events/edit`, changedData);
 
           console.log("✅ Phản hồi từ server:", response);
 
@@ -445,7 +445,11 @@ const EventDetail = ({ eventId, onClose }) => {
               <Button
                 variant="contained"
                 onClick={handleUpdate}
-                disabled={isSaving || !isFormChanged()}
+                disabled={
+                  isSaving || 
+                  !isFormChanged() || 
+                  (formData.showtimes?.length ?? 0) === 0
+                }
                 sx={{ ml: 2,   
                   backgroundColor: "#5669FF",
                   color: "#fff",

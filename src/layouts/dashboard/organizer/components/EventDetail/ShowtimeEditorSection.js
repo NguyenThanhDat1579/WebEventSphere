@@ -1,5 +1,5 @@
 // ShowtimeEditorSection.jsx
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -40,36 +40,68 @@ const formatVietnameseShowtime = (start, end) => {
 };
 
 const ShowtimeEditorSection = ({ isEditing, formData, setFormData }) => {
+   const [showtimeErrors, setShowtimeErrors] = useState({});
+
+     const validateShowtimeTimes = (index, start, end) => {
+    if (!start || !end) {
+      setShowtimeErrors((prev) => ({ ...prev, [index]: "" }));
+      return;
+    }
+
+    const showStart = new Date(start);
+    const showEnd = new Date(end);
+    const saleEnd = new Date(formData.timeEnd); // Thời gian kết thúc bán vé
+
+    if (showEnd <= showStart) {
+      setShowtimeErrors((prev) => ({
+        ...prev,
+        [index]: "Kết thúc suất diễn phải lớn hơn bắt đầu.",
+      }));
+    } else if (showStart < saleEnd) {
+      setShowtimeErrors((prev) => ({
+        ...prev,
+        [index]: "Suất diễn phải bắt đầu sau khi kết thúc bán vé.",
+      }));
+    } else {
+      setShowtimeErrors((prev) => ({ ...prev, [index]: "" }));
+    }
+  };
+
+
+
   const handleUpdate = (index, field, value) => {
     const updated = [...formData.showtimes];
     updated[index][field] = value;
     setFormData((prev) => ({ ...prev, showtimes: updated }));
+
+    if (field === "startTime" || field === "endTime") {
+      const startVal =
+        field === "startTime" ? value : updated[index].startTime;
+      const endVal =
+        field === "endTime" ? value : updated[index].endTime;
+      validateShowtimeTimes(index, startVal, endVal);
+    }
   };
 
-  const handleSaveEdit = (index) => {
-    const current = formData.showtimes[index];
-    const timeStart = new Date(formData.timeStart).getTime();
-
-    if (current.startTime >= current.endTime) {
-      alert("❌ Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.");
-      return;
-    }
-
-    if (current.startTime < timeStart) {
-      alert("❌ Thời gian bắt đầu phải sau thời gian mở bán.");
-      return;
-    }
-
+    const handleSaveEdit = (index) => {
+    if (showtimeErrors[index]) return; // Nếu còn lỗi, không lưu
     const updated = [...formData.showtimes];
     updated[index].isEditing = false;
     setFormData((prev) => ({ ...prev, showtimes: updated }));
   };
 
-  const handleDelete = (index) => {
+
+    const handleDelete = (index) => {
     const updated = formData.showtimes.filter((_, i) => i !== index);
     setFormData((prev) => ({ ...prev, showtimes: updated }));
+    setShowtimeErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[index];
+      return newErrors;
+    });
   };
 
+ 
   const handleStartEdit = (index) => {
     const updated = [...formData.showtimes];
     updated[index].isEditing = true;
@@ -104,8 +136,8 @@ const ShowtimeEditorSection = ({ isEditing, formData, setFormData }) => {
       <Grid container spacing={2}>
           {formData.showtimes.length === 0 && (
             <Grid item xs={12}>
-              <Typography ml={1} fontSize={15} fontWeight={500}   color="text.secondary" >
-                Chưa có suất diễn nào được thêm.
+              <Typography ml={1} fontSize={15} fontWeight={500} sx={{color: "red"}}>
+                  * Vui lòng thêm ít nhất một suất diễn.
               </Typography>
             </Grid>
           )}
@@ -154,24 +186,34 @@ const ShowtimeEditorSection = ({ isEditing, formData, setFormData }) => {
                     alignItems="center"
                     justifyContent="space-between"
                   >
-                    <CustomTextField
+                     <CustomTextField
                       label="Thời gian bắt đầu"
                       type="datetime-local"
                       value={formatInputDateTime(showtime.startTime)}
                       onChange={(e) =>
-                        handleUpdate(index, "startTime", new Date(e.target.value).getTime())
+                        handleUpdate(
+                          index,
+                          "startTime",
+                          new Date(e.target.value).getTime()
+                        )
                       }
+                      error={!!showtimeErrors[index]}
+                      helperText={showtimeErrors[index]}
                     />
                     <CustomTextField
                       label="Thời gian kết thúc"
                       type="datetime-local"
                       value={formatInputDateTime(showtime.endTime)}
                       onChange={(e) =>
-                        handleUpdate(index, "endTime", new Date(e.target.value).getTime())
+                        handleUpdate(
+                          index,
+                          "endTime",
+                          new Date(e.target.value).getTime()
+                        )
                       }
+                      error={!!showtimeErrors[index]}
+                      helperText={showtimeErrors[index]}
                     />
-
-
                     <Box display="flex" alignItems="center" gap={1}>
                       <IconButton onClick={() => handleSaveEdit(index)}>
                        <CheckIcon fontSize="small" color="success" />
@@ -226,6 +268,8 @@ ShowtimeEditorSection.propTypes = {
     ),
     typeBase: PropTypes.string.isRequired,
     timeStart: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    timeEnd: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+
   }).isRequired,
   setFormData: PropTypes.func.isRequired,
 };

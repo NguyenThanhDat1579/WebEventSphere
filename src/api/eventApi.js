@@ -18,6 +18,11 @@ const eventApi = {
     }),
 
   getPendingApproval: () => axiosInstance.get("/events/pending-approval"),
+
+  getSuggestedTags: () => axiosInstance.get("/tags/suggest"),
+    createTag: (name) =>
+    axiosInstance.post("/tags/create", { name }),
+
 };
 
 export default eventApi;

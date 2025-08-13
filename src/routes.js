@@ -25,6 +25,7 @@ import ResetPasswordOrganizer from "layouts/authentication/forgotPassword/ResetP
 import ArgonBox from "components/ArgonBox";
 import OtpOrganizerVerification from "layouts/authentication/forgotPassword/OtpOrganizerVerification";
 import WelcomePage from "layouts/welcome/WelcomePage";
+import TabsEvent from "layouts/dashboard/admin/TabsEvent";
 const routes = [
     {
     type: "route",
@@ -87,6 +88,15 @@ const routes = [
     route: "/revenueandreporting-admin",
     icon: <ArgonBox component="i" color="primary" fontSize="14px" className="ni ni-tv-2" />,
     component: <RevenueAndReporting />,
+    allowedRoles: [1],
+  },
+  {
+    type: "route",
+    name: "Quản lý thẻ sự kiện",
+    key: "admin-tabsevent",
+    route: "/tabsevent-admin",
+    icon: <ArgonBox component="i" color="primary" fontSize="14px" className="ni ni-tv-2" />,
+    component: <TabsEvent />,
     allowedRoles: [1],
   },
 

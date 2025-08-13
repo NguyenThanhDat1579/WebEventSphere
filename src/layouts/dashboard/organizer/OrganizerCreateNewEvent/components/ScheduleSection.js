@@ -17,10 +17,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-
 import CustomTextField from "./CustomTextField";
-
-
 import DeleteIcon from "@mui/icons-material/Delete";
 import eventApi from "../../../../../api/utils/eventApi";
 import {
@@ -69,16 +66,22 @@ export default function ScheduleSection() {
   const [showtimeEnd, setShowtimeEnd] = useState("");
   const [showtimeError, setShowtimeError] = useState("");
   const [zoneSeat, setZoneSeat] = useState(null);
+  const [seatLayoutInfo, setSeatLayoutInfo] = useState({
+      zones: [],
+      rows: 0,
+      cols: 0,
+      hasValidLayout: false
+    });
+const [seatLayoutError, setSeatLayoutError] = useState("");
 
+ 
   const dispatch = useDispatch();
   const eventInfo = useSelector((state) => state.eventInfo);
-  const [startDateTime, setStartDateTime] = useState(dayjs());
   const [alertStatus, setAlertStatus] = useState(null); // "loading" | "success" | "error"
   const [alertMessage, setAlertMessage] = useState("");
 
   useEffect(() => {
     console.log("eventInfo đã cập nhật2:", eventInfo);
-    console.log("TimeStart: ", startTime);
   }, [eventInfo]);
 
   function toUnixTimestamp(datetimeString) {
@@ -179,6 +182,7 @@ export default function ScheduleSection() {
     setTicketForm({ ...ticketForm, typeBase: e.target.value });
     // Reset zones mỗi khi đổi typeBase
     setZones([]);
+    setSeatLayoutError("");
   };
 
   // Hàm thêm zone mới vào danh sách zones
@@ -268,6 +272,15 @@ export default function ScheduleSection() {
     }
 
     if (ticketForm.typeBase === "seat") {
+       if (seatLayoutInfo.zones.length === 0 || seatLayoutInfo.rows === 0 || seatLayoutInfo.cols === 0) {
+        setSeatLayoutError("Vui lòng tạo sơ đồ ghế");
+        hasError = true;
+      } else if (!seatLayoutInfo.hasValidLayout) {
+        setSeatLayoutError("Vui lòng tạo sơ đồ ghế");
+        hasError = true;
+      } else {
+        setSeatLayoutError("");
+      }
     }
 
     if (localShowtimes.length === 0) {
@@ -332,10 +345,13 @@ export default function ScheduleSection() {
     return tempPayload;
   };
 
-  const handleLayoutSubmit = (data) => {
+  const handleLayoutSubmit = (data, layoutInfo) => {
     console.log("Dữ liệu nhận được từ ZoneSeatLayout:", data);
-    // Bạn có thể lưu vào state, hoặc gọi API ở đây
+     console.log("Layout info:", layoutInfo);
+  
     setZoneSeat(data);
+    setSeatLayoutInfo(layoutInfo);
+    setSeatLayoutError(""); 
   };
 
   const handleSubmit = async () => {
@@ -802,6 +818,14 @@ export default function ScheduleSection() {
                   backgroundColor: "#fdfdfd",
                 }}
               >
+                <Typography variant="h5">
+                  Tạo sơ đồ ghế
+                </Typography>
+                {seatLayoutError && (
+                <Typography variant="body2" color="error" sx={{ ml: 1, mb: 1 }}>
+                  * {seatLayoutError}
+                </Typography>
+              )}
                 {/* Thông tin khu vực */}
                 <ZoneSeatLayout onSubmit={handleLayoutSubmit} />
 

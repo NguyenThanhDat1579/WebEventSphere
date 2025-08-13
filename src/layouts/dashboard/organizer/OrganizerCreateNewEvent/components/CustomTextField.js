@@ -18,6 +18,7 @@ const CustomTextField = ({
   placeholder,
   type = "text",
   maxLength,
+  minLength,
   maxWidth = "80ch",
   error = false,
   helperText = "",
@@ -78,6 +79,7 @@ const CustomTextField = ({
           onChange={handleInputChange}
           placeholder={placeholder}
           {...(maxLength ? { maxLength } : {})}
+          {...(minLength ? { minLength } : {})}
           sx={{
             width: "100%",
             boxSizing: "border-box",
@@ -103,6 +105,7 @@ const CustomTextField = ({
             position: "absolute",
             bottom: helperText ? 28 : 9,
             right: 8,
+            top: 8.5,
             fontSize: 12,
             color: "gray",
             pointerEvents: "none",
@@ -116,7 +119,7 @@ const CustomTextField = ({
 
       {/* Error text */}
       {error && helperText && (
-        <Typography variant="caption" sx={{ color: "red", mt: 0.5, ml: "4px", display: "block" }}>
+        <Typography fontSize={13} sx={{ color: "red", mt: 0.5, ml: "4px", display: "block" }}>
           {helperText}
         </Typography>
       )}
@@ -131,6 +134,7 @@ CustomTextField.propTypes = {
   placeholder: PropTypes.string,
   type: PropTypes.string,
   maxLength: PropTypes.number,
+  minLength: PropTypes.number,
   maxWidth: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   error: PropTypes.bool,
   helperText: PropTypes.string,

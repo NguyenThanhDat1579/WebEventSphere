@@ -492,7 +492,7 @@ export default function TabInfoEvent({ onNext }) {
             </Button>
 
             {errors.eventLogo && (
-              <Typography fontSize={12} color="red" sx={{ mt: 0.5, ml: 1 }}>
+              <Typography fontSize={13} sx={{ color: "red", mt: 0.5, ml: "4px", display: "block" }}>
                 {errors.eventLogo}
               </Typography>
             )}
@@ -556,7 +556,7 @@ export default function TabInfoEvent({ onNext }) {
             </Button>
 
             {errors.eventBanner && (
-              <Typography fontSize={12} color="red" sx={{ mt: 0.5, ml: 1 }}>
+              <Typography fontSize={13} sx={{ color: "red", mt: 0.5, ml: "4px", display: "block" }}>
                 {errors.eventBanner}
               </Typography>
             )}

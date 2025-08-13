@@ -11,17 +11,26 @@ const eventApi = {
       reason: "Duyệt",
     }),
 
-  rejectEvent: (id) =>
-    axiosInstance.put(`/events/approve/${id}`, {
+  // rejectEvent: (id) =>
+  //   axiosInstance.put(`/events/approve/${id}`, {
+  //     approvalStatus: "rejected",
+  //     reason: reason || "Từ chối",
+  //   }),
+  rejectEvent: async (eventId, rejectReason) => { // Thêm tham số rejectReason
+    console.log("Gửi request tới API rejectEvent với ID:", eventId, "và lý do:", rejectReason);
+    const response = await axiosInstance.put(`/events/approve/${eventId}`, {
       approvalStatus: "rejected",
-      reason: reason || "Từ chối",
-    }),
+      reason: rejectReason || "Từ chối", // Sử dụng rejectReason thay vì reason
+    });
+    return response;
+  },
 
   getPendingApproval: () => axiosInstance.get("/events/pending-approval"),
 
   getSuggestedTags: () => axiosInstance.get("/tags/suggest"),
-    createTag: (name) =>
-    axiosInstance.post("/tags/create", { name }),
+  
+  createTag: (name) =>
+  axiosInstance.post("/tags/create", { name }),
 
 };
 

@@ -208,7 +208,7 @@ const EventDetail = ({ eventId, onClose }) => {
 
           console.log("🟡 Dữ liệu thay đổi cần gửi:\n", JSON.stringify(changedData, null, 2));
 
-          // const response = await axiosInstance.put(`/events/edit`, changedData);
+          const response = await axiosInstance.put(`/events/edit`, changedData);
 
           console.log("✅ Phản hồi từ server:", response);
 

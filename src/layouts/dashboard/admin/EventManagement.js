@@ -35,7 +35,7 @@ import SelectMenu from "../organizer/OrganizerCreateNewEvent/components/SelectMe
 
 const chipStatus = (st) => {
   const color =
-    st === "Đã duyệt" ? "success" : st === "Từ chối" ? "error" : "warning";
+    st === "Đã duyệt" ? "success" : st === "Từ chối duyệt" ? "error" : "warning";
   return <Chip label={st} size="small" color={color} sx={{ color: "#fff"}} />;
 };
 
@@ -358,16 +358,20 @@ const filteredRows = useMemo(() => {
 
 
 
-  // Cập nhật trạng thái event trong rows khi duyệt/từ chối
+  // Cập nhật trạng thái event trong rows khi duyệt/từ chối duyệt
     const applyStatus = useCallback(async (status) => {
       if (!detail) return;
-
+      
       setLoadingDet(true);
       try {
+        console.log(`Bắt đầu xử lý ${status} cho sự kiện ID: ${detail._id}`);
         if (status === "Đã duyệt") {
-          await eventApi.approveEvent(detail._id);
-        } else if (status === "Từ chối") {
-          await eventApi.rejectEvent(detail._id, rejectReason); // truyền lý do
+          const approveResponse = await eventApi.approveEvent(detail._id);
+          console.log("Kết quả API duyệt sự kiện:", approveResponse);
+        } else if (status === "Từ chối duyệt") {
+          console.log("Gọi API từ chối duyệt sự kiện với lý do:", rejectReason);
+          const rejectResponse = await eventApi.rejectEvent(detail._id, rejectReason);
+          console.log("Kết quả API từ chối duyệt sự kiện:", rejectResponse);
         }
 
         setRows((prev) =>
@@ -715,7 +719,7 @@ const filteredRows = useMemo(() => {
                           </Button>
                           <Button
                             variant="contained"
-                            onClick={() => setDlg({ open: true, status: "Duyệt" })}
+                            onClick={() => setDlg({ open: true, status: "Đã duyệt" })}
                             sx={{
                               textTransform: "none",
                               fontWeight: 600,
@@ -778,7 +782,7 @@ const filteredRows = useMemo(() => {
               "&:hover": { backgroundColor: "#388e3c" },
             }}
             onClick={() => applyStatus(dlg.status)}
-            disabled={dlg.status === "Từ chối" && !rejectReason.trim()}
+            disabled={dlg.status === "Từ chối duyệt" && !rejectReason.trim()}
           >
             Xác nhận
           </Button>

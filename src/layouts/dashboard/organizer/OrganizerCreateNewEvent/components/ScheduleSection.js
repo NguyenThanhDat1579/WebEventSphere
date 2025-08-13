@@ -373,7 +373,7 @@ const [seatLayoutError, setSeatLayoutError] = useState("");
       if (response.data?.status === true) {
         dispatch(resetEventInfo());
         dispatch(resetAddress());
-
+        localStorage.removeItem("eventAppState");
         setAlertStatus("success");
         setAlertMessage("Tạo sự kiện thành công!");
 

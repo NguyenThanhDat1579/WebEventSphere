@@ -8,7 +8,7 @@ import axiosInstance from "api/axiosInstance";
 const TagSection = ({ isEditing, formData, setFormData, isReadOnly = false }) => {
   const [tags, setTags] = useState(formData.tags || []);
   const [suggestions, setSuggestions] = useState([]);
-
+  const [error, setError] = useState(""); 
   useEffect(() => {
     setTags(formData.tags || []);
   }, [formData.tags]);
@@ -30,6 +30,21 @@ const TagSection = ({ isEditing, formData, setFormData, isReadOnly = false }) =>
     setSuggestions((prev) => (prev.includes(newTag) ? prev : [...prev, newTag]));
   };
 
+    const handleDeleteTag = (index) => {
+    if (tags.length <= 1) {
+      setError("Vui lòng chọn ít nhất một tag");
+      return;
+    }
+    setError("");
+    const updatedTags = formData.tags.filter((_, i) => i !== index);
+    setFormData((prev) => ({
+      ...prev,
+      tags: updatedTags,
+    }));
+    setTags(updatedTags);
+  };
+
+
   return (
    <Box mt={4}>
       {isEditing && (
@@ -47,11 +62,16 @@ const TagSection = ({ isEditing, formData, setFormData, isReadOnly = false }) =>
                 setFormData((prev) => ({ ...prev, tags: updatedTags }));
 
                 // Nếu có tag mới thì thêm vào suggestion
-                updatedTags.forEach((tag) => {
+                  updatedTags.forEach((tag) => {
                   if (!suggestions.includes(tag)) {
                     handleCreateTag(tag);
                   }
                 });
+
+                // Xóa lỗi nếu đã có tag
+                if (updatedTags.length > 0) {
+                  setError("");
+                }
               }}
               options={suggestions.map((tag) => ({ label: tag, value: tag }))}
               searchable
@@ -90,21 +110,20 @@ const TagSection = ({ isEditing, formData, setFormData, isReadOnly = false }) =>
                   borderColor: "#5669FF",
                   color: "#5669FF",
                 }}
-                onDelete={
-                  isEditing
-                    ? () => {
-                        const updatedTags = formData.tags.filter((_, i) => i !== index);
-                        setFormData((prev) => ({
-                          ...prev,
-                          tags: updatedTags,
-                        }));
-                        setTags(updatedTags);
-                      }
-                    : undefined
-                }
+                onDelete={isEditing ? () => handleDeleteTag(index) : undefined}
+
               />
             ))}
           </Box>
+           {error && (
+            <Typography
+              variant="body2"
+              color="error"
+              sx={{ mt: 1, fontSize: 13 }}
+            >
+              {error}
+            </Typography>
+          )}
         </>
       )}
     </Box>

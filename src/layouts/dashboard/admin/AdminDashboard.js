@@ -38,7 +38,7 @@ export default function AdminDashboard() {
   const [events,    setEvents]   = useState([]);
   const [detail,    setDetail]   = useState(null);          // object | null
   const [loadingDet,setLoadingDet]=useState(false);
-
+                  console.log("chi tiết sự kiện: ", detail)
   /* ---------------- fetch KPI + LIST ---------------- */
 /* ---------------- fetch KPI + LIST ---------------- */
 useEffect(() => {
@@ -109,9 +109,25 @@ tickets += Number.isFinite(rev.totalSold) ? rev.totalSold : 0;
           { label: "Doanh thu", color: "info", maxBarThickness: 60, data: [revPrev, revNow] },
         ],
       });
+      const getStatusOrder = (ev) => {
+        const now = Date.now();
+        const start = new Date(ev.timeStart).getTime();
+        const end = new Date(ev.timeEnd).getTime();
 
+        if (now >= start && now <= end) return 0; // Đang diễn ra
+        if (now < start) return 1;               // Sắp diễn ra
+        return 2;                                // Đã kết thúc
+      };
+
+      // Sắp xếp mảng
+      const sortedEvents = [...filteredEvents].sort((a, b) => {
+        return getStatusOrder(a) - getStatusOrder(b);
+      });
+
+
+    
       // chỉ render các sự kiện có revenue
-      setEvents(filteredEvents);
+      setEvents(sortedEvents);
     } catch (err) {
       console.error("Lỗi lấy dashboard:", err);
     } finally {
@@ -196,7 +212,22 @@ tickets += Number.isFinite(rev.totalSold) ? rev.totalSold : 0;
                   setLoadingDet(true);
                   try{
                     const { data } = await eventApi.getDetail(id);
-                    if(data?.status) setDetail(data.data);
+                    if (data?.status) {
+                    let detailData = data.data;
+
+                    // 🔍 Lọc từ events để lấy giá vé min/max
+                    const foundEvent = events.find(ev => ev._id === id);
+                    if (foundEvent) {
+                      detailData = {
+                        ...detailData,
+                        minTicketPrice: foundEvent.minTicketPrice || 0,
+                        maxTicketPrice: foundEvent.maxTicketPrice || 0
+                      };
+                    }
+
+                    setDetail(detailData);                    
+                  }
+
                   }catch(e){ console.error("Detail error:", e);}finally{ setLoadingDet(false);}
                 }}/>
             }
@@ -302,35 +333,68 @@ function EventDetailCard({ ev, onBack }) {
     }}
   />
 
-      <Typography variant="h4" fontWeight="bold" gutterBottom>
+      <Typography variant="h3" mt={2} fontWeight="bold" gutterBottom>
         {ev.name}
       </Typography>
 
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
-          <InfoRow label="Địa điểm" value={ev.location} />
-          <InfoRow label="Giá vé" value={`${(+ev.ticketPrice || 0).toLocaleString()} ₫`} />
+        <Box  mb={1}>
+          <Typography sx={{ fontWeight: 600, minWidth: 120 }}>
+            Địa điểm:
+          </Typography>
+          <Typography sx={{ fontSize: "1.1rem", fontWeight: 500 }}>
+            {ev.location}
+          </Typography>
+        </Box>
+
+         <Box  mb={1}>
+          <Typography sx={{ fontWeight: 600, minWidth: 120 }}>
+            Giá vé:
+          </Typography>
+          <Typography sx={{ fontSize: "1.1rem", fontWeight: 500 }}>
+           {
+              ev.minTicketPrice === ev.maxTicketPrice
+                ? `${(ev.minTicketPrice || 0).toLocaleString()} ₫`
+                : `${(ev.minTicketPrice || 0).toLocaleString()} ₫ - ${(ev.maxTicketPrice || 0).toLocaleString()} ₫`
+            }
+          </Typography>
+        </Box>
         </Grid>
         <Grid item xs={12} md={6}>
-          <InfoRow label="Bắt đầu" value={dayjs(ev.timeStart).format("HH:mm DD/MM/YYYY")} />
-          <InfoRow label="Kết thúc" value={dayjs(ev.timeEnd).format("HH:mm DD/MM/YYYY")} />
+          <Box  mb={1}>
+          <Typography sx={{ fontWeight: 600, minWidth: 120 }}>
+            Bắt đầu:
+          </Typography>
+          <Typography sx={{ fontSize: "1.1rem", fontWeight: 500 }}>
+            {dayjs(ev.timeStart).format("HH:mm DD/MM/YYYY")} 
+          </Typography>
+        </Box>
+         <Box  mb={1}>
+          <Typography sx={{ fontWeight: 600, minWidth: 120 }}>
+            Kết thúc:
+          </Typography>
+          <Typography sx={{ fontSize: "1.1rem", fontWeight: 500 }}>
+            {dayjs(ev.timeEnd).format("HH:mm DD/MM/YYYY")}
+          </Typography>
+        </Box>
         </Grid>
         <Grid item xs={12}>
           <Box
-  sx={{
-    bgcolor: "#f9f9f9",
-    p: 2,
-    borderRadius: 2,
-    border: "1px solid #e0e0e0",
-    mt: 1,
+          sx={{
+            bgcolor: "#f9f9f9",
+            p: 3,
+            borderRadius: 2,
+            border: "1px solid #e0e0e0",
+            mt: 1,
 
-    "& p": { mb: 1.5, lineHeight: 1.6 },
-    "& h1, h2, h3": { mt: 2, mb: 1 },
-    "& ul": { pl: 3, mb: 1.5 },
-    "& li": { mb: 0.5 },
-  }}
-  dangerouslySetInnerHTML={{ __html: ev.description }}
-/>
+            "& p": { mb: 1.5, lineHeight: 1.6 },
+            "& h1, h2, h3": { mt: 2, mb: 1 },
+            "& ul": { pl: 3, mb: 1.5 },
+            "& li": { mb: 0.5 },
+          }}
+          dangerouslySetInnerHTML={{ __html: ev.description }}
+        />
 
         </Grid>
       </Grid>
@@ -341,11 +405,29 @@ function EventDetailCard({ ev, onBack }) {
 
 /* ───────── misc chips & rows ───────── */
 const TimelineChip = ({ start, end }) => {
-  const now=Date.now(), s=new Date(start).getTime(), e=new Date(end).getTime();
-  let lbl="Đang diễn ra", col="success";
-  if(now<s){ lbl="Sắp diễn ra"; col="warning";}
-  else if(now>e){ lbl="Đã kết thúc"; col="default";}
-  return <Chip label={lbl} color={col} size="small"/>;
+  const now = Date.now();
+  const s = new Date(start).getTime();
+  const e = new Date(end).getTime();
+
+  let lbl = "Đang diễn ra";
+  let col = "success";
+
+  if (now < s) {
+    lbl = "Sắp diễn ra";
+    col = "warning";
+  } else if (now > e) {
+    lbl = "Đã kết thúc";
+    col = "default";
+  }
+
+  return (
+    <Chip
+      label={lbl}
+      color={col}
+      size="small"
+      sx={{ color: "#fff" }} // 👈 thêm text trắng
+    />
+  );
 };
 
 const InfoRow = ({ label, value }) => (

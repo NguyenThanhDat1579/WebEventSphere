@@ -39,47 +39,45 @@ function ModernLoginPage() {
     return;
   }
 
-   if (email === "admin" && password === "admin") {
-      console.log("Admin đăng nhập");
-      dispatch(setUserData({ role: 1 })); // Lưu role = 1
-      navigate("/dashboard-admin");
-      return; // Dừng hàm
-    }
+  try {
+  const res = await authApi.login(email, password);
+  const userData = res.data.data;
 
-    try {
-      const res = await authApi.login(email, password);
-      const userData = res.data.data;
+    if (userData) {
+      console.log("Thông tin user:", userData);
+      console.log("Access Token:", userData.token);
+      console.log("Refresh Token:", userData.refreshToken);
 
-      if (userData && userData.role === 2) {
-        console.log("Organizer đăng nhập", userData);
+      // Lưu token
+      saveTokens(userData.token, userData.refreshToken);
 
-        // ✅ In token ra để kiểm tra
-        console.log("Access Token:", userData.token);
-        console.log("Refresh Token:", userData.refreshToken);
+      // Lưu vào Redux + LocalStorage
+      dispatch(setUserData(userData));
+      localStorage.setItem("userData", JSON.stringify(userData));
 
-        // ✅ Lưu token KHÔNG cần await
-        saveTokens(userData.token, userData.refreshToken);
-
-        dispatch(setUserData(userData));
-        localStorage.setItem("userData", JSON.stringify(userData));
+      if (userData.role === 1) {
+        console.log("Admin đăng nhập");
+        navigate("/dashboard-admin");
+      } else if (userData.role === 2) {
+        console.log("Organizer đăng nhập");
         navigate("/dashboard-organizer");
       } else {
-        console.log("Đăng nhập không phải organizer", userData);
+        console.log("Tài khoản không có quyền truy cập", userData);
         setErrors({
-        email: ' ',
-        password: 'Tài khoản không có quyền truy cập.',
-      });
+          email: ' ',
+          password: 'Tài khoản không có quyền truy cập.',
+        });
       }
-    } catch (error) {
-      console.error("Lỗi đăng nhập:", error);
-      setErrors({
-        email: ' ',
-        password: 'Email hoặc mật khẩu không chính xác.',
-      });
-
-
-    } finally {
-    setIsLoading(false);}
+    }
+  } catch (error) {
+    console.error("Lỗi đăng nhập:", error);
+    setErrors({
+      email: ' ',
+      password: 'Email hoặc mật khẩu không chính xác.',
+    });
+  } finally {
+    setIsLoading(false);
+  }
 };
 
 

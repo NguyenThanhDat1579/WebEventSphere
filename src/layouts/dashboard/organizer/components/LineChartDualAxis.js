@@ -108,6 +108,7 @@ const LineChartDualAxis = ({ event }) => {
           wheel: {
             enabled: true,
             speed: 0.01,
+              modifierKey: 'ctrl',
           },
           pinch: {
             enabled: true,

@@ -25,7 +25,6 @@ const ITEMS_PER_PAGE = 8;
 function EventTable({ events }) {
   const [currentPage, setCurrentPage] = useState(1);
 
-  console.log("✅ Sự kiện truyền vào EventTable:", events);
 
   const getStatusChip = (event) => {
   const now = Date.now();
@@ -48,9 +47,26 @@ function EventTable({ events }) {
     return <Chip label="Đang mở bán" color="success" size="small" sx={{ color: "#fff" }} />;
   };
 
+  const getStatusPriority = (event) => {
+    const now = Date.now();
+    const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+    const { timeStart, timeEnd } = event;
 
-  const totalPages = Math.ceil(events.length / ITEMS_PER_PAGE);
-  const paginatedEvents = events.slice(
+    if (!timeStart || !timeEnd) return 4; // Chưa có lịch
+    if (now > timeEnd) return 3; // Kết thúc bán vé
+    if (timeStart - now > oneWeekMs) return 2; // Sắp mở bán
+    return 1; // Đang mở bán
+  };
+
+
+
+
+    const sortedEvents = [...events].sort((a, b) => {
+    return getStatusPriority(a) - getStatusPriority(b);
+  });
+
+  const totalPages = Math.ceil(sortedEvents.length / ITEMS_PER_PAGE);
+  const paginatedEvents = sortedEvents.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );

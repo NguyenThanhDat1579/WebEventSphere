@@ -94,7 +94,7 @@ const routes = [
     type: "route",
     name: "Quản lý thẻ sự kiện",
     key: "admin-tabsevent",
-    route: "/tabsevent-admin",
+    route: "/eventtab-admin",
     icon: <ArgonBox component="i" color="primary" fontSize="14px" className="ni ni-tv-2" />,
     component: <TabsEvent />,
     allowedRoles: [1],

@@ -17,7 +17,6 @@ const WorkshopTicketSection = ({ formData, setFormData, isEditing }) => {
       setLocalPrice(formData?.showtimes[0]?.ticketPrice || "");
       setLocalQuantity(formData?.showtimes[0]?.ticketQuantity || "");  
     }
-    console.log("sửa nè: ", formData?.showtimes[0]?.ticketPrice)
   }, [isEditingWorkshop, formData.ticketPrice, formData.ticketQuantity]);
 
   const handleSave = () => {

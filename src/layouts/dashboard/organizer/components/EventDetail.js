@@ -309,16 +309,76 @@ const EventDetail = ({ eventId, onClose }) => {
   return (
     <Box p={2} >
       <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-         <ArgonBox mt={2}  mb={1}>
+         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          {/* Nhóm bên trái */}
           <ArgonButton
-              color="info"
-              size="medium"  
-              variant="contained"
-              onClick={onClose} 
-            >
-             {"←"} Quay lại
-            </ArgonButton>
-         </ArgonBox>
+            color="info"
+            size="medium"
+            variant="contained"
+            onClick={onClose}
+          >
+            {"←"} Quay lại
+          </ArgonButton>
+
+          {/* Nhóm bên phải */}
+          <Box display="flex" gap={1}>
+            {!isEditing ? (
+              !isReadOnly && (
+                <ArgonButton
+                  color="info"
+                  size="medium"
+                  onClick={() => setIsEditing(true)}
+                  variant="contained"
+                >
+                  Chỉnh sửa
+                </ArgonButton>
+              )
+            ) : (
+              <>
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    setFormData(initialFormData);
+                    setIsEditing(false);
+                  }}
+                  sx={{
+                    backgroundColor: "#fff",
+                    color: "#5669FF",
+                    border: "1px solid #5669FF",
+                    "&:hover": {
+                      backgroundColor: "#5669FF",
+                      color: "#fff",
+                    },
+                  }}
+                >
+                  Hủy
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleUpdate}
+                  disabled={
+                    isSaving ||
+                    !isFormChanged() ||
+                    (formData.showtimes?.length ?? 0) === 0
+                  }
+                  sx={{
+                    backgroundColor: "#5669FF",
+                    color: "#fff",
+                    border: "1px solid #5669FF",
+                    "&:hover": {
+                      backgroundColor: "#fff",
+                      color: "#5669FF",
+                      borderColor: "#5669FF",
+                    },
+                  }}
+                >
+                  {isSaving ? "Đang lưu..." : "Xác nhận"}
+                </Button>
+              </>
+            )}
+          </Box>
+        </Box>
+
             
 
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
@@ -408,63 +468,6 @@ const EventDetail = ({ eventId, onClose }) => {
           formData={formData}
           setFormData={setFormData}
         />
-        <Box mt={4} display="flex" justifyContent="flex-end">
-          {!isEditing ? (
-            !isReadOnly && (
-               <ArgonBox mt={3} mb={1}>
-                <ArgonButton
-                  color="info"
-                  size="medium"
-                  onClick={() => setIsEditing(true)}
-                  variant="contained"
-                >
-                  Chỉnh sửa
-                </ArgonButton>
-                </ArgonBox>
-            )
-          ) : (
-            <>
-            
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  setFormData(initialFormData);
-                  setIsEditing(false);
-                }}
-                 sx={{ ml: 2,   
-                  backgroundColor: "#fff",
-                  color: "#5669FF",
-                  border: "1px solid #5669FF",
-                  "&:hover": {
-                    backgroundColor: "#5669FF",
-                    color: "#fff",
-                  },}} 
-              >
-                Hủy
-              </Button>
-              <Button
-                variant="contained"
-                onClick={handleUpdate}
-                disabled={
-                  isSaving || 
-                  !isFormChanged() || 
-                  (formData.showtimes?.length ?? 0) === 0
-                }
-                sx={{ ml: 2,   
-                  backgroundColor: "#5669FF",
-                  color: "#fff",
-                    border: "1px solid #5669FF",
-                  "&:hover": {
-                    backgroundColor: "#fff",
-                    color: "#5669FF",
-                    borderColor: "#5669FF",
-                  },}}   
-              >
-                {isSaving ? "Đang lưu..." : "Xác nhận"}
-              </Button>
-            </>
-          )}
-        </Box>
       </Paper>
 
       <Dialog open={!!previewImageUrl} onClose={() => setPreviewImageUrl(null)} maxWidth="md">

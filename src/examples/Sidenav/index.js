@@ -110,15 +110,15 @@ function Sidenav({ color, brand, brandNameImage, routes, ...rest }) {
         </ArgonBox>
         <ArgonBox
           component="div"
-          onClick={() => {
+         onClick={() => {
             if (role === 1) {
               navigate("/dashboard-admin");
             } else if (role === 2) {
               navigate("/dashboard-organizer");
-              window.location.reload();
             } else {
               navigate("/dashboard");
             }
+            window.location.reload(); // reload cho tất cả role
           }}
           display="flex"
           alignItems="center"

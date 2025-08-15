@@ -296,7 +296,7 @@ export default function TabInfoEvent({ onNext }) {
 
     
     if (!eventLogo && !tempLogoFile) {
-      newErrors.eventLogo = "Vui lòng thêm ảnh nền sự kiện";
+      newErrors.eventLogo = "Vui lòng thêm ảnh sự kiện";
       hasError = true;
     }
 
@@ -465,7 +465,7 @@ export default function TabInfoEvent({ onNext }) {
                 <Box sx={{ width: "90%", textAlign: "center" }}>
                   <img
                     src={previewLogo || eventLogo}
-                    alt="Logo sự kiện"
+                    alt="Ảnh sự kiện"
                     style={{
                       width: "100%",
                       maxHeight: 360,
@@ -476,7 +476,7 @@ export default function TabInfoEvent({ onNext }) {
                 </Box>
               ) : (
                 <Box textAlign="center">
-                  <Typography sx={{ color: "#1976D2" }}>Thêm logo sự kiện</Typography>
+                  <Typography sx={{ color: "#1976D2" }}>Thêm ảnh sự kiện</Typography>
                   <Typography variant="body2" fontWeight="bold" sx={{ color: "#1976D2" }}>
                     (720x958)
                   </Typography>

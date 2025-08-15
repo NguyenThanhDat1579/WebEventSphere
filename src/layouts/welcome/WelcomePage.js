@@ -113,7 +113,7 @@ export default function WelcomePage() {
             onClick={() => {
               // Link tải trực tiếp APK trên Google Drive
               window.location.href =
-                "https://drive.google.com/uc?export=download&id=1Q_icmqGLqysZ7YidwrejECo8D2IzBc9Y";
+                "https://drive.google.com/uc?export=download&id=1B4Uu-mxZrgA-hF_fwijOwtJXKaQ1j16E";
             }}
              sx={{
                 py: { xs: 2, sm: 1.5 }, // tăng padding trên mobile

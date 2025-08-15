@@ -142,8 +142,6 @@ const ShowtimeEditorSection = ({ isEditing, formData, setFormData }) => {
             </Grid>
           )}
 
-
-
         {formData.showtimes.map((showtime, index) => {
           const isShowtimeEditing = showtime.isEditing;
 

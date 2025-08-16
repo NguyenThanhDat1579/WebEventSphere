@@ -344,6 +344,7 @@ const filteredRows = useMemo(() => {
           ...data.data,
           approvalStatus: data.data?.approvalStatus ?? null
         };
+        console.log("[DEBUG] Detail từ API:", detailData);
         setDetail(detailData);
       }
 
@@ -695,7 +696,7 @@ const filteredRows = useMemo(() => {
                   </Grid>
    
                   <Grid item xs={12} mt={2} display="flex" justifyContent="flex-end" gap={2}>
-                      {detail.approvalStatus === "approved" ? (
+                      {detail.approvalStatus === "approved" || detail.approvalStatus == null ? (
                         <Chip
                           label="Đã duyệt"
                           color="success"

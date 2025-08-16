@@ -5,9 +5,11 @@ export const columns = [
   { title: "Tên nhà tổ chức", field: "name",      align: "left"   },
   { title: "Email",           field: "email",     align: "left"   },
   { title: "Số ĐT",           field: "phone",     align: "center" },
-  { title: "Địa chỉ",         field: "address",   align: "center" },
-  { title: "Người theo dõi",  field: "followers", align: "center" },
+
 ];
+
+  // { title: "Địa chỉ",         field: "address",   align: "center" },
+  // { title: "Người theo dõi",  field: "followers", align: "center" },
 
 const organizerTableData = (list = []) => {
   const rows = list.map(o => ({

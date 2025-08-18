@@ -111,7 +111,6 @@ const TagSection = ({ isEditing, formData, setFormData, isReadOnly = false }) =>
                   color: "#5669FF",
                 }}
                 onDelete={isEditing ? () => handleDeleteTag(index) : undefined}
-
               />
             ))}
           </Box>

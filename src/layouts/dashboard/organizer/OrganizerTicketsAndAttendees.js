@@ -33,7 +33,6 @@ function OrganizerTicketsAndAttendees() {
   const [attendees, setAttendees] = useState([]);
 
   const [localAttendees, setLocalAttendees] = useState(attendees);
-
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -48,6 +47,22 @@ function OrganizerTicketsAndAttendees() {
 
   return matchesSearch && matchesStatus;
 });
+
+function formatEventTime(timeStart, timeEnd) {
+  if (!timeStart || !timeEnd) return "Suất chiếu";
+
+  const start = new Date(timeStart);
+  const end = new Date(timeEnd);
+
+  const pad = (n) => (n < 10 ? "0" + n : n);
+
+  const startTime = `${pad(start.getHours())}:${pad(start.getMinutes())}`;
+  const endTime = `${pad(end.getHours())}:${pad(end.getMinutes())}`;
+
+  const date = `${pad(start.getDate())}/${pad(start.getMonth() + 1)}/${start.getFullYear()}`;
+
+  return `${startTime} - ${endTime} ${date}`;
+}
 
 
 console.log("✅ Danh sách đã lọc:", filteredAttendees);
@@ -112,8 +127,12 @@ console.log("✅ Danh sách đã lọc:", filteredAttendees);
 
       try {
         const res = await eventApi.getAllTicketsByEvent(selectedEvent);
+        const event = organizationEvents.find(e => e._id === selectedEvent);
         console.log("danh sách vé", res.data);
-        setEventDetail(res.data.data)
+       setEventDetail({
+        ...event,          // dữ liệu cơ bản từ organizationEvents
+        ...res.data.data,  // dữ liệu chi tiết từ API
+      });
       } catch (error) {
         console.error("❌ Lỗi lấy danh sách vé của sự kiện:", error);
       }
@@ -123,22 +142,25 @@ console.log("✅ Danh sách đã lọc:", filteredAttendees);
   }, [selectedEvent]);
 
 
-   useEffect(() => {
-    if (!eventDetail?.soldTickets) {
-      setAttendees([]);
-      return;
-    }
+  useEffect(() => {
+  if (!eventDetail?.soldTickets) {
+    setAttendees([]);
+    return;
+  }
 
-    if (selectedShowtime) {
-      const filtered = eventDetail.soldTickets.filter(
-        (ticket) => ticket.showtimeId === selectedShowtime
-      );
-      setAttendees(filtered);
-    } else {
-      // Không có selectedShowtime → hiện toàn bộ
-      setAttendees(eventDetail.soldTickets);
-    }
-  }, [selectedShowtime, eventDetail]);
+
+  if (selectedShowtime) {
+    const filtered = eventDetail.soldTickets.filter(
+      (ticket) => ticket.showtimeId === selectedShowtime
+    );
+
+    setAttendees(filtered);
+  } else {
+    setAttendees(eventDetail.soldTickets);
+  }
+}, [selectedShowtime, eventDetail]);
+
+
 
   useEffect(() => {
   setLocalAttendees(attendees);
@@ -169,9 +191,9 @@ console.log("✅ Danh sách đã lọc:", filteredAttendees);
               setAttendees([]);
             }}
             options={organizationEvents.map((event) => ({
-          label: event.name,
-          value: event._id,
-        }))}
+            label: event.name,
+            value: event._id,
+          }))}
            />
         </Box>     
       </Box>
@@ -215,6 +237,19 @@ console.log("✅ Danh sách đã lọc:", filteredAttendees);
                 ]}
               />
             </Box>
+            {eventDetail?.showtimes && eventDetail.showtimes.length > 1 && (
+              <Box sx={{ minWidth: 300 }}>
+                <SelectMenu
+                  label="Chọn suất chiếu"
+                  value={selectedShowtime}
+                  onChange={(value) => setSelectedShowtime(value)}
+                  options={eventDetail.showtimes.map((st, index) => ({
+                    value: st.id || st._id,   // dùng id chính xác từ API
+                    label: `Suất ${index + 1} - ${formatEventTime(st.startTime, st.endTime)}`                  
+                  }))}
+                />
+              </Box>
+            )}
              <ArgonBox mb={1}>
                <ArgonButton
                   color="info"
@@ -249,6 +284,9 @@ console.log("✅ Danh sách đã lọc:", filteredAttendees);
                 {/* <TableCell sx={{ width: "20%", fontWeight: 600 }}>
                   Hành động
                 </TableCell> */}
+               {filteredAttendees.some(a => a.zoneName && a.zoneName !== "Sơ đồ ghế") && (
+                  <TableCell sx={{ width: "15%", fontWeight: 600 }}>Loại vé</TableCell>
+                )}
                 <TableCell sx={{ width: "20%", fontWeight: 600 }}>
                   Ngày phát hành
                 </TableCell>
@@ -283,7 +321,10 @@ console.log("✅ Danh sách đã lọc:", filteredAttendees);
                         />
                       )}
                     </TableCell>
-                    {/* <TableCell>
+                     {attendee.zoneName && attendee.zoneName !== "Sơ đồ ghế" && (
+                        <TableCell>{attendee.zoneName}</TableCell>
+                      )}
+                      {/* <TableCell>
                       {attendee.status === "issued" && (
                         <Button
                           size="small"

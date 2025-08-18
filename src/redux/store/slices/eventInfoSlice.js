@@ -93,11 +93,11 @@ const eventInfoSlice = createSlice({
       state.typeBase = action.payload;
     },
     setZones: (state, action) => {
-  if (!Array.isArray(state.zones)) {
-    state.zones = [];
-  }
-  state.zones.push(action.payload);
-},
+      if (!Array.isArray(state.zones)) {
+        state.zones = [];
+      }
+      state.zones.push(action.payload);
+    },
     resetZones: (state) => {
       state.zones = [];
     },

@@ -62,7 +62,9 @@ const CustomTextField = ({
           sx={{
             "& .MuiInputBase-root": {
               borderRadius: 2,
-              fontSize: "1rem",
+              fontSize: "1.1rem",        
+              padding: "12px 16px",      
+              minHeight: "52px",
               fontFamily: "Roboto, sans-serif",
               ...inputSx,
             },

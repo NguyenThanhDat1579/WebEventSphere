@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import Icon from "@mui/material/Icon";
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
 import rtlPlugin from "stylis-plugin-rtl";
@@ -18,7 +17,6 @@ import WelcomePage from "layouts/welcome/WelcomePage";
 import Sidenav from "examples/Sidenav";
 import Configurator from "examples/Configurator";
 
-
 import theme from "assets/theme";
 import themeRTL from "assets/theme/theme-rtl";
 import brand from "assets/images/logo-ct.png";
@@ -26,9 +24,10 @@ import globalStyles from "assets/theme/globalStyles";
 
 import routes from "routes";
 import { useSelector, useDispatch } from "react-redux";
-import { setUserData } from "./redux/store/slices/authSlice"
+import { setUserData } from "./redux/store/slices/authSlice";
 import { useArgonController, setMiniSidenav, setOpenConfigurator } from "context";
 import brandImg from "./assets/images/logo.png";
+
 export default function App() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -45,7 +44,7 @@ export default function App() {
   const [rtlCache, setRtlCache] = useState(null);
   const { pathname } = useLocation();
 
-  // Khôi phục user từ localStorage nếu chưa có
+  // Khôi phục user từ localStorage
   useEffect(() => {
     const storedUserData = localStorage.getItem("userData");
     if (storedUserData && !role) {
@@ -54,36 +53,33 @@ export default function App() {
     setInitializing(false);
   }, [dispatch, role]);
 
-  // Redirect nếu chưa đăng nhập
+  // Redirect logic gộp chung
   useEffect(() => {
-  if (
-    !initializing &&
-    !isAuthenticated &&
-    ![
-      "/welcome",
-      "/authentication/sign-in",
-      "/authentication/sign-up",
-      "/authentication/forget-password",
-      "/authentication/otp-forget-password",
-      "/authentication/reset-password",
-      "/authentication/verify-otp-organizer"
-    ].includes(pathname)
-  ) {
-    navigate("/welcome");
-  }
-}, [initializing, isAuthenticated, pathname, navigate]);
+    if (initializing || redirectedRef.current) return;
 
-
-  // Redirect nếu đã đăng nhập
-  useEffect(() => {
-    if (!initializing && isAuthenticated && !redirectedRef.current) {
+    if (!isAuthenticated) {
+      const publicPaths = [
+        "/welcome",
+        "/authentication/sign-in",
+        "/authentication/sign-up",
+        "/authentication/forget-password",
+        "/authentication/otp-forget-password",
+        "/authentication/reset-password",
+        "/authentication/verify-otp-organizer",
+      ];
+      if (!publicPaths.includes(pathname)) {
+        redirectedRef.current = true;
+        navigate("/welcome", { replace: true });
+      }
+    } else {
       redirectedRef.current = true;
-      if (role === 1) navigate("/dashboard-admin");
-      else if (role === 2) navigate("/dashboard-organizer");
-      else navigate("/dashboard");
+      if (role === 1) navigate("/dashboard-admin", { replace: true });
+      else if (role === 2) navigate("/dashboard-organizer", { replace: true });
+      else navigate("/dashboard", { replace: true });
     }
-  }, [initializing, isAuthenticated, role, navigate]);
+  }, [initializing, isAuthenticated, role, pathname, navigate]);
 
+  // Cache RTL
   useMemo(() => {
     const cacheRtl = createCache({
       key: "rtl",

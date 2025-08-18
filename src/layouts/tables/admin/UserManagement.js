@@ -42,7 +42,9 @@ function UserManagement() {
           phoneNumber: user.phoneNumber || "", // Chuyển từ phone => phoneNumber
           address: user.address || "",
           role: user.role, // vẫn cần truyền để phân biệt roleLabel trong Cell
+          createAt: user.createAt
         }));
+
         const { columns, rows } = userTableData(filtered);
         setColumns(columns);
         setRows(rows);

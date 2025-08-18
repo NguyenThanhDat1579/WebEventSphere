@@ -432,7 +432,7 @@ const filteredRows = useMemo(() => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon sx={{ fontSize: 20, color: "text.secondary" }} />
+                    <SearchIcon sx={{ fontSize: 22, color: "text.secondary" }} />
                   </InputAdornment>
                 ),
               }}

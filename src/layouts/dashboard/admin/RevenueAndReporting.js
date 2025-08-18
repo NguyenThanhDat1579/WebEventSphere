@@ -506,12 +506,12 @@ useEffect(() => {
 
           <Table>
             <TableRow>
-              <TableCell><strong>Avatar</strong></TableCell>
-              <TableCell><strong>Nhà tổ chức</strong></TableCell>
+              <TableCell width={"10%"}><strong>Avatar</strong></TableCell>
+              <TableCell width={"20%"}><strong>Nhà tổ chức</strong></TableCell>
               <TableCell><strong>Email</strong></TableCell>
               <TableCell><strong>Tổng doanh thu</strong></TableCell>
               <TableCell><strong>Tổng vé bán</strong></TableCell>
-              <TableCell><strong>Sự kiện</strong></TableCell>
+              <TableCell><strong>Tổng sự kiện</strong></TableCell>
             </TableRow>
 
             <TableBody>
@@ -542,6 +542,7 @@ useEffect(() => {
                       <TableCell>{totalRevenue.toLocaleString("vi-VN")} ₫</TableCell>
                       <TableCell>{totalTickets}</TableCell>
                       <TableCell>
+                        <Typography fontSize={13}>{org.events.length} sự kiện</Typography>
                         <Typography color="primary" fontSize={16}>
                           {isOpen ? "Đóng" : "Xem chi tiết"}
                         </Typography>

@@ -46,6 +46,9 @@ function OrganizerRevenue() {
   function getTotalTicketsOfEvent(event) {
     return event?.totalTicketsEvent || 0;
   }
+  function getEstimatedRevenue(event) {
+    return event?.estimatedRevenue || 0;
+  }
 
   function calculateEstimatedRevenue(event) {
   if (!event || !event.showtimes) return 0;
@@ -90,7 +93,7 @@ function OrganizerRevenue() {
 
         if (sold === 0 || revenue === 0 || totalTickets === 0) return total;
 
-        const avgPrice = revenue / sold;
+        const avgPrice = Number((revenue / sold).toFixed(2));
         return total + avgPrice * totalTickets;
       }
 
@@ -130,8 +133,15 @@ function OrganizerRevenue() {
         const response = await eventApi.getEventOfOrganization();
         if (response.data.status === 200) {
           const originalEvents = response.data.events;
-
-          setEvents(originalEvents);
+          const sortedEvents = originalEvents.sort((a, b) => {
+          if (a.createdAt && b.createdAt) {
+            return new Date(b.createdAt) - new Date(a.createdAt); // mới nhất lên trước
+          }
+          if (a.createdAt) return -1;
+          if (b.createdAt) return 1;
+          return 0;
+        });
+          setEvents(sortedEvents);
         } else {
           console.error("Lấy sự kiện thất bại");
         }
@@ -160,6 +170,7 @@ function OrganizerRevenue() {
   const revenue = getEventRevenue(selectedEvent);
   const sold = getSoldTickets(selectedEvent);
   const total = getTotalTicketsOfEvent(selectedEvent);
+  const estimatedRevenue = getEstimatedRevenue(selectedEvent);
   const ticketTableData = getShowtimeDetailsByEvent(selectedEvent);
   console.log("ticketTableData ", ticketTableData)
   const ticketPrice = revenue / sold || 0; // Tránh chia cho 0
@@ -209,6 +220,8 @@ function OrganizerRevenue() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
+                position: "relative",
+                overflow: "visible",
               }}
             >
               {/* Bên trái: Thông tin tổng doanh thu */}
@@ -220,12 +233,12 @@ function OrganizerRevenue() {
                   {revenue.toLocaleString()} ₫
                 </Typography>
                 <Typography fontSize={18} fontWeight={500} gutterBottom>
-                  Tổng: {maxRevenue.toLocaleString()} ₫
+                  Dự kiến: {estimatedRevenue.toLocaleString()} ₫
                 </Typography>
               </Box>
 
               {/* Bên phải: DonutChart biểu diễn % đạt được */}
-              <Box sx={{ width: 120, height: 120 }}>
+              <Box sx={{ width: 120, height: 120, position: "relative", zIndex: 10, overflow: "visible" }}>
                 <DonutChartWithCenter
                   sold={revenue}
                   locked={0}

@@ -85,46 +85,117 @@ function MyEventTable({ events, onViewDetail }) {
     return "Chưa có suất phù hợp";
   };
 
-  const getStatusChip = (event) => {
+  const getStatusChip = (event) => {     
     const now = Date.now();
-
-    // Chip trạng thái duyệt sự kiện
-    let approvalStatusChip;
+    const start = toDate(event.timeStart).getTime();
+    const end = toDate(event.timeEnd).getTime();
     switch (event.approvalStatus) {
-      case "approved":
-        approvalStatusChip = <Chip label="Đã duyệt" color="primary" size="small" sx={{ color: "#fff", mr: 1 }} />;
-        break;
-      case null:
-        approvalStatusChip = <Chip label="Đã duyệt" color="primary" size="small" sx={{ color: "#fff", mr: 1 }} />;
-      break;
+      case "approved": {
+        const approvalStatusChip = (
+          <Chip
+            label="Đã duyệt"
+            color="primary"
+            size="small"
+            sx={{ color: "#fff", mr: 1 }}
+          />
+        );
+
+        let saleStatusChip;
+        if (now < start) {
+          saleStatusChip = (
+            <Chip
+              label="Sắp mở bán"
+              color="warning"
+              size="small"
+              sx={{ color: "#fff" }}
+            />
+          );
+        } else if (now >= start && now <= end) {
+          saleStatusChip = (
+            <Chip
+              label="Đang mở bán vé"
+              color="success"
+              size="small"
+              sx={{ color: "#fff" }}
+            />
+          );
+        } else {
+          saleStatusChip = (
+            <Chip
+              label="Đã kết thúc bán"
+              color="default"
+              size="small"
+              sx={{ color: "#fff" }}
+            />
+          );
+        }
+
+        return (
+          <>
+            {approvalStatusChip}
+            {saleStatusChip}
+          </>
+        );
+      }
+
       case "pending":
-        return <Chip label="Chờ duyệt" color="warning" size="small" sx={{ color: "#fff" }} />;
+        return (
+          <Chip
+            label="Chờ duyệt"
+            color="warning"
+            size="small"
+            sx={{ color: "#fff" }}
+          />
+        );
+
+        
+      case "postponed":
+        return (
+        <Chip
+            label="Tạm hoãn"
+            size="small"
+            sx={{
+              backgroundColor: '#FFA500', // Màu cam
+              color: '#fff'
+            }}
+          />
+        );
+
       case "rejected":
-        return <Chip label="Từ chối" color="error" size="small" sx={{ color: "#fff" }} />;
+        console.log("Approval reason:", event);
+        return (
+            <Stack direction="column" spacing={0.5} alignItems="flex-start">
+              <Chip
+                label="Từ chối"
+                color="error"
+                size="small"
+                sx={{ color: "#fff" }}
+              />
+              {event.approvalReason && (
+                <Typography variant="body2" color="error">
+                  Lý do: {event.approvalReason}
+                </Typography>
+              )}
+            </Stack>
+        );
+
+      case null: // fallback null = approved
+        return (
+          <>
+            <Chip
+              label="Đã duyệt"
+              color="primary"
+              size="small"
+              sx={{ color: "#fff", mr: 1 }}
+            />
+          </>
+        );
+
       default:
         return null;
     }
-
-    // Nếu đã duyệt, mới hiển thị chip trạng thái mở bán vé
-    const start = toDate(event.timeStart).getTime();
-    const end = toDate(event.timeEnd).getTime();
-
-    let saleStatusChip;
-    if (now < start) {
-      saleStatusChip = <Chip label="Sắp mở bán" color="warning" size="small" sx={{ color: "#fff" }} />;
-    } else if (now >= start && now <= end) {
-      saleStatusChip = <Chip label="Đang mở bán vé" color="success" size="small" sx={{ color: "#fff" }} />;
-    } else {
-      saleStatusChip = <Chip label="Đã kết thúc bán" color="default" size="small" sx={{ color: "#fff" }} />;
-    }
-
-    return (
-      <>
-        {approvalStatusChip}
-        {saleStatusChip}
-      </>
-    );
   };
+
 
   const handleViewRevenue = (eventId, eventTitle) => {
     const encodedTitle = encodeURIComponent(eventTitle);

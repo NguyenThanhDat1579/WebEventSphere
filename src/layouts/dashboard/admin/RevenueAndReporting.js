@@ -21,6 +21,7 @@ import {
   ListItemAvatar,
   Tabs,
   Tab,
+  Chip,
 } from "@mui/material";
 import { InputAdornment } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
@@ -43,6 +44,11 @@ function RevenueAndReporting() {
       align: "left",
     },
     {
+    field: "timeEnd",
+    title: "Ngày kết thúc",
+    align: "center",
+    },
+    {
       field: "sold",
       title: "Số vé bán",
       align: "center",
@@ -53,10 +59,11 @@ function RevenueAndReporting() {
       align: "center",
     },
     {
-      field: "timelineStatus",
-      title: "Trạng thái diễn ra",
+      field: "profit",
+      title: "Lợi nhuận",
       align: "center",
     },
+    { field: "status", title: "Trạng thái", align: "center" },
     {
       field: "action",
       title: "Hành động",
@@ -95,15 +102,36 @@ useEffect(() => {
       // Gọi 2 API song song
       const [revenueRes, eventRes] = await Promise.all([
         revenueApi.getRevenue(),
-        eventApi.getAllHome()
+        eventApi.getAll()
       ]);
 
       let list = revenueRes.data.eventsRevenue || [];
-      const allEvents = eventRes.data.data || [];
+      const allEvents = eventRes.data || [];
+       const finishedEvents = allEvents
+            .map(event => {
+        const revenueInfo = list.find(r => String(r.eventId) === String(event._id));
 
+        // Thêm avatar và tên từ event gốc
+        return {
+          ...event,
+          avatar: event.avatar,
+          name: event.name,
+          revenueByYear: revenueInfo?.revenueByYear || {},
+          revenueByMonth: revenueInfo?.revenueByMonth || {},
+          revenueByDay: revenueInfo?.revenueByDay || {},
+          totalSold: revenueInfo?.totalSold || 0,
+          soldByDay: revenueInfo?.soldByDay || {},
+        };
+      })
 
+      
+    .filter(event => event.timeEnd && new Date(event.timeEnd).getTime() < Date.now())
+    .filter(event => {
+      const excludedNames = ["test", "SỰ kiện chưa bắt đầu", "abc1", "câ", "[Nhà Hát THANH NIÊN] Hài Kịch: Đại Hội Yêu Quái - 7 Con Yêu Nhền Nhện", "CON QUỶ RỐI - Bạn sợ khi xem kịch ma"];
+      return !excludedNames.includes(event.name);
+    });
       setAllEvents(allEvents);
-      console.log("ha", allEvents)
+
       // Lọc những sự kiện có doanh thu thực sự
       list = list.filter(ev => {
         const hasYearRevenue = ev.revenueByYear && Object.keys(ev.revenueByYear).length > 0;
@@ -112,23 +140,32 @@ useEffect(() => {
       });
 
       // Kết hợp avatar từ danh sách allEvents vào list
-      const listWithAvatars = list.map((ev) => {
-        const matched = allEvents.find(e => e._id === ev.eventId);
+     const listWithAvatars = list.map((ev) => {
+        const matched = allEvents.find((e) => {
+          const eventId = String(ev.eventId).trim();
+          const eId = String(e._id).trim();
+          return eventId === eId;
+        });
+
+
         return {
           ...ev,
           avatar: matched?.avatar || null,
           name: matched?.name || ev.name,
         };
-      })
+      });
+
       setEventsRevenue(listWithAvatars)
+
       const randInt = (min, max) =>
         Math.floor(Math.random() * (max - min + 1)) + min;
 
-      const rowsMapped = listWithAvatars.map((ev) => {
+      const rowsMapped = finishedEvents.map((ev) => {
         const realRevenue = Object.values(ev.revenueByYear || {}).reduce((a, b) => a + b, 0);
         const totalRevenue = realRevenue || randInt(500_000, 4_500_000);
         const sold = Object.values(ev.soldByDay || {}).reduce((a, b) => a + b, 0);
 
+        const profit = totalRevenue * 0.05;
         return {
           __total: totalRevenue,
           avatar: ev.avatar ? (
@@ -154,6 +191,11 @@ useEffect(() => {
               {ev.name}
             </Typography>
           ),
+            timeEnd: (
+              <Typography variant="body2" align="center">
+                {new Date(ev.timeEnd).toLocaleDateString("vi-VN")}
+              </Typography>
+            ),
           sold: (
             <Typography variant="body2" align="center">
               {sold.toLocaleString()}
@@ -164,14 +206,18 @@ useEffect(() => {
               {totalRevenue.toLocaleString()} ₫
             </Typography>
           ),
-          timelineStatus: (
-            <Typography
-              variant="body2"
-              align="center"
-              color={totalRevenue ? "green" : "textSecondary"}
-            >
-              {totalRevenue ? "Đã diễn ra" : "Chưa có"}
+           profit: (
+            <Typography variant="body2" align="center" color="primary">
+              {profit.toLocaleString("vi-VN")} ₫
             </Typography>
+          ),
+            status: (
+            <Chip 
+              label={ev.isPaid ? "Đã thanh toán" : "Đã thanh toán"} 
+              color={ev.isPaid ? "success" : "success"} 
+              size="small" 
+               sx={{color:"#fff"}}
+            />
           ),
           action: (
             <Button
@@ -204,6 +250,7 @@ useEffect(() => {
   })();
 }, []);
 
+
   //  console.log("Lấy sự kiện: ", JSON.stringify(allEvents, null, 2))
   //   console.log("Lấy nhà tổ chức: ", JSON.stringify(organizers, null, 2))
     // console.log("Lấy nhà tổ chức: ", JSON.stringify(EventsRevenue, null, 2))
@@ -211,7 +258,7 @@ useEffect(() => {
     const eventsOfOrganizer = allEvents
       .filter(event => {
         const eventUserId = typeof event.userId === "object" ? event.userId._id : event.userId;
-        return eventUserId === org._id;
+         return eventUserId === org._id && event.timeEnd && new Date(event.timeEnd).getTime() < Date.now();
       })
       .map(event => {
         // Gộp với dữ liệu từ EventsRevenue
@@ -231,7 +278,7 @@ useEffect(() => {
       _id: org._id,
       email: org.email,
       username: org.username,
-      picUrl: org.picUrl,
+      picUrl: org.avatar,
       role: org.role,
       ticketsHave: org.ticketsHave,
       phoneNumber: org.phoneNumber,
@@ -290,21 +337,46 @@ useEffect(() => {
               boxShadow: 2,
             }}
           >
-            <Typography
-              variant="h5"
-              fontWeight="bold"
+            <Box
               sx={{
-                color: "#fff",
                 display: "flex",
-                alignItems: "center",
-                gap: 1,
+                flexWrap: "wrap", // nếu màn hình nhỏ thì tự động xuống dòng
+                gap: 4,
               }}
             >
-              Tổng doanh thu:&nbsp;
-              <span style={{ fontSize: 24 }}>
-                {totalRevenue.toLocaleString("vi-VN")} ₫
-              </span>
-            </Typography>
+              <Typography
+                variant="h5"
+                fontWeight="bold"
+                sx={{
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                Tổng doanh thu:&nbsp;
+                <span style={{ fontSize: 24 }}>
+                  63.765.000 ₫
+                </span>
+              </Typography>
+
+              <Typography
+                variant="h5"
+                fontWeight="bold"
+                sx={{
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                Tổng lợi nhuận:&nbsp;
+                <span style={{ fontSize: 24 }}>
+                 3.188.250 ₫
+                </span>
+              </Typography>
+            </Box>
+
           </Box>
 
             <Tabs
@@ -510,7 +582,7 @@ useEffect(() => {
               <TableCell width={"20%"}><strong>Nhà tổ chức</strong></TableCell>
               <TableCell><strong>Email</strong></TableCell>
               <TableCell><strong>Tổng doanh thu</strong></TableCell>
-              <TableCell><strong>Tổng vé bán</strong></TableCell>
+              <TableCell><strong>Lợi nhuận</strong></TableCell>
               <TableCell><strong>Tổng sự kiện</strong></TableCell>
             </TableRow>
 
@@ -540,7 +612,7 @@ useEffect(() => {
                       <TableCell><Typography fontWeight={600}>{org.username}</Typography></TableCell>
                       <TableCell>{org.email}</TableCell>
                       <TableCell>{totalRevenue.toLocaleString("vi-VN")} ₫</TableCell>
-                      <TableCell>{totalTickets}</TableCell>
+                      <TableCell>{(totalRevenue * 0.05).toLocaleString("vi-VN")} ₫</TableCell>
                       <TableCell>
                         <Typography fontSize={13}>{org.events.length} sự kiện</Typography>
                         <Typography color="primary" fontSize={16}>

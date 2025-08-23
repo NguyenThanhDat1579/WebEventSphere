@@ -30,8 +30,11 @@ function ModernLoginPage() {
   setIsLoading(true);
 
   const newErrors = {};
-  if (!email) newErrors.email = 'Vui lòng nhập Email';
-  if (!password) newErrors.password = 'Vui lòng nhập Mật khẩu';
+  const trimmedEmail = email.trim();
+  const trimmedPassword = password.trim();
+
+  if (!trimmedEmail) newErrors.email = 'Vui lòng nhập Email';
+  if (!trimmedPassword) newErrors.password = 'Vui lòng nhập Mật khẩu';
 
   if (Object.keys(newErrors).length > 0) {
     setErrors(newErrors);
@@ -40,8 +43,8 @@ function ModernLoginPage() {
   }
 
   try {
-  const res = await authApi.login(email, password);
-  const userData = res.data.data;
+    const res = await authApi.login(trimmedEmail, trimmedPassword);
+    const userData = res.data.data;
 
     if (userData) {
       console.log("Thông tin user:", userData);
@@ -79,6 +82,7 @@ function ModernLoginPage() {
     setIsLoading(false);
   }
 };
+
 
 
   return (

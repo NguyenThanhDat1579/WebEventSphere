@@ -31,6 +31,15 @@ function OrganizerDashboard() {
     return amount.toLocaleString("vi-VN") + " ₫";
   }
 
+  const getCurrentMonthRevenue = (data) => {
+      if (!data) return 0;
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0"); // thêm số 0 phía trước nếu < 10
+      const key = `${year}-${month}`;
+      return data[key] || 0; // nếu không có dữ liệu thì trả về 0
+    };
+
 
   const ongoingEventsCount = events.filter((event) => {
     const start = event.timeStart;
@@ -63,6 +72,7 @@ function OrganizerDashboard() {
     fetchEvents();
   }, []);
 
+
   
  
   return (
@@ -70,10 +80,10 @@ function OrganizerDashboard() {
       <DashboardNavbar />
       <ArgonBox py={3}>
         <Grid container spacing={3} mb={3}>
-          <Grid item xs={12} md={6} lg={3}>
+          <Grid item xs={12} md={6} lg={3.5}>
             <DetailedStatisticsCard
-              title="Tổng doanh thu"
-              count={formatCurrencyVND(totalRevenue)}
+              title="Tổng doanh thu tháng này"
+              count={formatCurrencyVND(getCurrentMonthRevenue(totalRevenueByMonth))}
               icon={{ color: "info", component: <MonetizationOnIcon fontSize="small" /> }}
             />
           </Grid>
@@ -91,7 +101,7 @@ function OrganizerDashboard() {
               icon={{ color: "success", component: <EventAvailableIcon fontSize="small" /> }}
             />
           </Grid>
-          <Grid item xs={12} md={6} lg={3}>
+          <Grid item xs={12} md={6} lg={2.5}>
             <DetailedStatisticsCard
               title="Tổng sự kiện"
               count={events.length}

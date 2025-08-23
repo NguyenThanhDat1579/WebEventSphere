@@ -43,6 +43,7 @@ const transformEvents = (events) =>
       status,
       createdAt: event.createdAt ?? null,
       approvalStatus: event.approvalStatus ?? null,
+      approvalReason: event.approvalReason ?? "Kiểm tra lại",
     };
   });
 

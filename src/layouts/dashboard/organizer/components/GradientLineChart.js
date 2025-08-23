@@ -27,8 +27,14 @@ const GradientLineChart = ({
 
   // Convert object to chart.js format
   const convertData = (dataObj) => {
-    const labels = Object.keys(dataObj);
-    const values = Object.values(dataObj);
+     let labels = Object.keys(dataObj);   // dùng let thay vì const
+    let values = Object.values(dataObj); // dùng let thay vì const
+
+    if (labels.length === 1) {
+      // Nếu muốn điểm nằm ở cuối trục X
+      labels = ["", ...labels];
+      values = [0, ...values];
+    }
     return {
       labels,
       datasets: [

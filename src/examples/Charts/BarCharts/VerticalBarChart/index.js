@@ -9,46 +9,49 @@ import Card from "@mui/material/Card";
 import ArgonBox from "components/ArgonBox";
 import ArgonTypography from "components/ArgonTypography";
 
-// Base theme
-import colors from "assets/theme/base/colors";
-
 // Chart.js auto register
 import Chart from "chart.js/auto";
 
 // Gradient function
 const createGradient = (ctx, area) => {
   const gradient = ctx.createLinearGradient(0, area.bottom, 0, area.top);
-  gradient.addColorStop(0, "#42a5f5");  // light blue
-  gradient.addColorStop(1, "#1e88e5");  // darker blue
+  gradient.addColorStop(0, "#42a5f5");
+  gradient.addColorStop(1, "#1e88e5");
   return gradient;
 };
 
 function VerticalBarChart({ title, description, height, chart }) {
-const chartData = useMemo(() => {
-  const datasets = chart.datasets.map((dataset) => ({
-    ...dataset,
-    backgroundColor: (context) => {
-      const { ctx, chartArea } = context.chart;
-      if (!chartArea) return "#42a5f5";
-      return createGradient(ctx, chartArea);
-    },
-    borderRadius: {
-      topLeft: 12,   // ✅ Bo tròn góc trên trái
-      topRight: 12,  // ✅ Bo tròn góc trên phải
-      bottomLeft: 0,
-      bottomRight: 0,
-    },
-    borderSkipped: "bottom",  // ✅ Chỉ bỏ bo ở đáy (để bo trên)
-    barThickness: 60,
-    hoverBackgroundColor: "#1976d2",
-  }));
+  const chartData = useMemo(() => {
+    const datasets = chart.datasets.map((dataset) => {
+      const isProfit = dataset.label.toLowerCase().includes("lợi nhuận");
+      const axisId = isProfit ? "profit" : "revenue";
 
-  return {
-    labels: chart.labels,
-    datasets,
-  };
-}, [chart]);
+      return {
+        ...dataset,
+        yAxisID: axisId,
+        backgroundColor: isProfit
+          ? "#4CAF50"
+          : (context) => {
+              const { ctx, chartArea } = context.chart;
+              if (!chartArea) return "#42a5f5";
+              return createGradient(ctx, chartArea);
+            },
+        borderRadius: {
+          topLeft: 12,
+          topRight: 12,
+          bottomLeft: 0,
+          bottomRight: 0,
+        },
+        borderSkipped: "bottom",
+        barThickness: 60,
+      };
+    });
 
+    return {
+      labels: chart.labels,
+      datasets,
+    };
+  }, [chart]);
 
   const chartOptions = useMemo(() => ({
     responsive: true,
@@ -67,6 +70,13 @@ const chartData = useMemo(() => {
         borderWidth: 1,
         cornerRadius: 6,
         padding: 10,
+        callbacks: {
+          label: function (context) {
+            const label = context.dataset.label || "";
+            const value = context.raw;
+            return `${label}: ${value.toLocaleString()} VND`;
+          },
+        },
       },
     },
     scales: {
@@ -75,22 +85,46 @@ const chartData = useMemo(() => {
           font: { size: 13, weight: "600" },
           color: "#333",
         },
-        grid: {
-          display: false,
-        },
+        grid: { display: false },
       },
-      y: {
+      revenue: {
+        type: "linear",
+        position: "left",
+        beginAtZero: true,
+        suggestedMax: Math.ceil(
+          Math.max(...chart.datasets
+            .filter((d) => !d.label.toLowerCase().includes("lợi nhuận"))
+            .flatMap((d) => d.data)) * 1.2
+        ),
         ticks: {
+          color: "#1e88e5",
           font: { size: 13 },
-          color: "#666",
         },
         grid: {
           color: "#e0e0e0",
           borderDash: [4, 4],
         },
       },
+     profit: {
+  type: "linear",
+  position: "right",
+  beginAtZero: true,
+  suggestedMax: Math.ceil(
+    Math.max(...chart.datasets
+      .filter((d) => d.label.toLowerCase().includes("lợi nhuận"))
+      .flatMap((d) => d.data)) * 2  // tăng ít hơn doanh thu
+  ),
+
+        ticks: {
+          color: "#4CAF50",
+          font: { size: 13 },
+        },
+        grid: {
+          drawOnChartArea: false,
+        },
+      },
     },
-  }), []);
+  }), [chart]);
 
   return (
     <Card>

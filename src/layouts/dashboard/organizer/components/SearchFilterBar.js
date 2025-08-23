@@ -116,6 +116,7 @@ const SearchFilterBar = ({
                         { label: "Đã duyệt", value: "approved" },
                         { label: "Chờ duyệt", value: "pending" },
                         { label: "Từ chối", value: "rejected" },
+                        { label: "Tạm hoãn", value: "postponed" },
                       ]}
                     />
                   </Box>

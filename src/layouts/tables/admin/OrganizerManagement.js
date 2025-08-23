@@ -33,7 +33,6 @@ function OrganizerManagement() {
         const res = await userApi.getAll();
         if (res.data.status) {
           const organizers = res.data.data.filter((u) => u.role !== 3);
-            console.log("Danh sách organizers:", organizers);
           const { columns, rows } = organizerTableData(organizers);
           setColumns(columns);
           setRows(rows);

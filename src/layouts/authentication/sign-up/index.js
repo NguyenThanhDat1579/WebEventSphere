@@ -42,72 +42,77 @@ function Cover() {
   }, []);
 
   const validateForm = () => {
-    let tempErrors = {};
+  let tempErrors = {};
 
-    if (!username.trim()) {
-      tempErrors.username = "Vui lòng nhập tên";
-    } else if (username.length < 3 || username.length > 50) {
-      tempErrors.username = "Tên người dùng phải từ 3 đến 50 ký tự";
-    } else if (!/^[a-zA-ZÀ-ỹ\d_ ]+$/.test(username)) {
-      tempErrors.username = "Tên người dùng không được chứa kí tự đặc biệt";
+  const trimmedUsername = username.trim();
+  const trimmedEmail = email.trim();
+  const trimmedPassword = password.trim();
+  const trimmedConfirmPassword = confirmPassword.trim();
+
+  if (!trimmedUsername) {
+    tempErrors.username = "Vui lòng nhập tên";
+  } else if (trimmedUsername.length < 3 || trimmedUsername.length > 50) {
+    tempErrors.username = "Tên người dùng phải từ 3 đến 50 ký tự";
+  }
+
+  if (!trimmedEmail) {
+    tempErrors.email = "Vui lòng nhập Email";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+    tempErrors.email = "Email không hợp lệ";
+  }
+
+  if (!trimmedPassword) {
+    tempErrors.password = "Vui lòng nhập Mật khẩu";
+  } else if (trimmedPassword.length < 6 || trimmedPassword.length > 28) {
+    tempErrors.password = "Mật khẩu phải có từ 6 đến 28 ký tự";
+  } else if (!/[A-Z]/.test(trimmedPassword)) {
+    tempErrors.password = "Mật khẩu phải chứa ít nhất một chữ cái in hoa";
+  } else if (!/[a-z]/.test(trimmedPassword)) {
+    tempErrors.password = "Mật khẩu phải chứa ít nhất một chữ cái in thường";
+  } else if (!/[0-9]/.test(trimmedPassword)) {
+    tempErrors.password = "Mật khẩu phải chứa ít nhất một chữ số";
+  } else if (!/[!@#$%^&*(),.?\":{}|<>]/.test(trimmedPassword)) {
+    tempErrors.password = "Mật khẩu phải chứa ít nhất một ký tự đặc biệt";
+  }
+
+  if (!trimmedConfirmPassword) {
+    tempErrors.confirmPassword = "Vui lòng nhập Xác nhận mật khẩu";
+  } else if (trimmedConfirmPassword !== trimmedPassword) {
+    tempErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
+  }
+
+  setErrors(tempErrors);
+  return Object.keys(tempErrors).length === 0;
+};
+
+const handleRegister = async () => {
+  if (!validateForm()) return;
+  setLoading(true);
+  try {
+    const body = {
+      username: username.trim(),
+      email: email.trim(),
+      password: password.trim(),
+      role: 2,
+    };
+    console.log("Body", body);
+
+    const res = await authApi.register(body);
+
+    if (res.status) {
+      navigate("/authentication/verify-otp-organizer", {
+        state: { email: email.trim(), fromRegister: true }
+      });
+    } else {
+      setErrors(prev => ({ ...prev, email: res.message || "Email đã tồn tại" }));
     }
+  } catch (err) {
+    setErrors(prev => ({ ...prev, email: "Email đã tồn tại." }));
+  } finally {
+    setLoading(false);
+  }
+};
 
-    if (!email.trim()) {
-      tempErrors.email = "Vui lòng nhập Email";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      tempErrors.email = "Email không hợp lệ";
-    }
-
-    if (!password.trim()) {
-      tempErrors.password = "Vui lòng nhập Mật khẩu";
-    } else if (password.length < 6 || password.length > 28) {
-      tempErrors.password = "Mật khẩu phải có từ 6 đến 28 ký tự";
-    } else if (!/[A-Z]/.test(password)) {
-      tempErrors.password = "Mật khẩu phải chứa ít nhất một chữ cái in hoa";
-    } else if (!/[a-z]/.test(password)) {
-      tempErrors.password = "Mật khẩu phải chứa ít nhất một chữ cái in thường";
-    } else if (!/[0-9]/.test(password)) {
-      tempErrors.password = "Mật khẩu phải chứa ít nhất một chữ số";
-    } else if (!/[!@#$%^&*(),.?\":{}|<>]/.test(password)) {
-      tempErrors.password = "Mật khẩu phải chứa ít nhất một ký tự đặc biệt";
-    }
-
-    if (!confirmPassword.trim()) {
-      tempErrors.confirmPassword = "Vui lòng nhập Xác nhận mật khẩu";
-    } else if (confirmPassword !== password) {
-      tempErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
-    }
-
-    setErrors(tempErrors);
-    return Object.keys(tempErrors).length === 0;
-  };
-
-  const handleRegister = async () => {
-    if (!validateForm()) return;
-    setLoading(true);
-    try {
-     const body = {
-        username: username.trim(),
-        email: email.trim(),
-        password,
-        role: 2,
-      };
-      console.log("Body", body)
-      const res = await authApi.register(body);
-      
-      if (res.status) {
-         navigate("/authentication/verify-otp-organizer", {
-          state: { email, fromRegister: true }
-        });
-      } else {
-        setErrors(prev => ({ ...prev, email: res.message || "Email đã tồn tại" }));
-      }
-    } catch (err) {
-      setErrors(prev => ({ ...prev, email: "Email đã tồn tại." }));
-    } finally {
-      setLoading(false);
-    }
-  };
 
 
   return (

@@ -31,9 +31,9 @@ const userTableData = (users = []) => {
       name     : Cell(u.username || "Chưa có tên"),
       email    : Cell(u.email || "Chưa có email"),
      phone: Cell(
-  u.phoneNumber && u.phoneNumber.trim() !== "" ? u.phoneNumber : "Chưa cập nhật",
-  "center"
-),
+        u.phoneNumber && u.phoneNumber.trim() !== "" ? u.phoneNumber : "Chưa cập nhật",
+        "center"
+      ),
 
       address  : Cell(u.address || "", "center"),
       roleLabel: Cell(u.role === 3 ? "Người dùng" : "Nhà tổ chức", "center"),

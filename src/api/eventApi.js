@@ -2,6 +2,7 @@ import axiosInstance from "./axiosInstance";
 
 const eventApi = {
   getAllHome: () => axiosInstance.get("/events/home"),
+  getAll: () => axiosInstance.get("/events/all?showAll=true"),
   getDetail: (id) => axiosInstance.get(`/events/detail/${id}`),
   editEvent: (payload) => axiosInstance.put("/events/edit", payload),
 
@@ -32,6 +33,11 @@ const eventApi = {
   createTag: (name) =>
   axiosInstance.post("/tags/create", { name }),
 
+    postponeEvent: (id,) =>
+    axiosInstance.put(`/events/postpone/${id}`),
+
+    unpostponeEvent: (id,) =>
+    axiosInstance.put(`/events/unpostpone/${id}`),
 };
 
 export default eventApi;

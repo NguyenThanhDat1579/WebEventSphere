@@ -206,11 +206,13 @@ function EventManagement() {
             ? chipTimeline(ev.timeStart, ev.timeEnd)
             : "Xem chi tiết",
           status: chipStatus(
-              ev.approvalStatus === null
+              ev.approvalStatus ===  "approved"
                 ? "Đã duyệt"
                 : ev.approvalStatus === "pending"
                   ? "Chờ duyệt"
                   : ev.approvalStatus
+                  ? "Từ chối duyệt"
+                  : ev.applyStatus === "rejected"
           ),
           action: (
             <Button
@@ -258,9 +260,8 @@ function EventManagement() {
         eventApi.getPendingApproval()
       ]);
 
-       const homeEvents = homeRes.data?.data || [];
+       const homeEvents = homeRes.data.data || [];
         const pendingEvents = pendingRes.data?.data.events || [];
-    
         const homeMapped = homeEvents?.map(evt => ({
           _id: evt._id, // giữ nguyên _id để dùng trong processEvents
           name: evt.name,
@@ -312,7 +313,9 @@ const filteredRows = useMemo(() => {
       const status = row.rawData.approvalStatus;
       if (approvalStatus === "approved" && !(status === "approved" || status === null)) return false;
       if (approvalStatus === "pending" && status !== "pending") return false;
+      if (approvalStatus === "rejected" && status !== "rejected") return false;
     }
+
 
     // --- Filter theo search term ---
     if (searchTerm.trim()) {
@@ -451,6 +454,7 @@ const filteredRows = useMemo(() => {
                 { label: "Tất cả", value: "" },
                 { label: "Đã duyệt", value: "approved" },
                 { label: "Chờ duyệt", value: "pending" },
+                // { label: "Từ chối duyệt", value: "rejected" },
               ]}
             />
           </Box>

@@ -206,7 +206,7 @@ function EventManagement() {
             ? chipTimeline(ev.timeStart, ev.timeEnd)
             : "Xem chi tiết",
           status: chipStatus(
-              ev.approvalStatus ===  "approved"
+              ev.approvalStatus ===  "approved" || ev.approvalStatus === null
                 ? "Đã duyệt"
                 : ev.approvalStatus === "pending"
                   ? "Chờ duyệt"
@@ -255,13 +255,9 @@ function EventManagement() {
     (async () => {
       setLoadingTbl(true);
       try {
-      const [homeRes, pendingRes] = await Promise.all([
-        eventApi.getAllHome(),
-        eventApi.getPendingApproval()
-      ]);
+      const homeRes = await eventApi.getAll();
+      const homeEvents = homeRes.data || [];
 
-       const homeEvents = homeRes.data.data || [];
-        const pendingEvents = pendingRes.data?.data.events || [];
         const homeMapped = homeEvents?.map(evt => ({
           _id: evt._id, // giữ nguyên _id để dùng trong processEvents
           name: evt.name,
@@ -274,22 +270,7 @@ function EventManagement() {
           maxTicketPrice: evt.maxTicketPrice,
           ticketInfo: evt.ticketInfo || [] // thêm để getPriceRange hoạt động
         }));
-
-        const pendingMapped = pendingEvents?.map(evt => ({
-          _id: evt._id,
-          name: evt.name,
-          avatar: evt.avatar,
-          createdAt: evt.createdAt,
-          timeStart: evt.timeStart,
-          timeEnd: evt.timeEnd,
-          location: evt.location || "",
-          approvalStatus: evt.approvalStatus || null,
-          minTicketPrice: evt.minTicketPrice || 0,
-          maxTicketPrice: evt.maxTicketPrice || 0,
-          ticketInfo: evt.ticketInfo || []
-        }));
-
-        const rawEvents = [...homeMapped, ...pendingMapped];
+        const rawEvents = [...homeMapped];
 
         if (!mounted) return;
         const processed = processEvents(rawEvents);
@@ -454,7 +435,7 @@ const filteredRows = useMemo(() => {
                 { label: "Tất cả", value: "" },
                 { label: "Đã duyệt", value: "approved" },
                 { label: "Chờ duyệt", value: "pending" },
-                // { label: "Từ chối duyệt", value: "rejected" },
+                { label: "Từ chối duyệt", value: "rejected" },
               ]}
             />
           </Box>

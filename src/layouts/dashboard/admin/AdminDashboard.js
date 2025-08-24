@@ -34,7 +34,6 @@ export default function AdminDashboard() {
   const [chart, setChart] = useState(null);
   const [totalOrganizers, setTotalOrganizers] = useState(0);
   const [mergedData, setMergedData] = useState([]);
-  
   const [page, setPage] = useState(1);
   const rowsPerPage = 5;
   useEffect(() => {
@@ -61,7 +60,7 @@ export default function AdminDashboard() {
     const fetchEvents = async () => {
       try {
         setLoadingEvents(true);
-        const res = await eventApi.getAllHome();
+        const res = await eventApi.getAllHome(); 
         setEventList(res.data?.data ?? []);
       } catch (err) {
         console.error("Fetch events error:", err);
@@ -75,10 +74,10 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (eventList.length > 0 && revenueData?.eventsRevenue?.length > 0) {
       const merged = eventList.map(event => {
-        const revenueInfo = revenueData.eventsRevenue.find(r => r.eventId === event._id);
+        const revenueInfo = revenueData.eventsRevenue.find(r => String(r.eventId) === String(event._id)); // Đồng bộ: Ép kiểu String cho ID
         return {
           ...event,
-          revenue: revenueInfo ? revenueInfo.revenueByYear : {},
+          revenueByYear: revenueInfo ? revenueInfo.revenueByYear : {}, // Đồng bộ: Sử dụng revenueByYear, revenueByMonth, revenueByDay
           revenueByMonth: revenueInfo ? revenueInfo.revenueByMonth : {},
           revenueByDay: revenueInfo ? revenueInfo.revenueByDay : {},
           totalSold: revenueInfo ? revenueInfo.totalSold : 0,
@@ -103,34 +102,39 @@ export default function AdminDashboard() {
     })();
   }, []);
 
-  const getPastEventsList = (events, currentTime = Date.now()) => {
-    const pastShowtimes = events
-      .flatMap(event =>
-        (event.showtimes || []).map(show => ({ ...event, showtimeEnd: show.endTime }))
-      )
-      .filter(item => item.showtimeEnd < currentTime);
-
-    if (pastShowtimes.length === 0) return [];
-
-    const eventMap = new Map();
-    pastShowtimes.forEach(ev => {
-      const existing = eventMap.get(ev._id);
-      if (!existing || ev.showtimeEnd > existing.showtimeEnd) {
-        eventMap.set(ev._id, ev);
-      }
-    });
-
-    return Array.from(eventMap.values()).sort((a, b) => b.showtimeEnd - a.showtimeEnd);
+  const getFinishedEvents = (events, currentTime = Date.now()) => { // Đồng bộ: Hàm lọc thống nhất, kết hợp showtimes và timeEnd
+    return events
+      .filter(event => event.timeEnd && new Date(event.timeEnd).getTime() < currentTime) // Kiểm tra timeEnd
+      .map((event) => {
+        const pastShowtimes = (event.showtimes || []).filter(
+          (show) => new Date(show.endTime).getTime() < currentTime
+        );
+        if (pastShowtimes.length === 0) return null;
+        const lastShowtime = pastShowtimes.reduce((latest, show) =>
+          new Date(show.endTime).getTime() > new Date(latest.endTime).getTime() ? show : latest
+        );
+        return {
+          ...event,
+          showtimeEnd: new Date(lastShowtime.endTime).getTime(),
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.showtimeEnd - a.showtimeEnd);
   };
- 
 
-  const excludedNames = [
-  "V CONCERT RẠNG RỠ VIỆT NAM - CHẠM VÀO ĐỈNH CAO CỦA ÂM NHẠC VÀ CẢM XÚC",
-  "Nhà Hát Kịch IDECAF: LƯƠNG SƠN BÁ CHÚC ANH ĐÀI ngoại truyện",
-  "CON QUỶ RỐI - Bạn sợ khi xem kịch ma"
-];
-  const closestEvent = getPastEventsList(mergedData)
-  .filter(event => !excludedNames.includes(event.name));
+  const excludedNames = [ // Đồng bộ: Kết hợp danh sách excluded từ cả hai component
+    "V CONCERT RẠNG RỠ VIỆT NAM - CHẠM VÀO ĐỈNH CAO CỦA ÂM NHẠC VÀ CẢM XÚC",
+    "Nhà Hát Kịch IDECAF: LƯƠNG SƠN BÁ CHÚC ANH ĐÀI ngoại truyện",
+    "CON QUỶ RỐI - Bạn sợ khi xem kịch ma",
+    "Đêm Nhạc Ái Phương - Về Nhà",
+    "test",
+    "SỰ kiện chưa bắt đầu",
+    "abc1",
+    "câ"
+  ];
+
+  const closestEvent = getFinishedEvents(mergedData)
+    .filter(event => !excludedNames.includes(event.name));
 
   const paginatedEvents = closestEvent.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
@@ -160,8 +164,8 @@ export default function AdminDashboard() {
           if (!monthlyRevenue[monthKey]) monthlyRevenue[monthKey] = 0;
           monthlyRevenue[monthKey] += value;
         });
-      } else if (ev.revenue) {
-        Object.entries(ev.revenue).forEach(([year, value]) => {
+      } else if (ev.revenueByYear) {
+        Object.entries(ev.revenueByYear).forEach(([year, value]) => {
           const monthKey = `${year}-01`;
           if (!monthlyRevenue[monthKey]) monthlyRevenue[monthKey] = 0;
           monthlyRevenue[monthKey] += value;
@@ -183,18 +187,28 @@ export default function AdminDashboard() {
     };
   };
 
-   const getFinishedEvents = (events) => {
-    return events.filter(event => event.timeEnd && new Date(event.timeEnd).getTime() < Date.now());
-  };
-  const mergedData1 = getFinishedEvents(mergedData)
+    const calculateTotalRevenue = (event) => {
+      if (event.revenueByMonth && Object.keys(event.revenueByMonth).length > 0) {
+        return Object.values(event.revenueByMonth).reduce((a, b) => a + b, 0);
+      } else if (event.revenueByDay && Object.keys(event.revenueByDay).length > 0) {
+        return Object.values(event.revenueByDay).reduce((a, b) => a + b, 0);
+      } else if (event.revenueByYear && Object.keys(event.revenueByYear).length > 0) {
+        return Object.values(event.revenueByYear).reduce((a, b) => a + b, 0);
+      }
+      return 0;
+    };
+
+  const mergedData1 = getFinishedEvents(mergedData);
 
   const totalRevenueClosestEvents = (mergedData1 || []).reduce((sum, evt) => {
-    const revenueValue = Object.values(evt.revenue || {})[0] || 0;
-    console.log("Revenue của sự kiện:", revenueValue);
+    const revenueValue = calculateTotalRevenue(evt); // Đồng bộ: Sử dụng hàm tính tổng mới
     return sum + revenueValue;
   }, 0);
 
   const totalProfitClosestEvents = totalRevenueClosestEvents * 0.05;
+
+
+
 
   return (
     <DashboardLayout>
@@ -210,7 +224,7 @@ export default function AdminDashboard() {
           </Grid>
           <Grid item xs={12} md={6} lg={3.5}>
             <DetailedStatisticsCard
-              title="Tổng lợi nhuận Admin (5%)"
+              title="Tổng phí nền tảng (5%)"
               count={`${totalProfitClosestEvents.toLocaleString("vi-VN")} ₫`}
               icon={{ color: "error", component: <MonetizationOnIcon fontSize="small" /> }}
             />
@@ -260,7 +274,7 @@ export default function AdminDashboard() {
                 </TableBody>
                 <TableBody>
                   {paginatedEvents.map((ev) => {
-                    const totalRevenue = ev.revenue ? Object.values(ev.revenue).reduce((a, b) => a + b, 0) : 0;
+                    const totalRevenue = calculateTotalRevenue(ev); // Đồng bộ: Sử dụng hàm mới
                     const profit = totalRevenue * 0.05;
                     return (
                       <TableRow key={ev._id} hover>

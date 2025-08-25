@@ -82,6 +82,7 @@ export default function AdminDashboard() {
           revenueByDay: revenueInfo ? revenueInfo.revenueByDay : {},
           totalSold: revenueInfo ? revenueInfo.totalSold : 0,
           soldByDay: revenueInfo ? revenueInfo.soldByDay : {},
+          isPayment: true,
         };
       });
       setMergedData(merged);
@@ -207,9 +208,6 @@ export default function AdminDashboard() {
 
   const totalProfitClosestEvents = totalRevenueClosestEvents * 0.05;
 
-
-
-
   return (
     <DashboardLayout>
       <DashboardNavbar />
@@ -289,8 +287,8 @@ export default function AdminDashboard() {
                         <TableCell>{profit.toLocaleString("vi-VN")} ₫</TableCell>
                         <TableCell sx={{ textAlign: "center" }}>
                           <Chip
-                            label={ev.timeEnd && ev.timeEnd < Date.now() ? "Đã thanh toán" : "Đã thanh toán"}
-                            color={ev.timeEnd && ev.timeEnd < Date.now() ? "success" : "success"}
+                            label={ev.isPayment ? "Đã thanh toán" : "Chưa thanh toán"}
+                            color={ev.isPayment ? "success" : "warning"}
                             size="small"
                             sx={{ color: "#fff" }}
                           />

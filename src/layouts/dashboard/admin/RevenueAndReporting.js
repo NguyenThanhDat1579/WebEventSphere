@@ -139,6 +139,7 @@ function RevenueAndReporting() {
     return finishedEvents;
   };
 
+
   // Function to filter revenue events
   const filterRevenueEvents = (revenueList) => {
     return revenueList.filter((ev) => {
@@ -147,6 +148,15 @@ function RevenueAndReporting() {
       return hasYearRevenue || hasDayRevenue;
     });
   };
+
+  const organizerOfSelected = selected
+  ? organizers.find(org => {
+      const eventUserId = typeof selected.userId === "object" ? selected.userId._id : selected.userId;
+      return org._id === eventUserId;
+    })
+  : null;
+
+  console.log("hê", organizerOfSelected)
 
   // Function to add avatars to revenue list
   const addAvatarsToRevenueList = (revenueList, allEvents) => {
@@ -170,7 +180,6 @@ function RevenueAndReporting() {
       const totalRevenue = calculateTotalRevenue(ev); // Đồng bộ: Sử dụng hàm mới
       const sold = Object.values(ev.soldByDay || {}).reduce((a, b) => a + b, 0);
       const profit = totalRevenue * 0.05;
-
       return {
         __total: totalRevenue,
         avatar: ev.avatar ? (
@@ -218,8 +227,8 @@ function RevenueAndReporting() {
         ),
         status: (
           <Chip
-            label={ev.isPaid ? "Đã thanh toán" : "Đã thanh toán"}
-            color={ev.isPaid ? "success" : "success"}
+            label={ev.isPayment ? "Đã thanh toán" : "Chưa thanh toán"}
+            color={ev.isPayment ? "success" : "warning"}
             size="small"
             sx={{ color: "#fff" }}
           />
@@ -260,10 +269,14 @@ function RevenueAndReporting() {
       ]);
 
       const revenueList = revenueRes.data.eventsRevenue || [];
-      const allEvents = Array.isArray(eventRes.data) 
+      let allEvents = Array.isArray(eventRes.data) 
       ? eventRes.data 
       : eventRes.data.data || [];
 
+      allEvents = allEvents.map((event) => ({
+        ...event,
+        isPayment: event.isPayment || true, // mặc định tất cả event chưa thanh toán
+      }));
 
 
       const finishedEvents = mergeEventAndRevenueData(allEvents, revenueList);
@@ -318,6 +331,7 @@ function RevenueAndReporting() {
         revenueByYear: revenueData?.revenueByYear || {},
         totalSold: revenueData?.totalSold || 0,
         soldByDay: revenueData?.soldByDay || {},
+
       };
     });
 
@@ -463,6 +477,8 @@ function RevenueAndReporting() {
             selected && (
               <Box py={2}>
                 <Card sx={{ borderRadius: 3, boxShadow: 4, p: 3 }}>
+                 <Box display="flex" justifyContent="space-between" mb={2}>
+                  {/* Nút Quay lại danh sách bên trái */}
                   <Button
                     size="small"
                     variant="contained"
@@ -476,15 +492,63 @@ function RevenueAndReporting() {
                       fontWeight: 600,
                       px: 2,
                       borderRadius: 2,
-                      mb: 2,
                       backgroundColor: "#5669FF",
                       color: "#fff",
-                      width: "fit-content",
                       "&:hover": { backgroundColor: "#115293" },
                     }}
                   >
                     Quay lại danh sách
                   </Button>
+
+                  {/* Nút Thanh toán bên phải */}
+                {!selected.isPayment && (
+                    <Button
+                      variant="contained"
+                      sx={{
+                        textTransform: "none",
+                        backgroundColor: "#28a745", // màu xanh lá cây
+                        color: "#fff",              // chữ trắng
+                        "&:hover": { backgroundColor: "#218838" }, // màu hover tối hơn
+                      }}
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(
+                            `https://api.eventsphere.io.vn/api/events/confirmPayment/${selected._id}`,
+                            {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                            }
+                          );
+                          if (!res.ok) throw new Error("Thanh toán thất bại");
+                          setSelected((prev) => ({ ...prev, isPayment: true }));
+                          setRows((prevRows) =>
+                            prevRows.map((r) =>
+                              r.eventName.props.children === selected.name
+                                ? {
+                                    ...r,
+                                    status: (
+                                      <Chip
+                                        label="Đã thanh toán"
+                                        color="success"
+                                        size="small"
+                                        sx={{ color: "#fff" }}
+                                      />
+                                    ),
+                                  }
+                                : r
+                            )
+                          );
+                          alert("Thanh toán thành công!");
+                        } catch (error) {
+                          console.error(error);
+                          alert("Có lỗi khi thanh toán");
+                        }
+                      }}
+                    >
+                      Thanh toán
+                    </Button>
+                  )}
+                </Box>
 
                   <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" mb={3}>
                     <Box
@@ -557,6 +621,55 @@ function RevenueAndReporting() {
                       </Grid>
                     ))}
                   </Grid>
+
+                <Box display="flex" justifyContent="space-between" mb={2} mt={2} gap={2}>
+                {/* Box trái: Thông tin nhà tổ chức */}
+                <Box flex={1} display="flex" gap={2} mr={2}>
+                  <Box
+                    sx={{
+                      background: "#fafafa",
+                      border: "1px solid #eee",
+                      borderRadius: 2,
+                      p: 2,
+                      width: "100%",
+                    }}
+                  >
+                    <Avatar  sx={{ width: 80, height: 80 }} src={organizerOfSelected?.picUrl} alt={organizerOfSelected?.username} />
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      {organizerOfSelected?.username || "Không rõ"}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {organizerOfSelected?.email || ""}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                {/* Box phải: Thông tin ngân hàng */}
+                <Box
+                  flex={1}
+                  sx={{
+                    background: "#fafafa",
+                    border: "1px solid #eee",
+                    borderRadius: 2,
+                    p: 2,
+                  }}
+                >
+                  <Typography variant="body2" fontWeight={600} gutterBottom color="text.primary">
+  Thông tin ngân hàng
+</Typography>
+<Typography variant="body2" color="text.primary">
+  Chủ tài khoản: {organizerOfSelected?.bankAccountHolder || ""}
+</Typography>
+<Typography variant="body2" color="text.primary">
+  Số tài khoản: {organizerOfSelected?.bankAccountNumber || ""}
+</Typography>
+<Typography variant="body2" color="text.primary">
+  Tên ngân hàng: {organizerOfSelected?.bankName || ""}
+</Typography>
+                </Box>
+              </Box>
+
+
                 </Card>
               </Box>
             )

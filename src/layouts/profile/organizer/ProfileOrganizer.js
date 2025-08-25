@@ -54,6 +54,11 @@ const ProfileOrganizer = () => {
   const [editMode, setEditMode] = useState(false);
   const [passwordMode, setPasswordMode] = useState(false);
   const [editedName, setEditedName] = useState("");
+
+  const [accountHolder, setAccountHolder] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [bankName, setBankName] = useState("");
+
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -123,6 +128,10 @@ const ProfileOrganizer = () => {
         setProfile(user);
         setEditedName(user.username || "");
         setPreviewUrl(user.picUrl);
+
+        setAccountHolder(user.bankAccountHolder || "");
+        setAccountNumber(user.bankAccountNumber || "");
+        setBankName(user.bankName || "");
       } catch (error) {
         console.error("Lỗi khi tải thông tin người dùng:", error);
       }
@@ -131,6 +140,7 @@ const ProfileOrganizer = () => {
     if (userId) fetchProfile();
   }, [userId]);
 
+
   // Chọn avatar mới
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
@@ -138,6 +148,37 @@ const ProfileOrganizer = () => {
     setSelectedImage(file);
     setPreviewUrl(URL.createObjectURL(file));
   };
+
+  const handleSaveBankInfo = async () => {
+    try {
+      setLoading(true);
+      const body = {
+        id: userId,
+        bankAccountHolder: accountHolder,
+        bankAccountNumber: accountNumber,
+        bankName: bankName,
+      };
+
+      const response = await userApi.updateBankInfo(body);
+      console.log("Cập nhật thông tin ngân hàng thành công:", response);
+
+      // Cập nhật state profile
+      setProfile(prev => ({
+        ...prev,
+        bankAccountHolder: accountHolder,
+        bankAccountNumber: accountNumber,
+        bankName: bankName,
+      }));
+
+      alert("Cập nhật thông tin ngân hàng thành công!");
+    } catch (error) {
+      console.error("Lỗi khi cập nhật thông tin ngân hàng:", error);
+      alert("Cập nhật thông tin ngân hàng thất bại!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   // Lưu chỉnh sửa profile
   const handleSave = async () => {
@@ -270,36 +311,74 @@ const ProfileOrganizer = () => {
               </Grid>
 
               {/* Thông tin */}
-              <Grid item xs={12} sm={9}>
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <Typography variant="h6">THÔNG TIN NHÀ TỔ CHỨC</Typography>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <CustomTextField
-                      label="Email liên hệ"
-                      name="email"
-                      value={profile.email}
-                      fullWidth
-                      disabled
-                    />
-                  </Grid>
+             <Grid item xs={12} sm={9}>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <Typography variant="h6">THÔNG TIN NHÀ TỔ CHỨC</Typography>
                 </Grid>
 
-                <Grid container spacing={2} mt={1.5}>
-                  <Grid item xs={12} sm={6}>
-                    <CustomTextField
-                      label="Tên nhà tổ chức"
-                      name="username"
-                      value={editedName}
-                      onChange={(e) => setEditedName(e.target.value)}
-                      fullWidth
-                      disabled={!editMode}
-                      error={Boolean(nameError)}
-                      helperText={nameError}
-                    />
-                  </Grid>
+                {/* Email */}
+                <Grid item xs={12} sm={6}>
+                  <CustomTextField
+                    label="Email liên hệ"
+                    name="email"
+                    value={profile.email}
+                    fullWidth
+                    disabled
+                  />
                 </Grid>
+
+                {/* Tên nhà tổ chức */}
+                <Grid item xs={12} sm={6}>
+                  <CustomTextField
+                    label="Tên nhà tổ chức"
+                    name="username"
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                    fullWidth
+                    disabled={!editMode}
+                    error={Boolean(nameError)}
+                    helperText={nameError}
+                  />
+                </Grid>
+
+                {/* Chủ tài khoản */}
+                <Grid item xs={12} sm={6}>
+                  <CustomTextField
+                    label="Chủ tài khoản"
+                    name="accountHolder"
+                    value={accountHolder}
+                    onChange={(e) => setAccountHolder(e.target.value)}
+                    fullWidth
+                    disabled={!editMode}
+                  />
+                </Grid>
+
+                {/* Số tài khoản */}
+                <Grid item xs={12} sm={6}>
+                  <CustomTextField
+                    label="Số tài khoản"
+                    name="accountNumber"
+                    value={accountNumber}
+                    onChange={(e) => setAccountNumber(e.target.value)}
+                    fullWidth
+                    disabled={!editMode}
+                  />
+                </Grid>
+
+                {/* Tên ngân hàng */}
+                <Grid item xs={12} sm={6}>
+                  <CustomTextField
+                    label="Tên ngân hàng"
+                    name="bankName"
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                    fullWidth
+                    disabled={!editMode}
+                  />
+                </Grid>
+              </Grid>
+
 
                 {/* Nút hành động */}
                 <Grid item xs={12} mt={1.5}>
@@ -312,8 +391,11 @@ const ProfileOrganizer = () => {
                           color: "#fff",
                           mr: 3,
                         }}
-                        onClick={handleSave}
-                        disabled={loading}
+                         onClick={async () => {
+                            await handleSave();          // Lưu thông tin profile (username, avatar)
+                            await handleSaveBankInfo();  // Lưu thông tin ngân hàng
+                          }}
+                          disabled={loading}
                       >
                         Thay đổi
                       </Button>

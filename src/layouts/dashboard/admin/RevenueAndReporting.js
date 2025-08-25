@@ -274,7 +274,7 @@ function RevenueAndReporting() {
 
       allEvents = allEvents.map((event) => ({
         ...event,
-        isPayment: event.isPayment || true, // mặc định tất cả event chưa thanh toán
+        isPayment: event.isPayment || false, // mặc định tất cả event chưa thanh toán
       }));
 
 
@@ -481,9 +481,12 @@ function RevenueAndReporting() {
                   <Button
                     size="small"
                     variant="contained"
-                    onClick={() => {
+                    onClick={async () => {
                       setDetailMode(false);
                       setSelected(null);
+
+                      // Tái gọi API để load lại dữ liệu mới
+                      await fetchAndProcessData();
                     }}
                     sx={{
                       textTransform: "none",
@@ -509,40 +512,36 @@ function RevenueAndReporting() {
                         color: "#fff",              // chữ trắng
                         "&:hover": { backgroundColor: "#218838" }, // màu hover tối hơn
                       }}
-                      onClick={async () => {
-                        try {
-                          const res = await fetch(
-                            `https://api.eventsphere.io.vn/api/events/confirmPayment/${selected._id}`,
-                            {
-                              method: "PUT",
-                              headers: { "Content-Type": "application/json" },
+                    onClick={async () => {
+                            try {
+                              const res = await eventApi.confirmPayment(selected._id);
+                              console.log("thay đổi", res)
+                              // Nếu API thành công, cập nhật trạng thái
+                              setSelected((prev) => ({ ...prev, isPayment: true }));
+                              setRows((prevRows) =>
+                                prevRows.map((r) =>
+                                  r.eventName.props.children === selected.name
+                                    ? {
+                                        ...r,
+                                        status: (
+                                          <Chip
+                                            label="Đã thanh toán"
+                                            color="success"
+                                            size="small"
+                                            sx={{ color: "#fff" }}
+                                          />
+                                        ),
+                                      }
+                                    : r
+                                )
+                              );
+
+                              alert("Thanh toán thành công!");
+                            } catch (error) {
+                              console.error("Có lỗi khi thanh toán:", error);
+                              alert("Có lỗi khi thanh toán");
                             }
-                          );
-                          if (!res.ok) throw new Error("Thanh toán thất bại");
-                          setSelected((prev) => ({ ...prev, isPayment: true }));
-                          setRows((prevRows) =>
-                            prevRows.map((r) =>
-                              r.eventName.props.children === selected.name
-                                ? {
-                                    ...r,
-                                    status: (
-                                      <Chip
-                                        label="Đã thanh toán"
-                                        color="success"
-                                        size="small"
-                                        sx={{ color: "#fff" }}
-                                      />
-                                    ),
-                                  }
-                                : r
-                            )
-                          );
-                          alert("Thanh toán thành công!");
-                        } catch (error) {
-                          console.error(error);
-                          alert("Có lỗi khi thanh toán");
-                        }
-                      }}
+                          }}
                     >
                       Thanh toán
                     </Button>

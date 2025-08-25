@@ -383,7 +383,7 @@ const filteredRows = useMemo(() => {
     { title: "Tên sự kiện", field: "name", align: "left", width: "30%" },
     { title: "Ngày bắt đầu", field: "start", align: "center", width: "120px" },
     { title: "Giá vé", field: "price", align: "center", width: "150px" },
-    { title: "Diễn ra", field: "timeline", align: "center", width: "120px" },
+    // { title: "Diễn ra", field: "timeline", align: "center", width: "120px" },
     { title: "Trạng thái", field: "status", align: "center", width: "110px" },
     { title: "", field: "action", align: "center", width: "100px" },
   ], []);

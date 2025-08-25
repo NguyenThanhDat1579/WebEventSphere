@@ -38,6 +38,8 @@ const eventApi = {
 
     unpostponeEvent: (id,) =>
     axiosInstance.put(`/events/unpostpone/${id}`),
+     confirmPayment: (id) =>
+    axiosInstance.put(`/events/confirmPayment/${id}`),
 };
 
 export default eventApi;

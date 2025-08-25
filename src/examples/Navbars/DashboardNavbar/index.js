@@ -3,216 +3,139 @@ import { useState, useEffect } from "react";
 // react-router components
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { clearUserData } from "../../../redux/store/slices/authSlice"; // cập nhật đúng đường dẫn
+import { clearUserData } from "../../../redux/store/slices/authSlice"; 
 
-// prop-types is a library for typechecking of props.
+// prop-types
 import PropTypes from "prop-types";
 
 // @mui core components
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import IconButton from "@mui/material/IconButton";
-import Menu from "@mui/material/Menu";
 import Icon from "@mui/material/Icon";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import Button from "@mui/material/Button";
 
-// Argon Dashboard 2 MUI components
+// Argon components
 import ArgonBox from "components/ArgonBox";
 import ArgonTypography from "components/ArgonTypography";
-import ArgonInput from "components/ArgonInput";
 
-// Argon Dashboard 2 MUI example components
-import Breadcrumbs from "examples/Breadcrumbs";
-import NotificationItem from "examples/Items/NotificationItem";
+// Custom styles
+import { navbar, navbarContainer, navbarRow, navbarIconButton, navbarDesktopMenu } from "examples/Navbars/DashboardNavbar/styles";
 
-// Custom styles for DashboardNavbar
-import {
-  navbar,
-  navbarContainer,
-  navbarRow,
-  navbarIconButton,
-  navbarDesktopMenu,
-  navbarMobileMenu,
-} from "examples/Navbars/DashboardNavbar/styles";
-
-// Argon Dashboard 2 MUI context
-import {
-  useArgonController,
-  setTransparentNavbar,
-  setMiniSidenav,
-  setOpenConfigurator,
-} from "context";
-
-// Images
-import team2 from "assets/images/team-2.jpg";
-import logoSpotify from "assets/images/small-logos/logo-spotify.svg";
-import { colors } from "@mui/material";
+// Argon context
+import { useArgonController, setMiniSidenav } from "context";
 
 function DashboardNavbar({ absolute, light, isMini }) {
   const [navbarType, setNavbarType] = useState();
   const [controller, dispatch] = useArgonController();
-  const { miniSidenav, transparentNavbar, fixedNavbar, openConfigurator } = controller;
-  const [openMenu, setOpenMenu] = useState(false);
-  const route = useLocation().pathname.split("/").slice(1);
-  const dispatch1 = useDispatch();
+  const { miniSidenav, fixedNavbar } = controller;
+  const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
   const navigate = useNavigate();
+  const dispatch1 = useDispatch();
 
   const handleLogout = () => {
     // Clear Redux state
     dispatch1(clearUserData());
-
-    // Optionally: Xoá thêm localStorage nếu có dùng
     localStorage.removeItem("token");
     localStorage.removeItem("role");
     localStorage.removeItem("userData");
-    // Navigate về trang đăng nhập
+
     navigate("/authentication/sign-in");
     setTimeout(() => {
       window.location.reload();
-    }, 100); // Delay nhẹ để đảm bảo navigate xong mới reload
+    }, 100);
   };
 
   useEffect(() => {
-    // Setting the navbar type
-    if (fixedNavbar) {
-      setNavbarType("sticky");
-    } else {
-      setNavbarType("static");
-    }
+    setNavbarType(fixedNavbar ? "sticky" : "static");
+  }, [fixedNavbar]);
 
-    // A function that sets the transparent state of the navbar.
-    function handleTransparentNavbar() {
-      setTransparentNavbar(dispatch, (fixedNavbar && window.scrollY === 0) || !fixedNavbar);
-    }
-
-    window.addEventListener("scroll", handleTransparentNavbar);
-
-    // Call the handleTransparentNavbar function to set the state with the initial value.
-    handleTransparentNavbar();
-
-    // Remove event listener on cleanup
-    return () => window.removeEventListener("scroll", handleTransparentNavbar);
-  }, [dispatch, fixedNavbar]);
-
-  const handleMiniSidenav = () => setMiniSidenav(dispatch, !miniSidenav);
-  const handleConfiguratorOpen = () => setOpenConfigurator(dispatch, !openConfigurator);
-  const handleOpenMenu = (event) => setOpenMenu(event.currentTarget);
-  const handleCloseMenu = () => setOpenMenu(false);
-
-  // Render the notifications menu
-  const renderMenu = () => (
-    <Menu
-      anchorEl={openMenu}
-      anchorReference={null}
-      anchorOrigin={{
-        vertical: "bottom",
-        horizontal: "left",
-      }}
-      open={Boolean(openMenu)}
-      onClose={handleCloseMenu}
-      sx={{ mt: 2 }}
-    >
-      <NotificationItem
-        image={<img src={team2} alt="person" />}
-        title={["New message", "from Laur"]}
-        date="13 minutes ago"
-        onClick={handleCloseMenu}
-      />
-      <NotificationItem
-        image={<img src={logoSpotify} alt="person" />}
-        title={["New album", "by Travis Scott"]}
-        date="1 day"
-        onClick={handleCloseMenu}
-      />
-      <NotificationItem
-        color="secondary"
-        image={
-          <Icon fontSize="small" sx={{  color: "#fff" }}>
-            payment
-          </Icon>
-        }
-        title={["", "Payment successfully completed"]}
-        date="2 days"
-        onClick={handleCloseMenu}
-      />
-    </Menu>
-  );
+  const handleMiniSidenavClick = () => setMiniSidenav(dispatch, !miniSidenav);
 
   return (
-    <AppBar
-      position={absolute ? "absolute" : navbarType}
-      color="inherit"
-      sx={(theme) => navbar(theme, { transparentNavbar, absolute, light })}
-    >
-      <Toolbar sx={(theme) => navbarContainer(theme, { navbarType })}>
-        <ArgonBox
-          color={light && transparentNavbar ? "white" : "dark"}
-          mb={{ xs: 1, md: 0 }}
-          sx={(theme) => navbarRow(theme, { isMini })}
-        >
-          {/* <Breadcrumbs
-            icon="home"
-            title={route[route.length - 1]}
-            route={route}
-            light={transparentNavbar ? light : false}
-          /> */}
-          <Icon fontSize="medium" sx={{ ...navbarDesktopMenu, color: "#fff"}} onClick={handleMiniSidenav}>
-            {miniSidenav ? "menu_open" : "menu"}
-          </Icon>
-        </ArgonBox>
-        {isMini ? null : (
+    <>
+      <AppBar
+        position={absolute ? "absolute" : navbarType}
+        color="inherit"
+        sx={(theme) => navbar(theme, { absolute, light })}
+      >
+        <Toolbar sx={(theme) => navbarContainer(theme, { navbarType })}>
           <ArgonBox sx={(theme) => navbarRow(theme, { isMini })}>
-            <ArgonBox pr={1}>
-              {/* <ArgonInput
-                placeholder="Type here..."
-                startAdornment={
-                  <Icon fontSize="small" style={{ marginRight: "6px" }}>
-                    search
-                  </Icon>
-                }
-              /> */}
-            </ArgonBox>
-            <ArgonBox color={light ? "white" : "inherit"}>
-              <Link to="/authentication/sign-in">
-                <IconButton sx={navbarIconButton} size="small" onClick={handleLogout}>              
-                  <ArgonTypography
-                    variant="button"
-                    fontWeight="medium"
-                    sx={{color: "#fff"}}
-                  >
+            <Icon fontSize="medium" sx={{ ...navbarDesktopMenu, color: "#fff" }} onClick={handleMiniSidenavClick}>
+              {miniSidenav ? "menu_open" : "menu"}
+            </Icon>
+          </ArgonBox>
+          {!isMini && (
+            <ArgonBox sx={(theme) => navbarRow(theme, { isMini })}>
+              <ArgonBox color={light ? "white" : "inherit"}>
+                <IconButton
+                  sx={navbarIconButton}
+                  size="small"
+                  onClick={() => setOpenLogoutDialog(true)}
+                >
+                  <ArgonTypography variant="button" fontWeight="medium" sx={{ color: "#fff" }}>
                     Đăng xuất
                   </ArgonTypography>
-                    <IconButton>
-                   <Icon sx={{color: "#fff"}}>settings</Icon>
-                   </IconButton>
+                  <Icon sx={{ color: "#fff", ml: 1 }}>settings</Icon>
                 </IconButton>
-              </Link>
-              {/* <IconButton
-                size="small"
-                sx={{...navbarIconButton, color: "#fff"}}
-                aria-controls="notification-menu"
-                aria-haspopup="true"
-                variant="contained"
-                onClick={handleOpenMenu}
-              >
-                <Icon>notifications</Icon>
-              </IconButton>
-              {renderMenu()} */}
+              </ArgonBox>
             </ArgonBox>
-          </ArgonBox>
-        )}
-      </Toolbar>
-    </AppBar>
+          )}
+        </Toolbar>
+      </AppBar>
+
+      {/* Dialog xác nhận logout */}
+        <Dialog
+          open={openLogoutDialog}
+          onClose={() => setOpenLogoutDialog(false)}
+          maxWidth="xs" // Tăng kích thước dialog
+          fullWidth
+        >
+          <DialogContent>
+            <DialogContentText
+              sx={{ fontSize: "1.2rem", color: "#000", textAlign: "center", fontWeight: "600", pt: 1 }} // chữ màu đen, lớn hơn
+            >
+              Bạn có chắc chắn muốn đăng xuất không?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions sx={{ justifyContent: "center", mb: 1 }}>
+            <Button
+              onClick={() => setOpenLogoutDialog(false)}
+              color="primary"
+              sx={{ fontSize: "1rem", minWidth: "100px" }}
+            >
+              Huỷ
+            </Button>
+            <Button
+              onClick={handleLogout}
+              variant="contained"
+              sx={{ 
+                fontSize: "1rem", 
+                minWidth: "100px", 
+                color: "#fff", // chữ màu trắng
+                backgroundColor: "#5669FF", // màu nút tùy ý
+                "&:hover": { backgroundColor: "#5669FF" }
+              }}
+            >
+            Đồng ý
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+    </>
   );
 }
 
-// Setting default values for the props of DashboardNavbar
 DashboardNavbar.defaultProps = {
   absolute: false,
   light: true,
   isMini: false,
 };
 
-// Typechecking props for the DashboardNavbar
 DashboardNavbar.propTypes = {
   absolute: PropTypes.bool,
   light: PropTypes.bool,

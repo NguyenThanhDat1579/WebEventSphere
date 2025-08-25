@@ -619,7 +619,7 @@ const [seatLayoutError, setSeatLayoutError] = useState("");
                     </Grid>
                     <Grid item xs={12} sm={3}>
                       <CustomTextField
-                        label="Tổng số lượng vé"
+                        label="Số lượng vé"
                         type="number"
                         value={ticketQuantity}
                         onChange={(e) => setTicketQuantity(e.target.value)}

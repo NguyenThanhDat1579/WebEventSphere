@@ -253,7 +253,7 @@ function RevenueAndReporting() {
   // Fetch data and process it
   const fetchAndProcessData = async () => {
     try {
-setLoading(true);
+      setLoading(true);
       const [revenueRes, eventRes] = await Promise.all([
         revenueApi.getRevenue(),
         eventApi.getAll(),
@@ -325,13 +325,14 @@ setLoading(true);
       _id: org._id,
       email: org.email,
       username: org.username,
-      picUrl: org.avatar,
+      picUrl: org.picUrl,
       role: org.role,
       ticketsHave: org.ticketsHave,
       phoneNumber: org.phoneNumber,
       events: finishedEvents, // giờ đồng bộ với tab "Doanh thu sự kiện"
     };
   });
+
 
   // Lọc theo input search
   const filteredOrganizers = organizersWithEvents.filter((org) => {
@@ -363,6 +364,7 @@ setLoading(true);
     const name = r.eventName?.props?.children?.toLowerCase?.() || "";
     return name.includes(search.toLowerCase());
   });
+
 
 
   return (
@@ -589,7 +591,7 @@ setLoading(true);
                     <TableCell><strong>Tổng sự kiện</strong></TableCell>
                   </TableRow>
                   <TableBody>
-                    {organizersWithEvents.map((org) => {
+                    {filteredOrganizers.map((org) => {
                       const totalRevenue = org.events.reduce((sum, event) => {
                         return sum + calculateTotalRevenue(event); // Đồng bộ: Sử dụng hàm mới
                       }, 0);

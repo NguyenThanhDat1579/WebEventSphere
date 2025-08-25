@@ -248,7 +248,7 @@ export default function AdminDashboard() {
             <Card sx={{ p: 3, borderRadius: 3, boxShadow: 3, minHeight: 380 }}>
               {mergedData1.length > 0 && (
                 <VerticalBarChart
-                  title="Doanh thu theo tháng (sự kiện đã kết thúc)"
+                  title="Doanh thu theo tháng"
                   chart={buildChartFromClosestEvents(mergedData1)}
                   height="300px"
                 />

@@ -40,7 +40,7 @@ function RevenueAndReporting() {
     { field: "timeEnd", title: "Ngày kết thúc", align: "center" },
     { field: "sold", title: "Số vé bán", align: "center" },
     { field: "revenue", title: "Doanh thu", align: "center" },
-    { field: "profit", title: "Lợi nhuận", align: "center" },
+    { field: "profit", title: "Phí nền tảng", align: "center" },
     { field: "status", title: "Trạng thái", align: "center" },
     { field: "action", title: "Hành động", align: "center" },
   ];
@@ -156,7 +156,6 @@ function RevenueAndReporting() {
     })
   : null;
 
-  console.log("hê", organizerOfSelected)
 
   // Function to add avatars to revenue list
   const addAvatarsToRevenueList = (revenueList, allEvents) => {
@@ -655,17 +654,17 @@ function RevenueAndReporting() {
                   }}
                 >
                   <Typography variant="body2" fontWeight={600} gutterBottom color="text.primary">
-  Thông tin ngân hàng
-</Typography>
-<Typography variant="body2" color="text.primary">
-  Chủ tài khoản: {organizerOfSelected?.bankAccountHolder || ""}
-</Typography>
-<Typography variant="body2" color="text.primary">
-  Số tài khoản: {organizerOfSelected?.bankAccountNumber || ""}
-</Typography>
-<Typography variant="body2" color="text.primary">
-  Tên ngân hàng: {organizerOfSelected?.bankName || ""}
-</Typography>
+                  Thông tin ngân hàng
+                </Typography>
+                <Typography variant="body2" color="text.primary">
+                  Chủ tài khoản: {organizerOfSelected?.bankAccountHolder || ""}
+                </Typography>
+                <Typography variant="body2" color="text.primary">
+                  Số tài khoản: {organizerOfSelected?.bankAccountNumber || ""}
+                </Typography>
+                <Typography variant="body2" color="text.primary">
+                  Tên ngân hàng: {organizerOfSelected?.bankName || ""}
+                </Typography>
                 </Box>
               </Box>
 
@@ -700,7 +699,7 @@ function RevenueAndReporting() {
                     <TableCell width={"20%"}><strong>Nhà tổ chức</strong></TableCell>
                     <TableCell><strong>Email</strong></TableCell>
                     <TableCell><strong>Tổng doanh thu</strong></TableCell>
-                    <TableCell><strong>Lợi nhuận</strong></TableCell>
+                    <TableCell><strong>Phí nền tảng</strong></TableCell>
                     <TableCell><strong>Tổng sự kiện</strong></TableCell>
                   </TableRow>
                   <TableBody>
